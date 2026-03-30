@@ -22,18 +22,23 @@ class AiConfigRepository {
 
   Future<UsageQuota> getQuotaToday() async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    // INSERT OR IGNORE: 경쟁 조건 방지
+    await _db.rawInsert(
+      'INSERT OR IGNORE INTO usageQuota (dayKey) VALUES (?)',
+      [today],
+    );
     final rows = await _db.query('usageQuota',
         where: 'dayKey = ?', whereArgs: [today]);
-
-    if (rows.isEmpty) {
-      final id = await _db.insert('usageQuota', {'dayKey': today});
-      return UsageQuota(id: id, dayKey: today);
-    }
     return UsageQuota.fromMap(rows.first);
   }
 
   Future<void> incrementTextCount({required bool isUserKey}) async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    // 먼저 row 확보
+    await _db.rawInsert(
+      'INSERT OR IGNORE INTO usageQuota (dayKey) VALUES (?)',
+      [today],
+    );
     final col = isUserKey ? 'userKeyTextCount' : 'appDefaultTextCount';
     await _db.rawUpdate(
       'UPDATE usageQuota SET $col = $col + 1 WHERE dayKey = ?',
@@ -43,6 +48,10 @@ class AiConfigRepository {
 
   Future<void> incrementImageCount({required bool isUserKey}) async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    await _db.rawInsert(
+      'INSERT OR IGNORE INTO usageQuota (dayKey) VALUES (?)',
+      [today],
+    );
     final col = isUserKey ? 'userKeyImageCount' : 'appDefaultImageCount';
     await _db.rawUpdate(
       'UPDATE usageQuota SET $col = $col + 1 WHERE dayKey = ?',

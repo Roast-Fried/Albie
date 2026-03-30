@@ -105,7 +105,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE parseJob (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        logId INTEGER REFERENCES drinkLog(id),
+        logId INTEGER REFERENCES drinkLog(id) ON DELETE SET NULL,
         sourceType TEXT NOT NULL,
         parserUsed TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'success',

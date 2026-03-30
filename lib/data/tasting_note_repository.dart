@@ -7,17 +7,18 @@ class TastingNoteRepository {
   TastingNoteRepository(this._db);
 
   Future<int> save(TastingNote note) async {
-    // upsert: entryId 기준 1:1
-    final existing = await _db.query('tastingNote',
-        where: 'entryId = ?', whereArgs: [note.entryId]);
-
-    if (existing.isEmpty) {
-      return _db.insert('tastingNote', note.toMap());
-    } else {
-      await _db.update('tastingNote', note.toMap(),
+    return _db.transaction((txn) async {
+      final existing = await txn.query('tastingNote',
           where: 'entryId = ?', whereArgs: [note.entryId]);
-      return existing.first['id'] as int;
-    }
+
+      if (existing.isEmpty) {
+        return txn.insert('tastingNote', note.toMap());
+      } else {
+        await txn.update('tastingNote', note.toMap(),
+            where: 'entryId = ?', whereArgs: [note.entryId]);
+        return existing.first['id'] as int;
+      }
+    });
   }
 
   Future<TastingNote?> getByEntryId(int entryId) async {

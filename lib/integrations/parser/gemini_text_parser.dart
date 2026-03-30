@@ -40,7 +40,12 @@ class GeminiTextParser {
     }
 
     // JSON 파싱
-    final json = jsonDecode(text) as Map<String, dynamic>;
+    final Map<String, dynamic> json;
+    try {
+      json = jsonDecode(text) as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Gemini 응답 JSON 파싱 실패: $e');
+    }
 
     final entries = (json['entries'] as List?)
             ?.map((e) => DraftEntry.fromJson(e as Map<String, dynamic>))

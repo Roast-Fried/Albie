@@ -394,14 +394,22 @@ class LocalRuleParser {
 
   Future<void> _ensureDictsLoaded() async {
     if (_foodDict == null) {
-      final str =
-          await rootBundle.loadString('assets/seed/food_dictionary.json');
-      _foodDict = (jsonDecode(str) as List).cast<Map<String, dynamic>>();
+      try {
+        final str =
+            await rootBundle.loadString('assets/seed/food_dictionary.json');
+        _foodDict = (jsonDecode(str) as List).cast<Map<String, dynamic>>();
+      } catch (_) {
+        _foodDict = [];
+      }
     }
     if (_placeKeywords == null) {
-      final str =
-          await rootBundle.loadString('assets/seed/place_keywords.json');
-      _placeKeywords = jsonDecode(str) as Map<String, dynamic>;
+      try {
+        final str =
+            await rootBundle.loadString('assets/seed/place_keywords.json');
+        _placeKeywords = jsonDecode(str) as Map<String, dynamic>;
+      } catch (_) {
+        _placeKeywords = {'suffixes': [], 'exactMatch': [], 'areas': []};
+      }
     }
   }
 }
