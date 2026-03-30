@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'ai_settings_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -15,7 +16,8 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('AI 설정'),
             subtitle: const Text('기본 제한형'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {}, // Phase 6에서 구현
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AiSettingsScreen())),
           ),
           const Divider(),
           const _SectionHeader('정보'),
