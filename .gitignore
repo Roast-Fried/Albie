@@ -45,6 +45,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Golden test failures (diff images)
+test/golden/failures/
+
 # Environment
 .env
 .env.*
