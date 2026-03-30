@@ -52,11 +52,12 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
   Future<OrchestrateResult?> generateDraft() async {
     if (state.inputText.trim().isEmpty) return null;
-    if (_orchestrator == null) return null;
+    final orchestrator = _orchestrator;
+    if (orchestrator == null) return null;
 
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final result = await _orchestrator!.process(
+      final result = await orchestrator.process(
         ParseInput(text: state.inputText.trim()),
       );
       state = state.copyWith(isLoading: false);

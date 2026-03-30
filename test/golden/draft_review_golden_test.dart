@@ -1,7 +1,8 @@
 @Tags(['golden'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:albi/views/draft_review/draft_review_screen.dart';
 import 'package:albi/viewmodels/draft_review_viewmodel.dart';
 import 'package:albi/integrations/parser/parse_result.dart';
