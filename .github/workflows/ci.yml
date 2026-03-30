@@ -63,3 +63,29 @@ jobs:
           name: albi-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
+
+  build-ios:
+    runs-on: macos-latest
+    needs: analyze-and-test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --no-codesign --debug
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: albi-ios-build
+          path: build/ios/iphoneos/Runner.app
+          retention-days: 14
