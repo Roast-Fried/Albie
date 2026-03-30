@@ -48,6 +48,9 @@ app.*.map.json
 # Golden test failures (diff images)
 test/golden/failures/
 
+# Integration test screenshots (로컬 생성물)
+test_screenshots/
+
 # Environment
 .env
 .env.*

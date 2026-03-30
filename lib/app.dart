@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
+import 'core/providers.dart';
 import 'views/home/home_screen.dart';
 import 'views/log/log_list_screen.dart';
 import 'views/settings/more_screen.dart';
@@ -68,14 +70,14 @@ class _AppEntryState extends State<_AppEntry> {
   }
 }
 
-class AppShell extends StatefulWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends ConsumerState<AppShell> {
   int _currentIndex = 0;
 
   final _screens = const [
@@ -86,6 +88,19 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    // DB 초기화 대기
+    final dbAsync = ref.watch(databaseProvider);
+    if (dbAsync.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (dbAsync.hasError) {
+      return Scaffold(
+        body: Center(child: Text('DB 초기화 실패: ${dbAsync.error}')),
+      );
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
