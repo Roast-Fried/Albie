@@ -5,10 +5,13 @@ class AppTheme {
 
   static const _seed = Color(0xFF8B5E3C); // 위스키 브라운
 
+  static const _fontFamily = 'NotoSansKR';
+
   static final light = ThemeData(
     useMaterial3: true,
     colorSchemeSeed: _seed,
     brightness: Brightness.light,
+    fontFamily: _fontFamily,
     scaffoldBackgroundColor: const Color(0xFFF8F6F3),
     appBarTheme: const AppBarTheme(
       centerTitle: false,
@@ -39,6 +42,7 @@ class AppTheme {
     useMaterial3: true,
     colorSchemeSeed: _seed,
     brightness: Brightness.dark,
+    fontFamily: _fontFamily,
     appBarTheme: const AppBarTheme(
       centerTitle: false,
       elevation: 0,

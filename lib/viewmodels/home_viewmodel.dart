@@ -35,9 +35,16 @@ final logCountProvider = FutureProvider<int>((ref) async {
 // --- ViewModel ---
 
 class HomeViewModel extends StateNotifier<HomeState> {
-  final ParseOrchestrator _orchestrator;
+  final ParseOrchestrator? _orchestrator;
 
-  HomeViewModel(this._orchestrator) : super(const HomeState());
+  HomeViewModel(ParseOrchestrator orchestrator)
+      : _orchestrator = orchestrator,
+        super(const HomeState());
+
+  /// 테스트 전용 — orchestrator 없이 생성
+  HomeViewModel.forTest()
+      : _orchestrator = null,
+        super(const HomeState());
 
   void updateInput(String text) {
     state = state.copyWith(inputText: text);
@@ -45,10 +52,11 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
   Future<OrchestrateResult?> generateDraft() async {
     if (state.inputText.trim().isEmpty) return null;
+    if (_orchestrator == null) return null;
 
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final result = await _orchestrator.process(
+      final result = await _orchestrator!.process(
         ParseInput(text: state.inputText.trim()),
       );
       state = state.copyWith(isLoading: false);

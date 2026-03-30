@@ -29,3 +29,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/seed/
+  fonts:
+    - family: NotoSansKR
+      fonts:
+        - asset: assets/fonts/NotoSansKR.ttf
