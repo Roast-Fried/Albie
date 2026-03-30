@@ -47,6 +47,7 @@ jobs:
 
       - name: Create local.properties
         run: |
+          mkdir -p android
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
           echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
 
