@@ -171,12 +171,17 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
       final state = ref.read(draftReviewProvider);
       final log = vm.toSaveable();
       final repo = ref.read(drinkLogRepoProvider);
-      final logId = await repo.save(log);
 
-      // parseJob 연결
-      if (state.parseJobId != null) {
-        final jobRepo = ref.read(parseJobRepoProvider);
-        await jobRepo.linkToLog(state.parseJobId!, logId);
+      if (state.isEditing) {
+        // 수정 모드
+        await repo.update(log.copyWith(id: state.editingLogId));
+      } else {
+        // 신규 저장
+        final logId = await repo.save(log);
+        if (state.parseJobId != null) {
+          final jobRepo = ref.read(parseJobRepoProvider);
+          await jobRepo.linkToLog(state.parseJobId!, logId);
+        }
       }
 
       // 홈 화면 데이터 갱신

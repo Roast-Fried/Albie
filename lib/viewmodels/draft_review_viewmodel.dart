@@ -88,6 +88,7 @@ class DraftReviewState {
   final DateTime drankAt;
   final String? rawInputText;
   final int? parseJobId;
+  final int? editingLogId; // null이면 신규, 값이면 수정 모드
 
   DraftReviewState({
     required this.source,
@@ -100,7 +101,10 @@ class DraftReviewState {
     required this.drankAt,
     this.rawInputText,
     this.parseJobId,
+    this.editingLogId,
   });
+
+  bool get isEditing => editingLogId != null;
 
   factory DraftReviewState.fromParseResult(
     ParseResult result, {
@@ -150,6 +154,7 @@ class DraftReviewState {
       drankAt: drankAt ?? this.drankAt,
       rawInputText: rawInputText,
       parseJobId: parseJobId,
+      editingLogId: editingLogId,
     );
   }
 }

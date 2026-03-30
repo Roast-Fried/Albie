@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../archive/archive_screen.dart';
+import '../stats/stats_screen.dart';
+import 'settings_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -13,20 +16,23 @@ class MoreScreen extends StatelessWidget {
             leading: const Icon(Icons.wine_bar),
             title: const Text('마셔본 술'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {}, // TODO: navigate to archive
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ArchiveScreen())),
           ),
           ListTile(
             leading: const Icon(Icons.bar_chart),
             title: const Text('통계'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {}, // TODO: navigate to stats
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const StatsScreen())),
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('설정'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {}, // TODO: navigate to settings
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen())),
           ),
         ],
       ),
