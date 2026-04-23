@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/archive_viewmodel.dart';
 import '../common/error_state_widget.dart';
+import 'archive_detail_screen.dart';
 
 class ArchiveScreen extends ConsumerWidget {
   const ArchiveScreen({super.key});
@@ -104,6 +105,23 @@ class _ArchiveTile extends ConsumerWidget {
                     .toggleFavorite(item.liquorMasterId!, item.isFavorite),
               )
             : null,
+        onTap: () {
+          if (item.liquorMasterId == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('마스터 데이터가 없는 브랜드는 상세를 볼 수 없습니다'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+            return;
+          }
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  ArchiveDetailScreen(masterId: item.liquorMasterId!),
+            ),
+          );
+        },
       ),
     );
   }
