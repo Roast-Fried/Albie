@@ -80,6 +80,27 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // AI 실패 → 로컬 fallback 시 경고 배너
+          if (state.showAiFailBanner) ...[
+            Card(
+              color: Colors.orange.shade50,
+              child: ListTile(
+                leading: const Icon(Icons.warning_amber_rounded,
+                    color: Colors.orange),
+                title: const Text(
+                  'AI 실패 — 로컬 파서 결과예요. 내용을 확인해주세요.',
+                  style: TextStyle(fontSize: 13),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: vm.dismissAiFailBanner,
+                ),
+                dense: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // 출처 + confidence
           SourceBadgeWidget(
             source: state.source,

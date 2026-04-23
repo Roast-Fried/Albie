@@ -113,6 +113,7 @@ class HomeScreen extends ConsumerWidget {
         result.parseResult,
         rawInputText: inputText,
         parseJobId: result.parseJobId,
+        wasAiAttempted: result.wasAiAttempted,
       ),
     );
     vm.clearInput();

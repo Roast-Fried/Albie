@@ -52,6 +52,11 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
     state = state.copyWith(foodItems: foods);
   }
 
+  /// AI 실패 배너 닫기 — `wasAiAttempted=false` 로 플래그만 내려 배너 숨김.
+  void dismissAiFailBanner() {
+    state = state.copyWith(wasAiAttempted: false);
+  }
+
   /// ParseResult → DB 저장 가능한 DrinkLog로 변환
   DrinkLog toSaveable() {
     return DrinkLog(
@@ -64,6 +69,7 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
       entries: state.entries
           .where((e) => e.liquorNameRaw.isNotEmpty)
           .map((e) => DrinkEntry(
+                id: e.id,
                 liquorMasterId: e.liquorMasterId,
                 liquorNameRaw: e.liquorNameRaw,
                 liquorCategory: e.liquorCategory,
@@ -113,6 +119,10 @@ class DraftReviewState {
   final int? parseJobId;
   final int? editingLogId; // null이면 신규, 값이면 수정 모드
 
+  /// AI 네트워크 호출이 실제로 있었는데 로컬 파서로 fallback 된 경우 true.
+  /// AI 비활성/키 없음/쿼터 초과는 false — 배너 미표시.
+  final bool wasAiAttempted;
+
   DraftReviewState({
     required this.source,
     this.confidence = 0.5,
@@ -125,14 +135,20 @@ class DraftReviewState {
     this.rawInputText,
     this.parseJobId,
     this.editingLogId,
+    this.wasAiAttempted = false,
   });
 
   bool get isEditing => editingLogId != null;
+
+  /// 배너 표시 조건: AI 실패 → 로컬 fallback 시에만.
+  bool get showAiFailBanner =>
+      wasAiAttempted && source == 'local_parser';
 
   factory DraftReviewState.fromParseResult(
     ParseResult result, {
     String? rawInputText,
     int? parseJobId,
+    bool wasAiAttempted = false,
   }) {
     return DraftReviewState(
       source: result.source,
@@ -145,6 +161,7 @@ class DraftReviewState {
       drankAt: result.drankAt ?? DateTime.now(),
       rawInputText: rawInputText,
       parseJobId: parseJobId,
+      wasAiAttempted: wasAiAttempted,
     );
   }
 
@@ -165,6 +182,7 @@ class DraftReviewState {
     String? place,
     String? overallMemo,
     DateTime? drankAt,
+    bool? wasAiAttempted,
   }) {
     return DraftReviewState(
       source: source,
@@ -178,6 +196,7 @@ class DraftReviewState {
       rawInputText: rawInputText,
       parseJobId: parseJobId,
       editingLogId: editingLogId,
+      wasAiAttempted: wasAiAttempted ?? this.wasAiAttempted,
     );
   }
 }
