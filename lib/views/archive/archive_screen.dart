@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/utils/label_utils.dart';
 import '../../viewmodels/archive_viewmodel.dart';
+import '../common/error_state_widget.dart';
 
 class ArchiveScreen extends ConsumerWidget {
   const ArchiveScreen({super.key});
@@ -55,7 +57,9 @@ class ArchiveScreen extends ConsumerWidget {
             child: archiveAsync.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('오류: $e')),
+              error: (e, _) => ErrorStateWidget(
+                  message: '데이터를 불러올 수 없습니다',
+                  onRetry: () => ref.invalidate(archiveListProvider)),
               data: (items) => items.isEmpty
                   ? const Center(child: Text('기록이 없어요'))
                   : ListView.builder(
@@ -87,7 +91,7 @@ class _ArchiveTile extends ConsumerWidget {
       child: ListTile(
         title: Text(item.displayName),
         subtitle: Text(
-            '${_categoryLabel(item.category)} · ${item.recordCount}회 기록 · 최근 $lastDate'),
+            '${categoryLabel(item.category)} · ${item.recordCount}회 기록 · 최근 $lastDate'),
         trailing: item.liquorMasterId != null
             ? IconButton(
                 icon: Icon(
@@ -104,12 +108,4 @@ class _ArchiveTile extends ConsumerWidget {
     );
   }
 
-  String _categoryLabel(String cat) {
-    const map = {
-      'whisky': '위스키', 'highball': '하이볼', 'beer': '맥주',
-      'wine': '와인', 'cocktail': '칵테일', 'soju': '소주',
-      'makgeolli': '막걸리', 'sake': '사케', 'other': '기타',
-    };
-    return map[cat] ?? cat;
-  }
 }

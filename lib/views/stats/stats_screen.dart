@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/utils/label_utils.dart';
 import '../../viewmodels/stats_viewmodel.dart';
+import '../common/error_state_widget.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -13,7 +15,9 @@ class StatsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('통계')),
       body: statsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('오류: $e')),
+        error: (e, _) => ErrorStateWidget(
+            message: '통계를 불러올 수 없습니다',
+            onRetry: () => ref.invalidate(statsProvider)),
         data: (stats) => stats.totalCount == 0
             ? const Center(child: Text('기록이 없어요'))
             : ListView(
@@ -117,7 +121,7 @@ class _CategoryBars extends StatelessWidget {
             children: [
               SizedBox(
                   width: 60,
-                  child: Text(_categoryLabel(e.key),
+                  child: Text(categoryLabel(e.key),
                       style: Theme.of(context).textTheme.bodySmall)),
               Expanded(
                 child: ClipRRect(
@@ -143,14 +147,6 @@ class _CategoryBars extends StatelessWidget {
     );
   }
 
-  String _categoryLabel(String cat) {
-    const map = {
-      'whisky': '위스키', 'highball': '하이볼', 'beer': '맥주',
-      'wine': '와인', 'cocktail': '칵테일', 'soju': '소주',
-      'makgeolli': '막걸리', 'sake': '사케', 'other': '기타',
-    };
-    return map[cat] ?? cat;
-  }
 }
 
 class _RankTile extends StatelessWidget {

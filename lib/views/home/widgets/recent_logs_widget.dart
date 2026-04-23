@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/label_utils.dart';
 import '../../../domain/entities/drink_log.dart';
 
 class RecentLogsWidget extends StatelessWidget {
@@ -45,7 +46,7 @@ class _LogCard extends StatelessWidget {
         ? '기록 없음'
         : entries
             .map((e) =>
-                '${e.liquorNameRaw} ${e.quantityValue % 1 == 0 ? e.quantityValue.toInt() : e.quantityValue}${_unitLabel(e.quantityUnit)}')
+                '${e.liquorNameRaw} ${e.quantityValue % 1 == 0 ? e.quantityValue.toInt() : e.quantityValue}${unitLabel(e.quantityUnit)}')
             .join(', ');
 
     return SizedBox(
@@ -76,15 +77,4 @@ class _LogCard extends StatelessWidget {
     );
   }
 
-  String _unitLabel(String unit) {
-    const map = {
-      'glass': '잔',
-      'shot': '샷',
-      'bottle': '병',
-      'can': '캔',
-      'ml': 'ml',
-      'unknown': '',
-    };
-    return map[unit] ?? '';
-  }
 }

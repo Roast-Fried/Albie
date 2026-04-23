@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers.dart';
 import '../../viewmodels/home_viewmodel.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
+import '../common/error_state_widget.dart';
 import '../draft_review/draft_review_screen.dart';
 import 'widgets/recent_logs_widget.dart';
 import 'widgets/input_section_widget.dart';
@@ -42,7 +44,10 @@ class HomeScreen extends ConsumerWidget {
               loading: () => const SizedBox(
                   height: 100,
                   child: Center(child: CircularProgressIndicator())),
-              error: (_, _) => const SizedBox.shrink(),
+              error: (_, _) => ErrorStateWidget(
+                message: '최근 기록을 불러오지 못했습니다',
+                onRetry: () => ref.invalidate(recentLogsProvider),
+              ),
             ),
 
             const SizedBox(height: 16),
@@ -82,7 +87,10 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
               loading: () => const SizedBox.shrink(),
-              error: (_, _) => const SizedBox.shrink(),
+              error: (_, _) => ErrorStateWidget(
+                message: '통계를 불러오지 못했습니다',
+                onRetry: () => ref.invalidate(logCountProvider),
+              ),
             ),
 
             const SizedBox(height: 80),
