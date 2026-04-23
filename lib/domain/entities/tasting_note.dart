@@ -22,6 +22,28 @@ class TastingNote {
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
+  /// copyWith — nullable 필드 clear 는 `TastingNote(...)` 직접 생성으로 처리 (whole replacement save).
+  TastingNote copyWith({
+    int? id,
+    int? entryId,
+    String? nose,
+    String? palate,
+    String? finish,
+    double? rating,
+    String? note,
+  }) {
+    return TastingNote(
+      id: id ?? this.id,
+      entryId: entryId ?? this.entryId,
+      nose: nose ?? this.nose,
+      palate: palate ?? this.palate,
+      finish: finish ?? this.finish,
+      rating: rating ?? this.rating,
+      note: note ?? this.note,
+      createdAt: createdAt,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,

@@ -5,7 +5,9 @@ import '../data/drink_log_repository.dart';
 import '../data/liquor_master_repository.dart';
 import '../data/ai_config_repository.dart';
 import '../data/parse_job_repository.dart';
+import '../data/tasting_note_repository.dart';
 import '../domain/entities/drink_log.dart';
+import '../domain/entities/tasting_note.dart';
 
 /// DB 인스턴스
 final databaseProvider = FutureProvider<Database>((ref) async {
@@ -31,6 +33,18 @@ final aiConfigRepoProvider = Provider<AiConfigRepository>((ref) {
 final parseJobRepoProvider = Provider<ParseJobRepository>((ref) {
   final db = ref.watch(databaseProvider).requireValue;
   return ParseJobRepository(db);
+});
+
+final tastingNoteRepoProvider = Provider<TastingNoteRepository>((ref) {
+  final db = ref.watch(databaseProvider).requireValue;
+  return TastingNoteRepository(db);
+});
+
+/// entry id 별 테이스팅 노트 조회 (없으면 null).
+final tastingNoteByEntryProvider =
+    FutureProvider.family<TastingNote?, int>((ref, entryId) async {
+  final repo = ref.watch(tastingNoteRepoProvider);
+  return repo.getByEntryId(entryId);
 });
 
 /// ── 공유 데이터 Providers (홈/목록 등 여러 화면에서 사용) ──

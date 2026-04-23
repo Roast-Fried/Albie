@@ -10,6 +10,7 @@ import '../../viewmodels/log_list_viewmodel.dart';
 import '../common/delete_confirm_dialog.dart';
 import '../common/error_state_widget.dart';
 import '../draft_review/draft_review_screen.dart';
+import 'widgets/tasting_note_section.dart';
 
 class LogDetailScreen extends ConsumerWidget {
   final int logId;
@@ -107,6 +108,8 @@ class _DetailBody extends ConsumerWidget {
                           _chip(context, '${entry.alcoholPercent}%'),
                       ],
                     ),
+                    if (entry.id != null)
+                      TastingNoteSection(entryId: entry.id!),
                   ],
                 ),
               ),
@@ -171,6 +174,7 @@ class _DetailBody extends ConsumerWidget {
       source: log.parseSource,
       entries: log.entries
           .map((e) => DraftEntry(
+                id: e.id,
                 liquorMasterId: e.liquorMasterId,
                 liquorNameRaw: e.liquorNameRaw,
                 liquorCategory: e.liquorCategory,
