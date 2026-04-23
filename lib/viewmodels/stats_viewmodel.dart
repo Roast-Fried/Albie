@@ -1,6 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 
+enum StatsPeriod { thisMonth, last3Months, all }
+
+extension StatsPeriodLabel on StatsPeriod {
+  String get label => switch (this) {
+        StatsPeriod.thisMonth => '이번 달',
+        StatsPeriod.last3Months => '3개월',
+        StatsPeriod.all => '전체',
+      };
+}
+
+/// 현재 선택된 기간 필터.
+final statsPeriodProvider =
+    StateProvider<StatsPeriod>((ref) => StatsPeriod.thisMonth);
+
 class StatsData {
   final int totalCount;
   final int last7DaysCount;
@@ -19,28 +33,50 @@ class StatsData {
   });
 }
 
+/// 선택 기간 내 집계.
+///
+/// `categoryDistribution` / `topLiquors` 는 선택 기간 기준,
+/// `monthlyTrend` 는 최근 6개월 고정 (라인차트 전용).
+/// `totalCount`, `last7DaysCount`, `thisMonthCount` 는 참조용 전체 지표.
 final statsProvider = FutureProvider<StatsData>((ref) async {
   final repo = ref.watch(drinkLogRepoProvider);
+  final period = ref.watch(statsPeriodProvider);
   final logs = await repo.getAll();
 
   final now = DateTime.now();
   final sevenDaysAgo = now.subtract(const Duration(days: 7));
   final monthStart = DateTime(now.year, now.month, 1);
+  final threeMonthsAgo = DateTime(now.year, now.month - 3, 1);
+  final sixMonthsAgo = DateTime(now.year, now.month - 5, 1);
 
+  // 지표 (전체 기준) — 상단 카드
   int last7 = 0;
   int thisMonth = 0;
-  final catMap = <String, int>{};
-  final liquorMap = <String, int>{};
   final monthMap = <String, int>{};
-
   for (final log in logs) {
     if (log.drankAt.isAfter(sevenDaysAgo)) last7++;
     if (log.drankAt.isAfter(monthStart)) thisMonth++;
+    if (log.drankAt.isAfter(sixMonthsAgo)) {
+      final monthKey =
+          '${log.drankAt.year}-${log.drankAt.month.toString().padLeft(2, '0')}';
+      monthMap[monthKey] = (monthMap[monthKey] ?? 0) + 1;
+    }
+  }
 
-    final monthKey =
-        '${log.drankAt.year}-${log.drankAt.month.toString().padLeft(2, '0')}';
-    monthMap[monthKey] = (monthMap[monthKey] ?? 0) + 1;
+  // 기간 필터 — 분포 / TOP5
+  bool inPeriod(DateTime dt) {
+    return switch (period) {
+      StatsPeriod.thisMonth => dt.isAfter(monthStart),
+      StatsPeriod.last3Months => dt.isAfter(threeMonthsAgo),
+      StatsPeriod.all => true,
+    };
+  }
 
+  final catMap = <String, int>{};
+  final liquorMap = <String, int>{};
+
+  for (final log in logs) {
+    if (!inPeriod(log.drankAt)) continue;
     for (final entry in log.entries) {
       catMap[entry.liquorCategory] =
           (catMap[entry.liquorCategory] ?? 0) + 1;
