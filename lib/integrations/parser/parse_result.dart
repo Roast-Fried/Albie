@@ -72,6 +72,9 @@ class ParseResult {
 
 /// 개별 항목 초안
 class DraftEntry {
+  /// 기존 drinkEntry 행의 id (편집 모드에서만 유효, 신규 작성 시 null).
+  /// update 시 `DrinkLogRepository.update()` 가 이 id 를 보존해 tastingNote CASCADE 손실을 막음.
+  final int? id;
   final String? liquorName;
   final int? liquorMasterId;
   final String liquorNameRaw;
@@ -83,6 +86,7 @@ class DraftEntry {
   final double? alcoholPercent;
 
   DraftEntry({
+    this.id,
     this.liquorName,
     this.liquorMasterId,
     this.liquorNameRaw = '',
@@ -95,6 +99,7 @@ class DraftEntry {
   });
 
   DraftEntry copyWith({
+    int? id,
     String? liquorName,
     int? liquorMasterId,
     String? liquorNameRaw,
@@ -106,6 +111,7 @@ class DraftEntry {
     double? alcoholPercent,
   }) {
     return DraftEntry(
+      id: id ?? this.id,
       liquorName: liquorName ?? this.liquorName,
       liquorMasterId: liquorMasterId ?? this.liquorMasterId,
       liquorNameRaw: liquorNameRaw ?? this.liquorNameRaw,
@@ -119,6 +125,7 @@ class DraftEntry {
   }
 
   Map<String, dynamic> toJson() => {
+        if (id != null) 'id': id,
         'liquorName': liquorName,
         'liquorMasterId': liquorMasterId,
         'liquorNameRaw': liquorNameRaw,
@@ -132,6 +139,7 @@ class DraftEntry {
 
   factory DraftEntry.fromJson(Map<String, dynamic> json) {
     return DraftEntry(
+      id: json['id'] as int?,
       liquorName: json['liquorName'] as String?,
       liquorNameRaw: json['liquorName'] as String? ?? '',
       liquorCategory: json['liquorCategory'] as String? ?? 'other',

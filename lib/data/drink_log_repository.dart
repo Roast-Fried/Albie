@@ -43,7 +43,11 @@ class DrinkLogRepository {
     }
   }
 
-  /// 전체 업데이트: 기존 entries/foods 삭제 후 재삽입
+  /// 업데이트: entry id 보존 upsert + foods 재삽입.
+  ///
+  /// entry 는 삭제→재삽입이 아니라 id 기준 upsert 로 처리한다.
+  /// 이유: `tastingNote.entryId` 가 CASCADE 로 연결되어 있어서 삭제 시 노트가 함께 사라짐.
+  /// foods 는 단순 라벨 데이터라 기존 삭제→재삽입 유지.
   Future<void> update(DrinkLog log) async {
     if (log.id == null) return;
     try {
@@ -53,18 +57,41 @@ class DrinkLogRepository {
         await txn.update('drinkLog', {...log.toMap(), 'updatedAt': now},
             where: 'id = ?', whereArgs: [log.id]);
 
-        // entries 재삽입
-        await txn
-            .delete('drinkEntry', where: 'logId = ?', whereArgs: [log.id]);
+        // entry 상태 파악
+        final existingRows = await txn.query('drinkEntry',
+            columns: ['id'], where: 'logId = ?', whereArgs: [log.id]);
+        final existingIds = existingRows
+            .map((r) => r['id'] as int)
+            .toSet();
+        final incomingIds = log.entries
+            .map((e) => e.id)
+            .whereType<int>()
+            .toSet();
+
+        // 1) 사용자가 제거한 entry 만 DELETE → 의도된 tastingNote CASCADE
+        final toDelete = existingIds.difference(incomingIds);
+        for (final id in toDelete) {
+          await txn.delete('drinkEntry', where: 'id = ?', whereArgs: [id]);
+        }
+
+        // 2) 기존 entry UPDATE, 신규 entry INSERT
         for (final entry in log.entries) {
-          await txn.insert('drinkEntry', {
+          final map = {
             ...entry.toMap(),
             'logId': log.id,
             'updatedAt': now,
-          });
+          };
+          if (entry.id != null && existingIds.contains(entry.id)) {
+            await txn.update('drinkEntry', map,
+                where: 'id = ?', whereArgs: [entry.id]);
+          } else {
+            // id 가 null 이거나, id 가 다른 log 것 (방어적): INSERT
+            map.remove('id');
+            await txn.insert('drinkEntry', map);
+          }
         }
 
-        // foods 재삽입
+        // foods 재삽입 (라벨 데이터, 연결 엔티티 없음)
         await txn.delete('drinkLogFood',
             where: 'logId = ?', whereArgs: [log.id]);
         for (final food in log.foodItems) {
