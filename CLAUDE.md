@@ -129,18 +129,25 @@ GitHub Actions: push/PR → analyze → test → (main만) APK 빌드
 | **자료 원본** | `C:\Users\tgkim\AppData\Local\Temp\albi_spec_review\` | 외부 docx + wireframes.html + screen_flow.png (로컬 임시) |
 | **과거 플랜 (완료)** | [plan.md](plan.md), [plan-error-handling.md](plan-error-handling.md) | Phase 1-4 + 에러 처리 잔여분. 역사 보존용, 신규 작업에 참조하지 말 것 |
 
-### 다음 작업 우선순위 (Phase A → B → C)
+### 구현 진도 (2026-04-23 기준)
 
-**Phase A (MVP 필수 누락, 2-3일)** — 반드시 먼저
-1. 테이스팅 노트 UI (L-4) — `log_detail_screen.dart` 에 향/맛/피니시/평점 섹션 + CTA
-2. 아카이브 상세 화면 (A-5) — `views/archive/archive_detail_screen.dart` 신규
-3. AI 실패 경고 배너 (D-1) — `draft_review_screen.dart` 상단 Material banner
+**Phase A ✅ 완료** (MVP 필수 누락 3건 + 선행 결함 1건)
+- A0 drink_log update() entry id 보존 upsert
+- L-4 테이스팅 노트 UI · A-5 아카이브 상세 · D-1 AI 실패 배너
 
-**Phase B (UX 완성, 3-4일)** — Phase A 이후
-- 통계 차트 (파이/라인) + 기간 탭 · 설정 데이터 섹션 · 최근 처리 로그 · 월별 그룹 + 시간대 자연어 · 아카이브 카드 강화 · 홈 보강 · 신뢰도 % 디테일 · 설정 메인 AI 토글 · 별점 입력
+**Phase B1~B3 ✅ 완료** (UX 완성, 15 Gap)
+- 통계 차트 + 기간 탭, 설정 메인 재설계, AI 처리 로그, 홈 보강
+- 기록 월 그룹·시간대·서브타이틀, 아카이브 카드 강화
+- 검토 디테일 (매칭 아이콘·영문 병기), 더보기 링크, 빈 상태 CTA
 
-**Phase C (폴리싱)** — 여유 시
-- 온보딩 비주얼 · 6시 컷오프 toggle · 기본 수량 단위 · 다크 모드 명시 · 오픈소스 라이선스 · 영문 병기 · 빈 상태 일관성
+**Phase C ✅ 완료** (실질 가치 3건)
+- 다크 모드 선택 · 오픈소스 라이선스 · 온보딩 비주얼
+
+**잔여 3 건** (의도적 미구현 또는 별도 작업)
+- H-5 AI 로딩 취소 — dio CancelToken 필요, 난이도 고려
+- C-4 기본 수량 단위 / C-5 6시 컷오프 — 실효성 낮음 판단
+
+와이어프레임 정합성 **36/39 완료**. 세부는 [docs/plan-wireframe-diff.md](docs/plan-wireframe-diff.md) § 8 히스토리 참조.
 
 ### 작업 루틴 (권장)
 
