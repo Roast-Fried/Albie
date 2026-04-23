@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/providers.dart';
+import '../../core/utils/date_utils.dart' as dt_utils;
 import '../../core/utils/label_utils.dart';
 import '../../domain/entities/drink_log.dart';
+import '../../domain/entities/liquor_master.dart';
 import '../../integrations/parser/parse_result.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
@@ -53,7 +55,10 @@ class _DetailBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dateStr = DateFormat('M월 d일 (E) a h:mm', 'ko').format(log.drankAt);
+    final day = DateFormat('M월 d일 (E)', 'ko').format(log.drankAt);
+    final tod = dt_utils.timeOfDayKorean(log.drankAt);
+    final time = DateFormat('h:mm').format(log.drankAt);
+    final dateStr = '$day $tod $time';
 
     return Scaffold(
       appBar: AppBar(
@@ -84,36 +89,7 @@ class _DetailBody extends ConsumerWidget {
 
           // entries
           for (final entry in log.entries) ...[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(entry.liquorNameRaw,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        _chip(context, categoryLabel(entry.liquorCategory)),
-                        if (entry.ageStatement != null)
-                          _chip(context, entry.ageStatement!),
-                        _chip(context,
-                            '${entry.quantityValue % 1 == 0 ? entry.quantityValue.toInt() : entry.quantityValue} ${unitLabel(entry.quantityUnit)}'),
-                        if (entry.alcoholPercent != null)
-                          _chip(context, '${entry.alcoholPercent}%'),
-                      ],
-                    ),
-                    if (entry.id != null)
-                      TastingNoteSection(entryId: entry.id!),
-                  ],
-                ),
-              ),
-            ),
+            _EntryCard(entry: entry),
             const SizedBox(height: 8),
           ],
 
@@ -216,15 +192,77 @@ class _DetailBody extends ConsumerWidget {
     }
   }
 
-  Widget _chip(BuildContext context, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+}
+
+/// liquorMaster 조회 FutureProvider — Entry 카드에서 canonicalName/subcategory 조회.
+final _entryMasterProvider =
+    FutureProvider.family<LiquorMaster?, int>((ref, masterId) async {
+  return ref.watch(liquorMasterRepoProvider).getById(masterId);
+});
+
+class _EntryCard extends ConsumerWidget {
+  final DrinkEntry entry;
+
+  const _EntryCard({required this.entry});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final masterAsync = entry.liquorMasterId != null
+        ? ref.watch(_entryMasterProvider(entry.liquorMasterId!))
+        : null;
+    final LiquorMaster? master = masterAsync?.valueOrNull;
+
+    final titleKo = master?.nameKo ?? entry.liquorNameRaw;
+    final titleEn = master?.canonicalName;
+    final subtitleParts = <String>[
+      if (master?.subcategory != null)
+        subcategoryLabel(master!.category, master.subcategory)
+      else
+        categoryLabel(entry.liquorCategory),
+      if (entry.ageStatement != null) entry.ageStatement!,
+      if (entry.alcoholPercent != null) '${entry.alcoholPercent}%',
+    ];
+    final qty =
+        entry.quantityValue % 1 == 0 ? entry.quantityValue.toInt() : entry.quantityValue;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Flexible(
+                  child: Text(titleKo,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                ),
+                if (titleEn != null && titleEn != titleKo) ...[
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text('($titleEn)',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline)),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(subtitleParts.join(' · '),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline)),
+            const SizedBox(height: 6),
+            Text('$qty ${unitLabel(entry.quantityUnit)}',
+                style: Theme.of(context).textTheme.titleMedium),
+            if (entry.id != null) TastingNoteSection(entryId: entry.id!),
+          ],
+        ),
       ),
-      child: Text(text, style: Theme.of(context).textTheme.labelSmall),
     );
   }
-
 }
