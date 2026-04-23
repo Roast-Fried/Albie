@@ -376,7 +376,6 @@
   {"canonicalName":"Sierra Nevada","nameKo":"시에라 네바다","aliases":["시에라네바다","시에라 네바다","sierra nevada"],"category":"beer","subcategory":"ale","defaultAbv":5.6,"country":"United States","distillery":null},
   {"canonicalName":"The Booth","nameKo":"더부스","aliases":["더부스","더 부스","the booth"],"category":"beer","subcategory":"ale","defaultAbv":5.0,"country":"Korea","distillery":null},
   {"canonicalName":"Budweiser Budvar","nameKo":"부드바","aliases":["부드바","budvar","budweiser budvar"],"category":"beer","subcategory":"lager","defaultAbv":5.0,"country":"Czech Republic","distillery":null},
-  {"canonicalName":"Krpin","nameKo":"크루소비체","aliases":["크루소비체","krusovice"],"category":"beer","subcategory":"lager","defaultAbv":5.0,"country":"Czech Republic","distillery":null},
   {"canonicalName":"Modelo Especial","nameKo":"모델로","aliases":["모델로","modelo","modelo especial"],"category":"beer","subcategory":"lager","defaultAbv":4.4,"country":"Mexico","distillery":null},
   {"canonicalName":"Platinum","nameKo":"플래티넘","aliases":["플래티넘","platinum"],"category":"beer","subcategory":"lager","defaultAbv":5.0,"country":"Korea","distillery":null},
   {"canonicalName":"Suntory Premium Malt's","nameKo":"프리미엄 몰츠","aliases":["프리미엄몰츠","프리미엄 몰츠","premium malts"],"category":"beer","subcategory":"lager","defaultAbv":5.5,"country":"Japan","distillery":null},

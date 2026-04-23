@@ -130,7 +130,6 @@
   {"canonicalName":"Terra","nameKo":"테라","aliases":["테라","terra"],"category":"beer","subcategory":"lager","defaultAbv":4.6,"country":"Korea","distillery":null},
   {"canonicalName":"Hite","nameKo":"하이트","aliases":["하이트","hite"],"category":"beer","subcategory":"lager","defaultAbv":4.5,"country":"Korea","distillery":null},
   {"canonicalName":"Kelly","nameKo":"켈리","aliases":["켈리","kelly"],"category":"beer","subcategory":"lager","defaultAbv":4.5,"country":"Korea","distillery":null},
-  {"canonicalName":"Krpin","nameKo":"크루소비체","aliases":["크루소비체","krusovice"],"category":"beer","subcategory":"lager","defaultAbv":5.0,"country":"Czech Republic","distillery":null},
   {"canonicalName":"Edelweiss","nameKo":"에델바이스","aliases":["에델바이스","edelweiss"],"category":"beer","subcategory":"wheat","defaultAbv":5.0,"country":"Austria","distillery":null},
   {"canonicalName":"Kozel","nameKo":"코젤","aliases":["코젤","kozel"],"category":"beer","subcategory":"lager","defaultAbv":4.0,"country":"Czech Republic","distillery":null},
   {"canonicalName":"Somersby","nameKo":"써머스비","aliases":["써머스비","somersby"],"category":"beer","subcategory":"cider","defaultAbv":4.5,"country":"Denmark","distillery":null},
