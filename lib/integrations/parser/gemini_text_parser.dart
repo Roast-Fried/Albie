@@ -70,7 +70,7 @@ class GeminiTextParser {
     if (json['drankAt'] != null) {
       try {
         drankAt = DateTime.parse(json['drankAt'] as String);
-      } catch (_) {}
+      } on FormatException catch (_) {}
     }
 
     return ParseResult(

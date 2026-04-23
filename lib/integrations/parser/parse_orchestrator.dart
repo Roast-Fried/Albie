@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/exceptions.dart';
 import '../../data/ai_config_repository.dart';
 import '../../data/parse_job_repository.dart';
 import '../../domain/entities/parse_job.dart';
@@ -103,12 +105,29 @@ class ParseOrchestrator {
 
       return _AiParseResult(result: result, parserUsed: config.selectedModel);
     } catch (e) {
-      // AI 실패 → fallback to local (에러 무시)
+      // AI 실패 → fallback to local. 타입화된 에러로 분류하지만 throw 하지 않음.
+      final error = _classifyAiError(e);
       await _aiConfigRepo.update(
-        (await _aiConfigRepo.get()).copyWith(lastErrorMessage: e.toString()),
+        (await _aiConfigRepo.get()).copyWith(lastErrorMessage: error.userMessage),
       );
       return null;
     }
+  }
+
+  /// AI 파싱 중 발생한 예외를 [AppError] 계층으로 분류한다.
+  /// 호출자(_tryAiParse)는 fallback 을 위해 throw 하지 않고 메시지만 저장한다.
+  AppError _classifyAiError(Object e) {
+    if (e is DioException) {
+      final msg = switch (e.response?.statusCode) {
+        401 => 'API 키가 유효하지 않습니다',
+        429 => 'API 할당량을 초과했습니다',
+        _ => e.type == DioExceptionType.connectionTimeout
+            ? '네트워크 연결 시간 초과'
+            : 'AI 분석 실패: ${e.message}',
+      };
+      return NetworkError(msg, cause: e, statusCode: e.response?.statusCode);
+    }
+    return ParseError('AI 분석 실패', cause: e);
   }
 }
 

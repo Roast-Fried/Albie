@@ -398,7 +398,7 @@ class LocalRuleParser {
         final str =
             await rootBundle.loadString('assets/seed/food_dictionary.json');
         _foodDict = (jsonDecode(str) as List).cast<Map<String, dynamic>>();
-      } catch (_) {
+      } on Exception catch (_) {
         _foodDict = [];
       }
     }
@@ -407,7 +407,7 @@ class LocalRuleParser {
         final str =
             await rootBundle.loadString('assets/seed/place_keywords.json');
         _placeKeywords = jsonDecode(str) as Map<String, dynamic>;
-      } catch (_) {
+      } on Exception catch (_) {
         _placeKeywords = {'suffixes': [], 'exactMatch': [], 'areas': []};
       }
     }

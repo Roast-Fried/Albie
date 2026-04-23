@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import '../core/exceptions.dart';
 import '../domain/entities/tasting_note.dart';
 
 class TastingNoteRepository {
@@ -7,18 +8,22 @@ class TastingNoteRepository {
   TastingNoteRepository(this._db);
 
   Future<int> save(TastingNote note) async {
-    return _db.transaction((txn) async {
-      final existing = await txn.query('tastingNote',
-          where: 'entryId = ?', whereArgs: [note.entryId]);
-
-      if (existing.isEmpty) {
-        return txn.insert('tastingNote', note.toMap());
-      } else {
-        await txn.update('tastingNote', note.toMap(),
+    try {
+      return await _db.transaction((txn) async {
+        final existing = await txn.query('tastingNote',
             where: 'entryId = ?', whereArgs: [note.entryId]);
-        return existing.first['id'] as int;
-      }
-    });
+
+        if (existing.isEmpty) {
+          return txn.insert('tastingNote', note.toMap());
+        } else {
+          await txn.update('tastingNote', note.toMap(),
+              where: 'entryId = ?', whereArgs: [note.entryId]);
+          return existing.first['id'] as int;
+        }
+      });
+    } on DatabaseException catch (e) {
+      throw DatabaseError('시음 노트 저장 실패', cause: e);
+    }
   }
 
   Future<TastingNote?> getByEntryId(int entryId) async {
@@ -29,7 +34,11 @@ class TastingNoteRepository {
   }
 
   Future<void> delete(int entryId) async {
-    await _db.delete('tastingNote',
-        where: 'entryId = ?', whereArgs: [entryId]);
+    try {
+      await _db.delete('tastingNote',
+          where: 'entryId = ?', whereArgs: [entryId]);
+    } on DatabaseException catch (e) {
+      throw DatabaseError('시음 노트 삭제 실패', cause: e);
+    }
   }
 }

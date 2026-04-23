@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import '../core/exceptions.dart';
 import '../domain/entities/ai_config.dart';
 import '../domain/entities/usage_quota.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +16,11 @@ class AiConfigRepository {
   }
 
   Future<void> update(AiConfig config) async {
-    await _db.update('aiConfig', config.toMap(), where: 'id = 1');
+    try {
+      await _db.update('aiConfig', config.toMap(), where: 'id = 1');
+    } on DatabaseException catch (e) {
+      throw DatabaseError('AI 설정 저장 실패', cause: e);
+    }
   }
 
   // --- Usage Quota ---
@@ -29,21 +34,27 @@ class AiConfigRepository {
     );
     final rows = await _db.query('usageQuota',
         where: 'dayKey = ?', whereArgs: [today]);
+    if (rows.isEmpty) return UsageQuota(dayKey: today);
     return UsageQuota.fromMap(rows.first);
   }
 
   Future<void> incrementTextCount({required bool isUserKey}) async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    // 먼저 row 확보
     await _db.rawInsert(
       'INSERT OR IGNORE INTO usageQuota (dayKey) VALUES (?)',
       [today],
     );
-    final col = isUserKey ? 'userKeyTextCount' : 'appDefaultTextCount';
-    await _db.rawUpdate(
-      'UPDATE usageQuota SET $col = $col + 1 WHERE dayKey = ?',
-      [today],
-    );
+    if (isUserKey) {
+      await _db.rawUpdate(
+        'UPDATE usageQuota SET userKeyTextCount = userKeyTextCount + 1 WHERE dayKey = ?',
+        [today],
+      );
+    } else {
+      await _db.rawUpdate(
+        'UPDATE usageQuota SET appDefaultTextCount = appDefaultTextCount + 1 WHERE dayKey = ?',
+        [today],
+      );
+    }
   }
 
   Future<void> incrementImageCount({required bool isUserKey}) async {
@@ -52,10 +63,16 @@ class AiConfigRepository {
       'INSERT OR IGNORE INTO usageQuota (dayKey) VALUES (?)',
       [today],
     );
-    final col = isUserKey ? 'userKeyImageCount' : 'appDefaultImageCount';
-    await _db.rawUpdate(
-      'UPDATE usageQuota SET $col = $col + 1 WHERE dayKey = ?',
-      [today],
-    );
+    if (isUserKey) {
+      await _db.rawUpdate(
+        'UPDATE usageQuota SET userKeyImageCount = userKeyImageCount + 1 WHERE dayKey = ?',
+        [today],
+      );
+    } else {
+      await _db.rawUpdate(
+        'UPDATE usageQuota SET appDefaultImageCount = appDefaultImageCount + 1 WHERE dayKey = ?',
+        [today],
+      );
+    }
   }
 }

@@ -64,6 +64,8 @@ class GeminiClient {
         options: Options(receiveTimeout: const Duration(seconds: 5)),
       );
       return response.statusCode == 200;
+    } on DioException catch (_) {
+      return false;
     } catch (_) {
       return false;
     }
