@@ -2,12 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/providers.dart';
 import '../domain/entities/ai_config.dart';
+import '../domain/entities/parse_job.dart';
 import '../domain/entities/usage_quota.dart';
 import '../integrations/gemini/gemini_client.dart';
 
 final aiConfigProvider =
     AsyncNotifierProvider<AiSettingsViewModel, AiSettingsState>(
         AiSettingsViewModel.new);
+
+/// AI 설정 화면 하단의 "최근 처리 로그" 목록.
+final recentParseJobsProvider = FutureProvider<List<ParseJob>>((ref) async {
+  final repo = ref.watch(parseJobRepoProvider);
+  return repo.getRecent(limit: 10);
+});
 
 class AiSettingsState {
   final AiConfig config;

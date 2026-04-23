@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../viewmodels/ai_settings_viewmodel.dart';
+import '../../domain/entities/parse_job.dart';
 import '../../domain/entities/usage_quota.dart';
+import '../../viewmodels/ai_settings_viewmodel.dart';
 
 class AiSettingsScreen extends ConsumerStatefulWidget {
   const AiSettingsScreen({super.key});
@@ -157,6 +158,10 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                     maxLines: 2, overflow: TextOverflow.ellipsis),
               ),
             ],
+
+            const Divider(),
+            const _SectionHeader('최근 처리 로그'),
+            const _RecentJobsList(),
           ],
         ),
       ),
@@ -192,6 +197,93 @@ class _SectionHeader extends StatelessWidget {
               .textTheme
               .labelLarge
               ?.copyWith(color: Theme.of(context).colorScheme.primary)),
+    );
+  }
+}
+
+class _RecentJobsList extends ConsumerWidget {
+  const _RecentJobsList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final jobsAsync = ref.watch(recentParseJobsProvider);
+    return jobsAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      error: (_, _) => const Padding(
+        padding: EdgeInsets.all(12),
+        child: Text('로그를 불러올 수 없습니다', style: TextStyle(fontSize: 12)),
+      ),
+      data: (jobs) {
+        if (jobs.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(12),
+            child: Text('기록된 파싱 작업이 없습니다',
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+          );
+        }
+        return Column(
+          children: jobs.map((j) => _JobTile(job: j)).toList(),
+        );
+      },
+    );
+  }
+}
+
+class _JobTile extends StatelessWidget {
+  final ParseJob job;
+  const _JobTile({required this.job});
+
+  String _parserLabel(String raw) {
+    if (raw.contains('flash-lite')) return 'Flash Lite';
+    if (raw.contains('flash')) return 'Flash';
+    if (raw == 'local_parser') return '로컬 파서';
+    return raw;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final time = DateFormat('HH:mm').format(job.createdAt);
+    final dur = job.durationMs != null ? '${job.durationMs}ms' : '-';
+    final isSuccess = job.status == 'success';
+    final statusIcon = isSuccess
+        ? Icon(Icons.check_circle, size: 16, color: Colors.green.shade600)
+        : Icon(Icons.cancel, size: 16, color: Colors.red.shade600);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 44,
+            child: Text(time,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontFeatures: const [FontFeature.tabularFigures()])),
+          ),
+          Expanded(
+            child: Text(
+              '${job.sourceType == 'text_only' ? '텍스트' : '이미지'} · ${_parserLabel(job.parserUsed)}',
+              style: Theme.of(context).textTheme.bodySmall,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text(dur,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                  fontFeatures: const [FontFeature.tabularFigures()])),
+          const SizedBox(width: 6),
+          statusIcon,
+        ],
+      ),
     );
   }
 }
