@@ -28,8 +28,11 @@ class LogListViewModel extends AsyncNotifier<List<DrinkLog>> {
         () => ref.read(drinkLogRepoProvider).search(keyword));
   }
 
+  /// 삭제 후 관련 provider 일괄 갱신
   Future<void> delete(int logId) async {
     await ref.read(drinkLogRepoProvider).delete(logId);
+    ref.invalidate(recentLogsProvider);
+    ref.invalidate(logCountProvider);
     await refresh();
   }
 }

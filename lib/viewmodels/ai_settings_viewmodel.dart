@@ -21,6 +21,20 @@ class AiSettingsState {
     this.hasUserKey = false,
     this.isValidating = false,
   });
+
+  AiSettingsState copyWith({
+    AiConfig? config,
+    UsageQuota? quota,
+    bool? hasUserKey,
+    bool? isValidating,
+  }) {
+    return AiSettingsState(
+      config: config ?? this.config,
+      quota: quota ?? this.quota,
+      hasUserKey: hasUserKey ?? this.hasUserKey,
+      isValidating: isValidating ?? this.isValidating,
+    );
+  }
 }
 
 class AiSettingsViewModel extends AsyncNotifier<AiSettingsState> {

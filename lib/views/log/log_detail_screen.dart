@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/providers.dart';
+import '../../core/utils/label_utils.dart';
 import '../../domain/entities/drink_log.dart';
+import '../../integrations/parser/parse_result.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
-import '../../viewmodels/home_viewmodel.dart';
-import '../../integrations/parser/parse_result.dart';
+import '../common/delete_confirm_dialog.dart';
+import '../common/error_state_widget.dart';
 import '../draft_review/draft_review_screen.dart';
 
 class LogDetailScreen extends ConsumerWidget {
@@ -22,7 +24,10 @@ class LogDetailScreen extends ConsumerWidget {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(
-          appBar: AppBar(), body: Center(child: Text('오류: $e'))),
+          appBar: AppBar(),
+          body: ErrorStateWidget(
+              message: '기록을 불러올 수 없습니다',
+              onRetry: () => ref.invalidate(_logDetailProvider(logId)))),
       data: (log) {
         if (log == null) {
           return Scaffold(
@@ -93,11 +98,11 @@ class _DetailBody extends ConsumerWidget {
                     Wrap(
                       spacing: 8,
                       children: [
-                        _chip(context, _categoryLabel(entry.liquorCategory)),
+                        _chip(context, categoryLabel(entry.liquorCategory)),
                         if (entry.ageStatement != null)
                           _chip(context, entry.ageStatement!),
                         _chip(context,
-                            '${entry.quantityValue % 1 == 0 ? entry.quantityValue.toInt() : entry.quantityValue} ${_unitLabel(entry.quantityUnit)}'),
+                            '${entry.quantityValue % 1 == 0 ? entry.quantityValue.toInt() : entry.quantityValue} ${unitLabel(entry.quantityUnit)}'),
                         if (entry.alcoholPercent != null)
                           _chip(context, '${entry.alcoholPercent}%'),
                       ],
@@ -195,36 +200,16 @@ class _DetailBody extends ConsumerWidget {
         ))
         .then((_) {
       ref.invalidate(_logDetailProvider(log.id!));
-      ref.invalidate(logListProvider);
-      ref.invalidate(recentLogsProvider);
-      ref.invalidate(logCountProvider);
+      // saveToDb이 logList, recentLogs, logCount를 이미 갱신함
     });
   }
 
-  void _delete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('기록 삭제'),
-        content: const Text('이 기록을 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(drinkLogRepoProvider).delete(log.id!);
-              ref.invalidate(logListProvider);
-              ref.invalidate(recentLogsProvider);
-              ref.invalidate(logCountProvider);
-              if (context.mounted) Navigator.of(context).pop();
-            },
-            child: Text('삭제',
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ),
-        ],
-      ),
-    );
+  void _delete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDeleteConfirmDialog(context);
+    if (confirmed == true) {
+      await ref.read(logListProvider.notifier).delete(log.id!);
+      if (context.mounted) Navigator.of(context).pop();
+    }
   }
 
   Widget _chip(BuildContext context, String text) {
@@ -238,20 +223,4 @@ class _DetailBody extends ConsumerWidget {
     );
   }
 
-  String _categoryLabel(String cat) {
-    const map = {
-      'whisky': '위스키', 'highball': '하이볼', 'beer': '맥주',
-      'wine': '와인', 'cocktail': '칵테일', 'soju': '소주',
-      'makgeolli': '막걸리', 'sake': '사케', 'other': '기타',
-    };
-    return map[cat] ?? cat;
-  }
-
-  String _unitLabel(String unit) {
-    const map = {
-      'glass': '잔', 'shot': '샷', 'bottle': '병',
-      'can': '캔', 'ml': 'ml', 'unknown': '',
-    };
-    return map[unit] ?? '';
-  }
 }

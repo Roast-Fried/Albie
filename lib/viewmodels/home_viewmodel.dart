@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
-import '../domain/entities/drink_log.dart';
 import '../integrations/parser/local_rule_parser.dart';
 import '../integrations/parser/parse_orchestrator.dart';
 import '../integrations/parser/parse_result.dart';
@@ -18,18 +17,6 @@ final orchestratorProvider = Provider<ParseOrchestrator>((ref) {
     aiConfigRepo: ref.watch(aiConfigRepoProvider),
     parseJobRepo: ref.watch(parseJobRepoProvider),
   );
-});
-
-/// 최근 기록 (홈 위젯용)
-final recentLogsProvider = FutureProvider<List<DrinkLog>>((ref) async {
-  final repo = ref.watch(drinkLogRepoProvider);
-  return repo.getAll(limit: 5);
-});
-
-/// 전체 기록 수 (홈 통계 카드용)
-final logCountProvider = FutureProvider<int>((ref) async {
-  final repo = ref.watch(drinkLogRepoProvider);
-  return repo.count();
 });
 
 // --- ViewModel ---

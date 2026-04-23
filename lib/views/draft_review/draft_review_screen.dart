@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
-import '../../core/providers.dart';
-import '../../viewmodels/home_viewmodel.dart';
 import 'widgets/entry_card_widget.dart';
 import 'widgets/food_chips_widget.dart';
 import 'widgets/source_badge_widget.dart';
@@ -19,6 +17,7 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
   late final TextEditingController _placeController;
   late final TextEditingController _memoController;
   bool _saving = false;
+  bool _saved = false;
 
   @override
   void initState() {
@@ -40,7 +39,30 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
     final state = ref.watch(draftReviewProvider);
     final vm = ref.read(draftReviewProvider.notifier);
 
-    return Scaffold(
+    return PopScope(
+      canPop: _saved,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldLeave = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('작성 취소'),
+            content: const Text('저장하지 않고 나가시겠습니까?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('계속 작성')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('나가기')),
+            ],
+          ),
+        );
+        if (shouldLeave == true && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('기록 검토'),
         actions: [
@@ -161,37 +183,20 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
           const SizedBox(height: 80),
         ],
       ),
-    );
+    ));
   }
 
   Future<void> _save(BuildContext context, WidgetRef ref) async {
     setState(() => _saving = true);
     try {
       final vm = ref.read(draftReviewProvider.notifier);
-      final state = ref.read(draftReviewProvider);
-      final log = vm.toSaveable();
-      final repo = ref.read(drinkLogRepoProvider);
-
-      if (state.isEditing) {
-        // 수정 모드
-        await repo.update(log.copyWith(id: state.editingLogId));
-      } else {
-        // 신규 저장
-        final logId = await repo.save(log);
-        if (state.parseJobId != null) {
-          final jobRepo = ref.read(parseJobRepoProvider);
-          await jobRepo.linkToLog(state.parseJobId!, logId);
-        }
-      }
-
-      // 홈 화면 데이터 갱신
-      ref.invalidate(recentLogsProvider);
-      ref.invalidate(logCountProvider);
+      await vm.saveToDb(ref);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('저장했습니다'), duration: Duration(seconds: 2)),
         );
+        setState(() => _saved = true);
         Navigator.of(context).pop();
       }
     } catch (e) {

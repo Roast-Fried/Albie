@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers.dart';
 import '../domain/entities/drink_log.dart';
 import '../integrations/parser/parse_result.dart';
+import 'log_list_viewmodel.dart';
 
 // --- ViewModel ---
 
@@ -74,6 +76,27 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
           .toList(),
       foodItems: state.foodItems,
     );
+  }
+
+  /// 저장 (신규/수정 모두 처리) — View에서 Repository 직접 호출 제거
+  Future<void> saveToDb(WidgetRef ref) async {
+    final log = toSaveable();
+    final repo = ref.read(drinkLogRepoProvider);
+
+    if (state.isEditing) {
+      await repo.update(log.copyWith(id: state.editingLogId));
+    } else {
+      final logId = await repo.save(log);
+      if (state.parseJobId != null) {
+        final jobRepo = ref.read(parseJobRepoProvider);
+        await jobRepo.linkToLog(state.parseJobId!, logId);
+      }
+    }
+
+    // 관련 provider 일괄 갱신
+    ref.invalidate(recentLogsProvider);
+    ref.invalidate(logCountProvider);
+    ref.invalidate(logListProvider);
   }
 }
 

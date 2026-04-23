@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/utils/label_utils.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
 import '../../domain/entities/drink_log.dart';
+import '../common/delete_confirm_dialog.dart';
+import '../common/error_state_widget.dart';
 import 'log_detail_screen.dart';
 
 class LogListScreen extends ConsumerStatefulWidget {
@@ -58,7 +61,9 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
       ),
       body: logsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('오류: $e')),
+        error: (e, _) => ErrorStateWidget(
+            message: '기록을 불러올 수 없습니다',
+            onRetry: () => ref.read(logListProvider.notifier).refresh()),
         data: (logs) => logs.isEmpty
             ? const _EmptyState()
             : RefreshIndicator(
@@ -86,26 +91,11 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
         .then((_) => ref.read(logListProvider.notifier).refresh());
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, DrinkLog log) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('기록 삭제'),
-        content: const Text('이 기록을 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(logListProvider.notifier).delete(log.id!);
-            },
-            child: Text('삭제',
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ),
-        ],
-      ),
-    );
+  void _confirmDelete(BuildContext context, WidgetRef ref, DrinkLog log) async {
+    final confirmed = await showDeleteConfirmDialog(context);
+    if (confirmed == true) {
+      await ref.read(logListProvider.notifier).delete(log.id!);
+    }
   }
 }
 
@@ -122,7 +112,7 @@ class _LogTile extends StatelessWidget {
     final dateStr = DateFormat('M/d (E) a h:mm', 'ko').format(log.drankAt);
     final summary = log.entries
         .map((e) =>
-            '${e.liquorNameRaw} ${e.quantityValue % 1 == 0 ? e.quantityValue.toInt() : e.quantityValue}${_unitLabel(e.quantityUnit)}')
+            '${e.liquorNameRaw} ${e.quantityValue % 1 == 0 ? e.quantityValue.toInt() : e.quantityValue}${unitLabel(e.quantityUnit)}')
         .join(', ');
 
     return Card(
@@ -163,13 +153,6 @@ class _LogTile extends StatelessWidget {
     );
   }
 
-  String _unitLabel(String unit) {
-    const map = {
-      'glass': '잔', 'shot': '샷', 'bottle': '병',
-      'can': '캔', 'ml': 'ml', 'unknown': '',
-    };
-    return map[unit] ?? '';
-  }
 }
 
 class _EmptyState extends StatelessWidget {
