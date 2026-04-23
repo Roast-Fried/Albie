@@ -17,9 +17,10 @@ Future<void> setupGoldenTests() async {
     await fontLoader.load();
   }
 
-  // Golden 비교 시 항상 업데이트 모드 → 실패 없이 최신 이미지 생성
-  // 비교 검증은 직접 이미지를 눈으로 확인하는 방식
-  autoUpdateGoldenFiles = true;
+  // 환경변수 UPDATE_GOLDENS=true 로 실행 시에만 golden 파일 갱신
+  // CI 및 일반 테스트에서는 회귀 감지를 위해 비교 모드 사용
+  autoUpdateGoldenFiles =
+      const String.fromEnvironment('UPDATE_GOLDENS') == 'true';
 }
 
 /// Golden test용 래퍼

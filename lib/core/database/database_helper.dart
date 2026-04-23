@@ -5,7 +5,7 @@ import 'seed_loader.dart';
 class DatabaseHelper {
   static Database? _db;
   static const _dbName = 'albi.db';
-  static const _dbVersion = 1;
+  static const _dbVersion = 2;
 
   DatabaseHelper._();
   static final instance = DatabaseHelper._();
@@ -150,6 +150,12 @@ class DatabaseHelper {
         'CREATE INDEX idx_drinkLog_drankAt ON drinkLog(drankAt)');
     await db.execute(
         'CREATE INDEX idx_parseJob_logId ON parseJob(logId)');
+    await db.execute(
+        'CREATE INDEX idx_liquorMaster_category ON liquorMaster(category)');
+    await db.execute(
+        'CREATE INDEX idx_liquorMaster_nameKo ON liquorMaster(nameKo)');
+    await db.execute(
+        'CREATE INDEX idx_parseJob_createdAt ON parseJob(createdAt)');
 
     // 기본 AI 설정 삽입
     await db.insert('aiConfig', {
@@ -165,6 +171,13 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // 향후 마이그레이션 스크립트 추가
+    if (oldVersion < 2) {
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_liquorMaster_category ON liquorMaster(category)');
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_liquorMaster_nameKo ON liquorMaster(nameKo)');
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_parseJob_createdAt ON parseJob(createdAt)');
+    }
   }
 }

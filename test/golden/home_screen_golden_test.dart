@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:albi/views/home/home_screen.dart';
+import 'package:albi/core/providers.dart';
 import 'package:albi/viewmodels/home_viewmodel.dart';
 import 'package:albi/domain/entities/drink_log.dart';
 import 'golden_helper.dart';

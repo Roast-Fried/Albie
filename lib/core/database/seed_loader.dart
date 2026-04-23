@@ -14,8 +14,9 @@ class SeedLoader {
     final batch = db.batch();
     for (final item in list) {
       final master = LiquorMaster.fromSeedJson(item as Map<String, dynamic>);
+      // replace로 시드 업데이트 반영 (isFavorite, isUserAdded는 toMap에 포함됨)
       batch.insert('liquorMaster', master.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.ignore);
+          conflictAlgorithm: ConflictAlgorithm.replace);
     }
     await batch.commit(noResult: true);
   }
