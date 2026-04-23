@@ -5,6 +5,7 @@ import '../../viewmodels/home_viewmodel.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
 import '../common/error_state_widget.dart';
 import '../draft_review/draft_review_screen.dart';
+import '../settings/ai_settings_screen.dart';
 import 'widgets/recent_logs_widget.dart';
 import 'widgets/input_section_widget.dart';
 
@@ -25,11 +26,23 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeViewModelProvider);
     final recentLogs = ref.watch(recentLogsProvider);
-    final logCount = ref.watch(logCountProvider);
+    final thisMonthCount = ref.watch(thisMonthLogCountProvider);
+    final recentLiquors = ref.watch(recentFrequentLiquorsProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('알비', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'AI 처리 로그',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const AiSettingsScreen()),
+            ),
+          ),
+        ],
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -69,10 +82,45 @@ class HomeScreen extends ConsumerWidget {
                   style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // 하단 통계
-            logCount.when(
+            // 최근 마셔본 술 chips (최근 한 달)
+            recentLiquors.when(
+              data: (names) => names.isEmpty
+                  ? const SizedBox.shrink()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('최근 마셔본 술',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 36,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: names.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 6),
+                            itemBuilder: (_, i) => Chip(
+                              label: Text(names[i]),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+              loading: () => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
+            ),
+
+            // 하단 "이번 달 N회" 지표
+            thisMonthCount.when(
               data: (count) => count == 0
                   ? const _EmptyHint()
                   : Card(
@@ -82,14 +130,14 @@ class HomeScreen extends ConsumerWidget {
                           Icon(Icons.local_bar,
                               color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 12),
-                          Text('총 $count건 기록'),
+                          Text('이번 달 $count회 기록'),
                         ]),
                       ),
                     ),
               loading: () => const SizedBox.shrink(),
               error: (_, _) => ErrorStateWidget(
                 message: '통계를 불러오지 못했습니다',
-                onRetry: () => ref.invalidate(logCountProvider),
+                onRetry: () => ref.invalidate(thisMonthLogCountProvider),
               ),
             ),
 

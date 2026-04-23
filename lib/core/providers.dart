@@ -60,3 +60,31 @@ final logCountProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(drinkLogRepoProvider);
   return repo.count();
 });
+
+/// 이번 달 기록 수 (홈 하단 카드).
+final thisMonthLogCountProvider = FutureProvider<int>((ref) async {
+  final logs = await ref.watch(drinkLogRepoProvider).getAll();
+  final now = DateTime.now();
+  final monthStart = DateTime(now.year, now.month, 1);
+  return logs.where((l) => l.drankAt.isAfter(monthStart)).length;
+});
+
+/// "최근 마셔본 술" chips — 최근 한 달 내 기록에서 많이 등장한 브랜드 상위 6 개.
+final recentFrequentLiquorsProvider =
+    FutureProvider<List<String>>((ref) async {
+  final logs = await ref.watch(drinkLogRepoProvider).getAll();
+  final now = DateTime.now();
+  final monthAgo = DateTime(now.year, now.month - 1, now.day);
+  final counts = <String, int>{};
+  for (final log in logs) {
+    if (!log.drankAt.isAfter(monthAgo)) continue;
+    for (final e in log.entries) {
+      final name = e.liquorNameRaw.trim();
+      if (name.isEmpty) continue;
+      counts[name] = (counts[name] ?? 0) + 1;
+    }
+  }
+  final sorted = counts.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+  return sorted.take(6).map((e) => e.key).toList();
+});
