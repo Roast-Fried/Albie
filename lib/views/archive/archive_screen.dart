@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/providers.dart';
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/archive_viewmodel.dart';
 import '../common/error_state_widget.dart';
@@ -64,7 +65,7 @@ class ArchiveScreen extends ConsumerWidget {
                   onRetry: () => ref.invalidate(archiveListProvider)),
               data: (items) {
                 if (items.isEmpty) {
-                  return const Center(child: Text('기록이 없어요'));
+                  return _EmptyArchive(selectedCategory: selected);
                 }
                 final totalRecords =
                     items.fold<int>(0, (s, it) => s + it.recordCount);
@@ -96,6 +97,40 @@ class ArchiveScreen extends ConsumerWidget {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyArchive extends ConsumerWidget {
+  final String? selectedCategory;
+
+  const _EmptyArchive({required this.selectedCategory});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.wine_bar_outlined,
+              size: 48, color: Theme.of(context).colorScheme.outline),
+          const SizedBox(height: 12),
+          Text(selectedCategory == null
+              ? '아직 기록이 없어요'
+              : '해당 카테고리에 기록이 없어요'),
+          const SizedBox(height: 4),
+          Text('오늘 뭐 마셨어요? 한 줄로 알려주세요!',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline)),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('첫 기록 남기기'),
+            onPressed: () =>
+                ref.read(appTabIndexProvider.notifier).state = 0,
           ),
         ],
       ),

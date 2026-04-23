@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/providers.dart';
 import '../../core/utils/date_utils.dart' as dt_utils;
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
@@ -207,11 +208,11 @@ class _ListItem {
   bool get isHeader => header != null;
 }
 
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends ConsumerWidget {
   const _EmptyState();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -220,6 +221,17 @@ class _EmptyState extends StatelessWidget {
               size: 48, color: Theme.of(context).colorScheme.outline),
           const SizedBox(height: 12),
           const Text('아직 기록이 없어요'),
+          const SizedBox(height: 4),
+          Text('오늘 뭐 마셨어요? 한 줄로 알려주세요!',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline)),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('첫 기록 남기기'),
+            onPressed: () =>
+                ref.read(appTabIndexProvider.notifier).state = 0,
+          ),
         ],
       ),
     );

@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers.dart';
+import '../../../domain/entities/liquor_master.dart';
 import '../../../integrations/parser/parse_result.dart';
 
-class EntryCardWidget extends StatefulWidget {
+/// liquorMaster 조회 FutureProvider — 검토 화면 Entry 카드에서 매칭 상태 확인.
+final _entryDraftMasterProvider =
+    FutureProvider.family<LiquorMaster?, int>((ref, masterId) async {
+  return ref.watch(liquorMasterRepoProvider).getById(masterId);
+});
+
+class EntryCardWidget extends ConsumerStatefulWidget {
   final int index;
   final DraftEntry entry;
   final bool canDelete;
@@ -20,10 +29,10 @@ class EntryCardWidget extends StatefulWidget {
   });
 
   @override
-  State<EntryCardWidget> createState() => _EntryCardWidgetState();
+  ConsumerState<EntryCardWidget> createState() => _EntryCardWidgetState();
 }
 
-class _EntryCardWidgetState extends State<EntryCardWidget> {
+class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _ageCtrl;
   late final TextEditingController _qtyCtrl;
@@ -95,12 +104,8 @@ class _EntryCardWidgetState extends State<EntryCardWidget> {
               ],
             ),
 
-            // 술 이름
-            TextField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: '술 이름'),
-              onChanged: (_) => _emit(),
-            ),
+            // 술 이름 — 매칭 아이콘 + 영문 병기/경고 helperText
+            _buildNameField(context),
             const SizedBox(height: 8),
 
             // 주종 + 연산
@@ -176,9 +181,58 @@ class _EntryCardWidgetState extends State<EntryCardWidget> {
                 ),
               ],
             ),
+            if (widget.entry.isEstimated)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 4),
+                child: Text('⚠ 수량이 추정치입니다',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.orange.shade700)),
+              ),
           ],
         ),
       ),
+    );
+  }
+
+  /// 이름 필드 — 매칭 상태 아이콘 + helperText (영문 병기 / 경고).
+  Widget _buildNameField(BuildContext context) {
+    final masterId = widget.entry.liquorMasterId;
+    final masterAsync = masterId != null
+        ? ref.watch(_entryDraftMasterProvider(masterId))
+        : null;
+    final master = masterAsync?.valueOrNull;
+    final rawFilled = _nameCtrl.text.trim().isNotEmpty;
+
+    Widget? suffix;
+    String? helper;
+    Color? helperColor;
+
+    if (master != null) {
+      suffix = Icon(Icons.check_circle,
+          size: 18, color: Colors.green.shade600);
+      if (master.canonicalName != _nameCtrl.text.trim()) {
+        helper = '(${master.canonicalName})';
+      }
+    } else if (rawFilled) {
+      // master 매칭 실패 + 이름 입력됨
+      suffix = Icon(Icons.warning_amber_rounded,
+          size: 18, color: Colors.orange.shade700);
+      helper = '⚠ 이름을 정확히 확인하지 못했습니다';
+      helperColor = Colors.orange.shade700;
+    }
+
+    return TextField(
+      controller: _nameCtrl,
+      decoration: InputDecoration(
+        labelText: '술 이름',
+        suffixIcon: suffix,
+        helperText: helper,
+        helperStyle: helperColor != null
+            ? TextStyle(color: helperColor, fontSize: 11)
+            : null,
+        helperMaxLines: 2,
+      ),
+      onChanged: (_) => _emit(),
     );
   }
 

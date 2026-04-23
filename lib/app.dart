@@ -78,8 +78,6 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  int _currentIndex = 0;
-
   final _screens = const [
     HomeScreen(),
     LogListScreen(),
@@ -101,14 +99,17 @@ class _AppShellState extends ConsumerState<AppShell> {
       );
     }
 
+    final currentIndex = ref.watch(appTabIndexProvider);
+
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        currentIndex: currentIndex,
+        onTap: (i) =>
+            ref.read(appTabIndexProvider.notifier).state = i,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),

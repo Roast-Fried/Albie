@@ -14,6 +14,10 @@ final databaseProvider = FutureProvider<Database>((ref) async {
   return DatabaseHelper.instance.database;
 });
 
+/// AppShell 의 BottomNav 탭 인덱스 (0=홈, 1=기록, 2=더보기).
+/// 다른 화면에서 프로그램적으로 탭을 전환할 때 사용.
+final appTabIndexProvider = StateProvider<int>((ref) => 0);
+
 /// Repositories — AppShell이 DB 준비 완료를 보장한 후에만 접근됨
 final drinkLogRepoProvider = Provider<DrinkLogRepository>((ref) {
   final db = ref.watch(databaseProvider).requireValue;

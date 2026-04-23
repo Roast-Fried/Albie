@@ -5,19 +5,35 @@ import '../../../domain/entities/drink_log.dart';
 
 class RecentLogsWidget extends StatelessWidget {
   final List<DrinkLog> logs;
+  final VoidCallback? onMore;
 
-  const RecentLogsWidget({super.key, required this.logs});
+  const RecentLogsWidget({super.key, required this.logs, this.onMore});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('최근 기록',
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
+        Row(
+          children: [
+            Text('최근 기록',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const Spacer(),
+            if (onMore != null)
+              TextButton(
+                onPressed: onMore,
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                ),
+                child: const Text('→ 더보기'),
+              ),
+          ],
+        ),
         const SizedBox(height: 8),
         SizedBox(
           height: 90,

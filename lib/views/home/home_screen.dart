@@ -53,7 +53,12 @@ class HomeScreen extends ConsumerWidget {
             recentLogs.when(
               data: (logs) => logs.isEmpty
                   ? const SizedBox.shrink()
-                  : RecentLogsWidget(logs: logs),
+                  : RecentLogsWidget(
+                      logs: logs,
+                      onMore: () => ref
+                          .read(appTabIndexProvider.notifier)
+                          .state = 1,
+                    ),
               loading: () => const SizedBox(
                   height: 100,
                   child: Center(child: CircularProgressIndicator())),
