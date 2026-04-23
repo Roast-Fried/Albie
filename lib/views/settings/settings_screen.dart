@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/usage_quota.dart';
 import '../../viewmodels/ai_settings_viewmodel.dart';
 import '../../viewmodels/settings_viewmodel.dart';
+import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../common/delete_confirm_dialog.dart';
 import 'ai_settings_screen.dart';
 
@@ -70,6 +71,22 @@ class SettingsScreen extends ConsumerWidget {
 
           const Divider(),
 
+          // ── 일반 ──
+          const _SectionHeader('일반'),
+          Consumer(builder: (context, ref, _) {
+            final modeAsync = ref.watch(themeModeProvider);
+            final mode = modeAsync.valueOrNull ?? ThemeMode.system;
+            return ListTile(
+              leading: const Icon(Icons.brightness_6_outlined),
+              title: const Text('다크 모드'),
+              subtitle: Text(themeModeLabel(mode)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showThemeDialog(context, ref, mode),
+            );
+          }),
+
+          const Divider(),
+
           // ── 데이터 ──
           const _SectionHeader('데이터'),
           dataAsync.when(
@@ -112,9 +129,40 @@ class SettingsScreen extends ConsumerWidget {
             title: Text('버전'),
             subtitle: Text('0.1.0'),
           ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('오픈소스 라이선스'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: '알비',
+              applicationVersion: '0.1.0',
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _showThemeDialog(
+      BuildContext context, WidgetRef ref, ThemeMode current) async {
+    final selected = await showDialog<ThemeMode>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('다크 모드'),
+        children: ThemeMode.values
+            .map((m) => RadioListTile<ThemeMode>(
+                  title: Text(themeModeLabel(m)),
+                  value: m,
+                  groupValue: current,
+                  onChanged: (v) => Navigator.pop(ctx, v),
+                ))
+            .toList(),
+      ),
+    );
+    if (selected != null) {
+      await ref.read(themeModeProvider.notifier).setMode(selected);
+    }
   }
 
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {

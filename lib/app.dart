@@ -4,22 +4,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers.dart';
+import 'viewmodels/theme_mode_viewmodel.dart';
 import 'views/home/home_screen.dart';
 import 'views/log/log_list_screen.dart';
 import 'views/settings/more_screen.dart';
 import 'views/onboarding/onboarding_screen.dart';
 
-class AlbiApp extends StatelessWidget {
+class AlbiApp extends ConsumerWidget {
   const AlbiApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode =
+        ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
     return MaterialApp(
       title: '알비',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       locale: const Locale('ko', 'KR'),
       supportedLocales: const [Locale('ko', 'KR')],
       localizationsDelegates: const [
