@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/archive_viewmodel.dart';
 import '../common/error_state_widget.dart';
+import '../log/widgets/star_rating.dart';
 import 'archive_detail_screen.dart';
 
 class ArchiveScreen extends ConsumerWidget {
@@ -61,14 +62,39 @@ class ArchiveScreen extends ConsumerWidget {
               error: (e, _) => ErrorStateWidget(
                   message: '데이터를 불러올 수 없습니다',
                   onRetry: () => ref.invalidate(archiveListProvider)),
-              data: (items) => items.isEmpty
-                  ? const Center(child: Text('기록이 없어요'))
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: items.length,
-                      itemBuilder: (context, i) =>
-                          _ArchiveTile(item: items[i]),
+              data: (items) {
+                if (items.isEmpty) {
+                  return const Center(child: Text('기록이 없어요'));
+                }
+                final totalRecords =
+                    items.fold<int>(0, (s, it) => s + it.recordCount);
+                return Column(
+                  children: [
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('${items.length}종 · 총 $totalRecords회 기록',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.outline)),
+                      ),
                     ),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: items.length,
+                        itemBuilder: (context, i) =>
+                            _ArchiveTile(item: items[i]),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -87,12 +113,40 @@ class _ArchiveTile extends ConsumerWidget {
     final lastDate = item.lastDrankAt != null
         ? DateFormat('M/d').format(item.lastDrankAt!)
         : '-';
+    final subParts = <String>[
+      subcategoryLabel(item.category, item.subcategory),
+      if (item.country != null) item.country!,
+      if (item.defaultAbv != null) '${item.defaultAbv}% ABV',
+    ];
+    final line1 = subParts.join(' · ');
+    final line2 = '${item.recordCount}회 기록 · 최근 $lastDate';
 
     return Card(
       child: ListTile(
         title: Text(item.displayName),
-        subtitle: Text(
-            '${categoryLabel(item.category)} · ${item.recordCount}회 기록 · 최근 $lastDate'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(line1,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline)),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Expanded(
+                    child: Text(line2,
+                        style: Theme.of(context).textTheme.bodySmall)),
+                if (item.avgRating != null) ...[
+                  StarRating(value: item.avgRating!, size: 12),
+                  const SizedBox(width: 4),
+                  Text(item.avgRating!.toStringAsFixed(1),
+                      style: Theme.of(context).textTheme.labelSmall),
+                ],
+              ],
+            ),
+          ],
+        ),
+        isThreeLine: true,
         trailing: item.liquorMasterId != null
             ? IconButton(
                 icon: Icon(
