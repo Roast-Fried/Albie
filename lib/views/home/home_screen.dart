@@ -109,12 +109,9 @@ class HomeScreen extends ConsumerWidget {
                             itemCount: names.length,
                             separatorBuilder: (_, _) =>
                                 const SizedBox(width: 6),
-                            itemBuilder: (_, i) => Chip(
-                              label: Text(names[i]),
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ),
+                            // Round 6 X3 — Chip shrinkWrap 32dp tap target FAIL
+                            // → 기본 padded 로 48dp 확보 (motor disability / 음주 후)
+                            itemBuilder: (_, i) => Chip(label: Text(names[i])),
                           ),
                         ),
                         const SizedBox(height: 16),

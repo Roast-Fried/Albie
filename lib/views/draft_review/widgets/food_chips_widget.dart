@@ -48,10 +48,10 @@ class _FoodChipsWidgetState extends State<FoodChipsWidget> {
           runSpacing: 4,
           children: [
             for (var i = 0; i < widget.foods.length; i++)
+              // Round 6 X3 — shrinkWrap 제거하여 tap target 48dp 확보
               Chip(
                 label: Text(widget.foods[i]),
                 onDeleted: () => widget.onRemove(i),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
           ],
         ),

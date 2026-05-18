@@ -61,12 +61,20 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
   }
 
   void _emit() {
+    // Round 5 Codex Finding 5.1 — silent fallback (?? 1.0) 위험. 음수/0/100% 초과 거부.
+    final parsedQty = double.tryParse(_qtyCtrl.text);
+    final qty = (parsedQty != null && parsedQty > 0) ? parsedQty : 1.0;
+    final parsedAbv =
+        _abvCtrl.text.isEmpty ? null : double.tryParse(_abvCtrl.text);
+    final abv = (parsedAbv != null && parsedAbv >= 0 && parsedAbv <= 100)
+        ? parsedAbv
+        : null;
+
     widget.onChanged(widget.entry.copyWith(
       liquorNameRaw: _nameCtrl.text,
       ageStatement: _ageCtrl.text.isEmpty ? null : _ageCtrl.text,
-      quantityValue: double.tryParse(_qtyCtrl.text) ?? 1.0,
-      alcoholPercent:
-          _abvCtrl.text.isEmpty ? null : double.tryParse(_abvCtrl.text),
+      quantityValue: qty,
+      alcoholPercent: abv,
     ));
   }
 

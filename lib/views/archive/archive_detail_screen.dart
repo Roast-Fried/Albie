@@ -90,7 +90,13 @@ class ArchiveDetailScreen extends ConsumerWidget {
                     ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             if (d.history.isEmpty)
-              const Text('기록이 없습니다', style: TextStyle(color: Colors.grey))
+              // WCAG AA fix — Colors.grey (~2.6:1) → onSurfaceVariant (~4.5:1+)
+              Text(
+                '기록이 없습니다',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              )
             else
               for (final h in d.history) _HistoryTile(item: h),
 

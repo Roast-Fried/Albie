@@ -170,10 +170,12 @@ class _CategoryPieChart extends StatelessWidget {
                       title:
                           '${(sorted[i].value / total * 100).toStringAsFixed(0)}%',
                       radius: 60,
+                      // WCAG AA fix — white on pastel pie sections 2.0-3.6:1 FAIL
+                      // → black87 (>5:1 on all 6 pastel colors)
                       titleStyle: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Colors.black87,
                       ),
                     ),
                 ],

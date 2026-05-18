@@ -209,10 +209,24 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
   }
 
   Future<void> _save(BuildContext context, WidgetRef ref) async {
+    // 0-entry 저장 차단 (Round 5 finding #18 — 항목 없는 기록은 무의미)
+    final state = ref.read(draftReviewProvider);
+    final validEntries =
+        state.entries.where((e) => e.liquorNameRaw.trim().isNotEmpty).toList();
+    if (validEntries.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('술 이름이 있는 항목을 최소 1개 추가해주세요'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       // Day 1 reward — 첫 기록 저장 시 다른 message (Round 6 P2 fix)
-      final isEditing = ref.read(draftReviewProvider).isEditing;
+      final isEditing = state.isEditing;
       final prevCount =
           isEditing ? -1 : await ref.read(logCountProvider.future);
       final isFirstRecord = prevCount == 0;
@@ -259,9 +273,10 @@ class _DateRow extends StatelessWidget {
       onTap: () async {
         final date = await showDatePicker(
           context: context,
-          initialDate: drankAt,
+          initialDate: drankAt.isAfter(DateTime.now()) ? DateTime.now() : drankAt,
           firstDate: DateTime(2020),
-          lastDate: DateTime.now().add(const Duration(days: 1)),
+          // 미래 날짜 입력 차단 (Round 5 Codex Finding 6)
+          lastDate: DateTime.now(),
         );
         if (date == null) return;
 
