@@ -149,13 +149,16 @@ GitHub Actions: push/PR → analyze → test → (main만) APK 빌드
 
 ---
 
-## 📌 향후 작업 지침 (2026-04-23 갱신)
+## 📌 향후 작업 지침 (2026-05-18 갱신)
 
 ### 활성 문서 계층
 | 역할 | 파일 | 비고 |
 |------|------|------|
 | **최상위 기획** | [docs/기획서.md](docs/기획서.md) | 외부 docx v2.1 + 와이어프레임 + 현재 구현을 통합. 작업 시 항상 이 문서 § 4.1 화면 목록을 기준으로 삼을 것 |
 | **와이어프레임 Gap 플랜** | [docs/plan-wireframe-diff.md](docs/plan-wireframe-diff.md) | 39 건 Gap + Phase A/B/C 우선순위. 다음 기능 착수 전 반드시 확인 |
+| **UI/UX 6라운드 평가 (2026-05-18)** | [docs/analyze/2026-05-18-ui-ux-evaluation.md](docs/analyze/2026-05-18-ui-ux-evaluation.md) | 14 agent (Claude 9 + Codex 5) 양방향 cross-feedback. ~165 unique finding. CRITICAL/HIGH 백로그 |
+| **Phase C plan (도메인 차별화)** | [docs/plan-phase-c-domain-differentiation.md](docs/plan-phase-c-domain-differentiation.md) | C1-C5 (표준잔/알림/occasion/i18n/라벨갤러리) — 사용자 결정 영역 |
+| **Phase D plan (시각 identity)** | [docs/plan-phase-d-visual-identity.md](docs/plan-phase-d-visual-identity.md) | D1-D5 (6색 팔레트/illustration 10건/splash) — 사용자 결정 영역 |
 | **개발 지침** | [CLAUDE.md](CLAUDE.md) | 이 파일. 아키텍처 규칙, 기술 스택, 명령어 |
 | **자료 원본** | `C:\Users\tgkim\AppData\Local\Temp\albi_spec_review\` | 외부 docx + wireframes.html + screen_flow.png (로컬 임시) |
 | **과거 플랜 (완료)** | [plan.md](plan.md), [plan-error-handling.md](plan-error-handling.md) | Phase 1-4 + 에러 처리 잔여분. 역사 보존용, 신규 작업에 참조하지 말 것 |
@@ -179,6 +182,40 @@ GitHub Actions: push/PR → analyze → test → (main만) APK 빌드
 - C-4 기본 수량 단위 / C-5 6시 컷오프 — 실효성 낮음 판단
 
 와이어프레임 정합성 **36/39 완료**. 세부는 [docs/plan-wireframe-diff.md](docs/plan-wireframe-diff.md) § 8 히스토리 참조.
+
+### 추가 구현 진도 (2026-05-18 — UI/UX 6라운드 평가 후속)
+
+**Phase 0 ✅ 완료** (출시 차단 CRITICAL 8건, `e7bd5ab`)
+- Android INTERNET / iOS Photo+Camera 권한
+- Android release keystore 분리 (`key.properties` gitignore)
+- parseJob.rawRequest 원문 privacy fix
+- LogList long-press → trailing 휴지통 button (a11y)
+- entry_card IconButton 48dp tap target
+- Day 1 첫 저장 reward Snackbar
+- Source badge 4 색 WCAG AA fix
+
+**Phase 1 ✅ 완료** (HIGH 6건, `e093b28`)
+- 미래 날짜 입력 차단
+- 0-entry 저장 차단 + qty/abv silent fallback 제거
+- archive_detail 빈 상태 grey → onSurfaceVariant
+- stats pie chart 라벨 white → black87
+- home/food Chip shrinkWrap 제거 (48dp tap target)
+
+**Phase 2 Mini ✅ 완료** (`2591650`)
+- StarRating Semantics (TalkBack/VoiceOver button + label)
+
+**Phase 2/3 잔여** (사용자 결정 영역 또는 sprint 단위)
+- 잔여 HIGH ~50건 — announce / userMessage / DB retry / permission_handler / recovery flow / period filter empty / search 등
+- Phase C implementation (docs/plan-phase-c-domain-differentiation.md)
+- Phase D implementation (docs/plan-phase-d-visual-identity.md)
+
+### LLM 자율 device test 환경 (2026-05-18)
+
+- `scripts/run-all-tests.sh` — 6 target wrapper (smoke/unit/golden/integration:windows/integration:android/all)
+- `scripts/install-and-test-device.sh` — APK 빌드 + device install + integration test
+- 검증된 device: SM F711N (Android 15 API 35)
+- JDK 21 + Android licenses 사전 설정 필수 (위 § 테스트 참조)
+- mixed file 처리 전략 (사전 WIP 보존): backup → `git restore` HEAD → 내 변경만 재적용 → stage → commit → backup 복원
 
 ### 작업 루틴 (권장)
 
