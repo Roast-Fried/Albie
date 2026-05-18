@@ -106,6 +106,10 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
   }
 }
 
+/// `copyWith` sentinel — 사용자가 `place: null` / `overallMemo: null` 로 명시적으로
+/// 비울 수 있도록 "값 미지정" 과 "null 로 비우기" 를 구분한다.
+const Object _kUnset = Object();
+
 class DraftReviewState {
   final String source;
   final double confidence;
@@ -179,8 +183,8 @@ class DraftReviewState {
   DraftReviewState copyWith({
     List<DraftEntry>? entries,
     List<String>? foodItems,
-    String? place,
-    String? overallMemo,
+    Object? place = _kUnset,
+    Object? overallMemo = _kUnset,
     DateTime? drankAt,
     bool? wasAiAttempted,
   }) {
@@ -190,8 +194,10 @@ class DraftReviewState {
       parseWarnings: parseWarnings,
       entries: entries ?? this.entries,
       foodItems: foodItems ?? this.foodItems,
-      place: place ?? this.place,
-      overallMemo: overallMemo ?? this.overallMemo,
+      place: identical(place, _kUnset) ? this.place : place as String?,
+      overallMemo: identical(overallMemo, _kUnset)
+          ? this.overallMemo
+          : overallMemo as String?,
       drankAt: drankAt ?? this.drankAt,
       rawInputText: rawInputText,
       parseJobId: parseJobId,

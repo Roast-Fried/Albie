@@ -49,7 +49,9 @@ class DrinkLogRepository {
   /// 이유: `tastingNote.entryId` 가 CASCADE 로 연결되어 있어서 삭제 시 노트가 함께 사라짐.
   /// foods 는 단순 라벨 데이터라 기존 삭제→재삽입 유지.
   Future<void> update(DrinkLog log) async {
-    if (log.id == null) return;
+    if (log.id == null) {
+      throw const ValidationError('update() 호출 시 log.id 가 필요합니다');
+    }
     try {
       await _db.transaction((txn) async {
         final now = DateTime.now().toIso8601String();

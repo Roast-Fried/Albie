@@ -1,3 +1,7 @@
+/// `copyWith` sentinel — 사용자가 `place: null` / `overallMemo: null` 로 명시적으로
+/// 비울 수 있도록 "값 미지정" 과 "null 로 비우기" 를 구분한다.
+const Object _kUnset = Object();
+
 class DrinkLog {
   final int? id;
   final String? rawInputText;
@@ -35,8 +39,8 @@ class DrinkLog {
     String? rawInputText,
     String? rawImagePath,
     String? parseSource,
-    String? place,
-    String? overallMemo,
+    Object? place = _kUnset,
+    Object? overallMemo = _kUnset,
     DateTime? drankAt,
     DateTime? userConfirmedAt,
     DateTime? createdAt,
@@ -49,8 +53,10 @@ class DrinkLog {
       rawInputText: rawInputText ?? this.rawInputText,
       rawImagePath: rawImagePath ?? this.rawImagePath,
       parseSource: parseSource ?? this.parseSource,
-      place: place ?? this.place,
-      overallMemo: overallMemo ?? this.overallMemo,
+      place: identical(place, _kUnset) ? this.place : place as String?,
+      overallMemo: identical(overallMemo, _kUnset)
+          ? this.overallMemo
+          : overallMemo as String?,
       drankAt: drankAt ?? this.drankAt,
       userConfirmedAt: userConfirmedAt ?? this.userConfirmedAt,
       createdAt: createdAt ?? this.createdAt,
