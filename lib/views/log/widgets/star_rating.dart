@@ -25,7 +25,7 @@ class StarRating extends StatelessWidget {
     final inactive = inactiveColor ?? Theme.of(context).colorScheme.outlineVariant;
     final interactive = onChanged != null;
 
-    return Row(
+    final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (i) {
         final starValue = i + 1.0;
@@ -42,33 +42,49 @@ class StarRating extends StatelessWidget {
         if (!interactive) return star;
 
         // interactive: 별 하나를 좌/우 반으로 나눠 0.5 단위 탭
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: Stack(
-              children: [
-                Positioned.fill(child: star),
-                Row(children: [
-                  Expanded(
+        // a11y — 각 반 별로 명시적 button semantics (Round 6 Agent X1)
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            children: [
+              Positioned.fill(child: star),
+              Row(children: [
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: '${starValue - 0.5}점 선택',
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => onChanged!(starValue - 0.5),
                     ),
                   ),
-                  Expanded(
+                ),
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: '${starValue.toInt()}점 선택',
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => onChanged!(starValue),
                     ),
                   ),
-                ]),
-              ],
-            ),
+                ),
+              ]),
+            ],
           ),
         );
       }),
     );
+
+    // 표시 모드 — 전체 Row 에 단일 별점 announce 적용
+    if (!interactive) {
+      return Semantics(
+        label: '별점 $value점',
+        excludeSemantics: true,
+        child: row,
+      );
+    }
+    return row;
   }
 }
