@@ -99,14 +99,45 @@ drinkLog, drinkEntry, drinkLogFood, liquorMaster, tastingNote, parseJob, aiConfi
 
 ## 테스트
 
+### 직접 호출
+
 ```bash
-flutter test --exclude-tags golden  # 37개 유닛/위젯 테스트
+flutter test --exclude-tags golden  # 46개 유닛/위젯 테스트
 flutter test                        # +3 golden (로컬 pixel diff 주의, CI 제외)
-flutter test integration_test/      # E2E (Windows desktop)
+flutter test integration_test/      # E2E (Windows desktop 기본)
+flutter test integration_test/ -d <DEVICE_ID>  # 특정 device 에서 실행
 flutter analyze                     # 0 issues
 ```
 
 Golden 테스트는 `UPDATE_GOLDENS=true` 환경변수로만 자동 갱신 (기본 false).
+
+### LLM 자율 실행 wrapper (scripts/)
+
+`scripts/run-all-tests.sh` — analyze + unit + golden + integration 자동 실행:
+
+```bash
+bash scripts/run-all-tests.sh smoke              # analyze + unit (~10s)
+bash scripts/run-all-tests.sh unit               # analyze + unit
+bash scripts/run-all-tests.sh golden             # golden test
+bash scripts/run-all-tests.sh integration:windows  # Windows desktop
+bash scripts/run-all-tests.sh integration:android  # 연결된 Android device
+bash scripts/run-all-tests.sh all                # 모두 (Android 우선, fallback Windows)
+UPDATE_GOLDENS=true bash scripts/run-all-tests.sh golden  # golden 재생성
+```
+
+`scripts/install-and-test-device.sh` — APK 빌드 + Android device install + integration test:
+
+```bash
+bash scripts/install-and-test-device.sh
+```
+
+### 디바이스 테스트 환경 요구사항
+
+- Flutter SDK PATH (`/d/flutter/bin` 또는 `$PATH`)
+- JDK 17+ 설정 (Android Gradle Plugin 요구): `flutter config --jdk-dir="C:\Program Files\OpenJDK\jdk-21.0.2"`
+- Android licenses 수락: `yes | flutter doctor --android-licenses`
+- USB 디버깅 활성화된 Android device 또는 emulator
+- `flutter devices` 에 `android-arm64` 표시 확인
 
 ## CI
 
