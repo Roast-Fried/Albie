@@ -27,14 +27,20 @@ final settingsDataProvider =
 });
 
 /// 모든 기록 데이터 삭제.
+///
 /// drinkLog 만 지우면 FK CASCADE 로 drinkEntry, drinkLogFood, tastingNote 모두 삭제.
-/// parseJob 은 `logId` 가 `SET NULL` 이라 log 만 끊어지고 로그 자체는 남음 — 별도 정리 생략.
+/// parseJob 은 `logId` 가 `SET NULL` 이라 log 만 끊어지고 로그 자체는 남음 —
+/// 그러나 `parseJob.rawRequest` 에 사용자가 입력한 원문(개인정보) 이 보관되므로
+/// "전체 기록 삭제" 시 parseJob 도 함께 삭제해야 한다.
 Future<void> resetAllRecords(WidgetRef ref) async {
   final repo = ref.read(drinkLogRepoProvider);
   final all = await repo.getAll();
   for (final log in all) {
     if (log.id != null) await repo.delete(log.id!);
   }
+
+  // 개인정보 보호 — parseJob 의 rawRequest 원문도 삭제.
+  await ref.read(parseJobRepoProvider).deleteAll();
 
   // invalidations
   ref.invalidate(recentLogsProvider);

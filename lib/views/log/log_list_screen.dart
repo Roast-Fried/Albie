@@ -158,39 +158,59 @@ class _LogTile extends StatelessWidget {
         .join(', ');
 
     return Card(
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onDelete,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(dateStr,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary)),
-              const SizedBox(height: 4),
-              Text(summary.isEmpty ? '(항목 없음)' : summary,
-                  style: Theme.of(context).textTheme.bodyMedium),
-              if (log.foodItems.isNotEmpty || log.place != null) ...[
-                const SizedBox(height: 4),
-                Row(
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: onTap,
+              // long-press 는 기존 호환성 유지 — 새 사용자는 trailing 휴지통 button 사용
+              onLongPress: onDelete,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                bottomLeft: Radius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (log.foodItems.isNotEmpty)
-                      Text('🍽 ${log.foodItems.join(", ")}',
-                          style: Theme.of(context).textTheme.bodySmall),
-                    if (log.foodItems.isNotEmpty && log.place != null)
-                      const SizedBox(width: 8),
-                    if (log.place != null)
-                      Text('📍 ${log.place}',
-                          style: Theme.of(context).textTheme.bodySmall),
+                    Text(dateStr,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary)),
+                    const SizedBox(height: 4),
+                    Text(summary.isEmpty ? '(항목 없음)' : summary,
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    if (log.foodItems.isNotEmpty || log.place != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (log.foodItems.isNotEmpty)
+                            Text('🍽 ${log.foodItems.join(", ")}',
+                                style: Theme.of(context).textTheme.bodySmall),
+                          if (log.foodItems.isNotEmpty && log.place != null)
+                            const SizedBox(width: 8),
+                          if (log.place != null)
+                            Text('📍 ${log.place}',
+                                style: Theme.of(context).textTheme.bodySmall),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-              ],
-            ],
+              ),
+            ),
           ),
-        ),
+          // 명시적 삭제 button — TalkBack / motor disability 대응 (long-press alternative)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: '기록 삭제',
+              onPressed: onDelete,
+              iconSize: 20,
+            ),
+          ),
+        ],
       ),
     );
   }

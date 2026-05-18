@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/providers.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
 import 'widgets/entry_card_widget.dart';
 import 'widgets/food_chips_widget.dart';
@@ -210,12 +211,24 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
   Future<void> _save(BuildContext context, WidgetRef ref) async {
     setState(() => _saving = true);
     try {
+      // Day 1 reward — 첫 기록 저장 시 다른 message (Round 6 P2 fix)
+      final isEditing = ref.read(draftReviewProvider).isEditing;
+      final prevCount =
+          isEditing ? -1 : await ref.read(logCountProvider.future);
+      final isFirstRecord = prevCount == 0;
+
       final vm = ref.read(draftReviewProvider.notifier);
       await vm.saveToDb(ref);
 
       if (context.mounted) {
+        final message = isFirstRecord
+            ? '🎉 첫 기록이 저장되었어요!'
+            : '저장했습니다';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('저장했습니다'), duration: Duration(seconds: 2)),
+          SnackBar(
+            content: Text(message),
+            duration: Duration(seconds: isFirstRecord ? 3 : 2),
+          ),
         );
         setState(() => _saved = true);
         Navigator.of(context).pop();

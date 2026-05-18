@@ -29,4 +29,17 @@ class ParseJobRepository {
         orderBy: 'createdAt DESC', limit: limit);
     return rows.map((r) => ParseJob.fromMap(r)).toList();
   }
+
+  /// 개인정보 보호 — 모든 parseJob 삭제 (raw 입력 텍스트 포함 영구 삭제).
+  ///
+  /// `settings_viewmodel.resetAllRecords` 에서 호출. `parseJob.logId` 는
+  /// CASCADE SET NULL 이라 log 만 삭제해도 parseJob 은 남는다 → 본 메서드로
+  /// rawRequest 포함 전체 삭제.
+  Future<void> deleteAll() async {
+    try {
+      await _db.delete('parseJob');
+    } on DatabaseException catch (e) {
+      throw DatabaseError('파싱 기록 전체 삭제 실패', cause: e);
+    }
+  }
 }

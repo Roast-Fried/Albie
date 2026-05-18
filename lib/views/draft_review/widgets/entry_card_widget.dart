@@ -96,10 +96,12 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 const Spacer(),
                 if (widget.canDelete)
+                  // tap target 48dp 보장 (음주 후 사용 시나리오 — Round 6 P1 fix)
                   IconButton(
-                    icon: const Icon(Icons.close, size: 18),
+                    icon: const Icon(Icons.close),
+                    iconSize: 20,
+                    tooltip: '항목 삭제',
                     onPressed: widget.onDelete,
-                    visualDensity: VisualDensity.compact,
                   ),
               ],
             ),
