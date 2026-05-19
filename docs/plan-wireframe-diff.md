@@ -1,7 +1,7 @@
 # 와이어프레임 ↔ 구현 상세 Diff + 구현 계획
 
 > 대상: 곽태만상 공동 기획서 v2.1 의 `wireframes.html` (13 화면 목업)
-> 현재 구현: `fafe1cd` (2026-04-23)
+> 현재 구현: 2026-05-05 최종 정합화 기준
 > 작성 목적: 기획서대로 구현하기 위한 Gap 목록 + 우선순위
 
 ---
@@ -62,11 +62,11 @@
 - "✨ 분석 중…" 라벨 + **✕ 취소** 버튼
 
 ### 현재 구현 — [home_screen.dart](../lib/views/home/home_screen.dart)
-- 상단: `AppBar title: '알비'` — 🔔 알림 아이콘 없음
+- 상단: `AppBar title: '알비'` + 🔔 AI 처리 로그 진입
 - `recentLogs.when()` → `RecentLogsWidget`
-- `InputSectionWidget` (placeholders 순환 + AI/직접 버튼)
-- `homeState.error` 메시지
-- 하단 `logCount.when()` → **전체 카운트 카드** ("총 N건 기록")
+- `InputSectionWidget` (placeholders 순환 + 사진 첨부 + AI/직접 버튼)
+- AI 로딩 중 취소 버튼 → `CancelToken` 으로 실제 요청 취소
+- 하단: 최근 마셔본 술 chips + 이번 달 기록 카드
 
 ### Gap
 | # | 항목 | 현재 | 와이어 | 우선 |
@@ -75,11 +75,11 @@
 | **H-2** | **"최근 마셔본 술" chips** (가로 스크롤 브랜드 칩) | 없음 | 최근 빈번 브랜드 4-6개 FilterChip-like | 중 |
 | **H-3** | "이번 달 N회" vs "총 N건" | 전체 카운트 (`logCountProvider`) | **이번 달** 카운트 (statsProvider.thisMonthCount 활용 가능) | 중 |
 | **H-4** | 최근 기록 → 더보기 링크 | `RecentLogsWidget` 자체에 링크 없음 — 가로 스크롤만 | 명시적 "→ 더보기" 텍스트 | 낮음 |
-| **H-5** | AI 로딩 중 취소 버튼 | 입력 카드 내 로딩 표시는 있음, 취소 버튼 없음 | 로딩 카드 안에 ✕ 취소 | 중 |
+| **H-5** | AI 로딩 중 취소 버튼 | ✅ `CancelToken` + 로딩 중 취소 버튼 | 로딩 카드 안에 ✕ 취소 | 중 |
 
 > 🗓 이미 구현: 요일/한국어 날짜 포맷 (`M/d (E)`, ko) — [recent_logs_widget.dart:43](../lib/views/home/widgets/recent_logs_widget.dart)
 
-**판정**: ⚠️ 부분 — 핵심 플로우 OK, "최근 마셔본 술 chips" 와 "이번 달 N회" 가 주요 Gap.
+**판정**: ✅ 완료 — 홈 와이어프레임 Gap 해결.
 
 ---
 
@@ -169,26 +169,26 @@
 - 날짜별 요약 리스트 (상세 클릭 가능)
 
 ### 현재 구현 — [log_list_screen.dart](../lib/views/log/log_list_screen.dart), [log_detail_screen.dart](../lib/views/log/log_detail_screen.dart)
-- 목록: 최신순 단순 리스트, 월 그룹 없음 확인 필요
-- 상세: 기본 Entry 표시, 테이스팅 노트 섹션 확인 필요
-- 검색: 기본 구현
+- 목록: 월별 그룹 + 시간대 자연어 표시
+- 상세: Entry 표시 + 테이스팅 노트 섹션 + AI 보완 + 첨부 이미지 표시
+- 검색: 브랜드/장소/안주 검색 구현
 
 ### Gap
 | # | 항목 | 현재 | 와이어 | 우선 |
 |---|------|------|--------|------|
-| **L-1** | **월별 그룹 헤더** ("4월 2026") | 없음 | Sticky 또는 inline 섹션 헤더 | 중 |
-| **L-2** | **시간대 자연어** ("밤 11:30", "저녁 7:00") | `a h:mm` 포맷 — "오전/오후 11:30" 고정 | "저녁/밤/아침/새벽" + HH:mm 함수화 (utils/date_utils 확장) | 중 |
-| **L-4** | **테이스팅 노트 UI** (향/맛/피니시 섹션) | 스키마만 O (`TastingNoteRepository` + `tastingNote` 테이블) — 상세 화면에 호출 0건 | 상세 화면에 3-필드 섹션 + 평점 + 한 줄 감상 | **높음** (MVP 핵심 기능 4) |
-| **L-5** | **별점 입력/표시** (★★★★★ 4.0) | `rating` DB 필드만 존재 — UI 참조 0건 | 상세에 표시 + 편집 | 중 |
-| **L-6** | 영문 병기 "(Benromach)" | Entry 카드 `liquorNameRaw` 만 | `liquorMasterId` JOIN 으로 canonicalName 표시 | 낮음 |
-| **L-7** | Entry 서브타이틀 "싱글몰트 스카치 · 15년 · 43%" | chips 형태로 나열 — subcategory + country 조합 없음 | titleSmall 아래 subtitle 한 줄 | 중 |
-| **L-8** | "+ 테이스팅 노트 작성" CTA | 없음 | 노트 없는 entry 에 OutlinedButton | 중 |
+| **L-1** | **월별 그룹 헤더** ("4월 2026") | ✅ 월별 inline 섹션 헤더 | Sticky 또는 inline 섹션 헤더 | 중 |
+| **L-2** | **시간대 자연어** ("밤 11:30", "저녁 7:00") | ✅ `timeOfDayKorean()` 적용 | "저녁/밤/아침/새벽" + HH:mm 함수화 | 중 |
+| **L-4** | **테이스팅 노트 UI** (향/맛/피니시 섹션) | ✅ 상세 화면 섹션 + 편집 sheet | 상세 화면에 3-필드 섹션 + 평점 + 한 줄 감상 | **높음** |
+| **L-5** | **별점 입력/표시** (★★★★★ 4.0) | ✅ `StarRating` 입력/표시 | 상세에 표시 + 편집 | 중 |
+| **L-6** | 영문 병기 "(Benromach)" | ✅ `liquorMasterId` 기반 canonicalName 표시 | `liquorMasterId` JOIN 으로 canonicalName 표시 | 낮음 |
+| **L-7** | Entry 서브타이틀 "싱글몰트 스카치 · 15년 · 43%" | ✅ category/subcategory/연산/도수 subtitle | titleSmall 아래 subtitle 한 줄 | 중 |
+| **L-8** | "+ 테이스팅 노트 작성" CTA | ✅ 노트 없는 entry CTA | 노트 없는 entry 에 OutlinedButton | 중 |
 
 > 🗓 이미 구현:
 > - 요일 + 한국어 날짜 + 시각 포맷 (`M/d (E) a h:mm`, ko) — [log_list_screen.dart:112](../lib/views/log/log_list_screen.dart)
 > - 상세 화면 수정/삭제 아이콘 (⋮ 단일 메뉴 대신 AppBar actions 로 분리) — [log_detail_screen.dart:60-69](../lib/views/log/log_detail_screen.dart)
 
-**판정**: ⚠️ 부분 — **L-4 테이스팅 노트 UI** 가 MVP 필수 기능이라 가장 큰 Gap.
+**판정**: ✅ 완료 — 기록 목록/상세 Gap 해결.
 
 ---
 
@@ -243,24 +243,24 @@
 - **라인 차트** (SVG 기반 6개월 추이, Grid + Area fill + Dots)
 
 ### 현재 구현 — [archive_screen.dart](../lib/views/archive/archive_screen.dart), [stats_screen.dart](../lib/views/stats/stats_screen.dart)
-- 아카이브: FilterChip 카테고리, `_ArchiveTile` 기본 표시. **아카이브 상세 화면 없음**.
-- 통계: StatsData 계산 로직 완비 (totalCount, last7Days, thisMonth, category, topLiquors, monthlyTrend), 렌더링은 `_CategoryBars` 바 차트만.
+- 아카이브: FilterChip 카테고리, 상단 요약, 카드 국가/ABV/평점/하트, 상세 화면.
+- 통계: 기간 탭, 파이차트, TOP5, 월별 라인차트, 업적 배지.
 
 ### Gap
 | # | 항목 | 현재 | 와이어 | 우선 |
 |---|------|------|--------|------|
-| **A-1** | 상단 요약 "N종 · 총 N회" | 없음 | 카테고리 필터 아래 | 낮음 |
-| **A-2** | 아카이브 item 의 **국가 + ABV** 서브라인 | `categoryLabel · recordCount` | `아종 · 국가 · ABV%` 2줄 | 중 |
-| **A-3** | **♥/♡ 즐겨찾기 토글 UI** | `isFavorite` 필드 + `toggleFavorite()` 로직 | 각 카드에 하트 아이콘 | 중 |
-| **A-4** | 각 카드 평점 별 | 없음 | ★★★★ ★ 4.0 | 중 |
-| **A-5** | **아카이브 상세 화면 전체** | ❌ 미구현 | 별도 화면 | **높음** |
-| **A-6** | 별칭 관리 UI (상세 내 + 추가) | `addAlias` 로직 있음 | 상세 화면 chips | 중 |
-| **S-1** | **기간 탭** (이번 달/3개월/전체) | 3개 카운트 동시 표시 | Segment/Tabbar | 중 |
-| **S-2** | **파이 차트** 추가 | 없음 | categoryDistribution 시각화 | 중 |
-| **S-3** | **라인 차트** (월별 추이) | monthlyTrend 계산만 | fl_chart 또는 CustomPaint | 중 |
-| **S-4** | TOP 5 표시 방식 | 확인 필요 | 순번 + 이름 + 카운트 | 낮음 |
+| **A-1** | 상단 요약 "N종 · 총 N회" | ✅ 구현 | 카테고리 필터 아래 | 낮음 |
+| **A-2** | 아카이브 item 의 **국가 + ABV** 서브라인 | ✅ 구현 | `아종 · 국가 · ABV%` 2줄 | 중 |
+| **A-3** | **♥/♡ 즐겨찾기 토글 UI** | ✅ 카드/상세 하트 토글 | 각 카드에 하트 아이콘 | 중 |
+| **A-4** | 각 카드 평점 별 | ✅ 구현 | ★★★★ ★ 4.0 | 중 |
+| **A-5** | **아카이브 상세 화면 전체** | ✅ 구현 | 별도 화면 | **높음** |
+| **A-6** | 별칭 관리 UI (상세 내 + 추가) | ✅ 구현 | 상세 화면 chips | 중 |
+| **S-1** | **기간 탭** (이번 달/3개월/전체) | ✅ `SegmentedButton` | Segment/Tabbar | 중 |
+| **S-2** | **파이 차트** 추가 | ✅ `fl_chart` | categoryDistribution 시각화 | 중 |
+| **S-3** | **라인 차트** (월별 추이) | ✅ `fl_chart` | fl_chart 또는 CustomPaint | 중 |
+| **S-4** | TOP 5 표시 방식 | ✅ 순번 + 이름 + 카운트 | 순번 + 이름 + 카운트 | 낮음 |
 
-**판정**: ⚠️ 부분 — **A-5 아카이브 상세 화면 미구현** + 통계 차트 보강이 주요 Gap.
+**판정**: ✅ 완료 — 아카이브/통계 Gap 해결.
 
 ---
 
@@ -318,8 +318,8 @@
 | **C-1** | **AI 사용 토글 (설정 메인)** | AI 설정 화면에만 | 메인에서 바로 | 중 |
 | **C-2** | 메인의 "오늘 사용량 N/10" 즉시 표시 | 없음 | AI 섹션에 카운터 | 중 |
 | **C-3** | **다크 모드 설정** | 없음 (시스템 자동) | 선택 다이얼로그 | 낮음 |
-| **C-4** | **기본 수량 단위 설정** | 없음 | 잔/병/샷 셀렉트 | 낮음 |
-| **C-5** | **6시 컷오프 toggle** | 하드코딩 | on/off 스위치 | 낮음 |
+| **C-4** | **기본 수량 단위 설정** | ✅ SharedPreferences + 설정 UI + 파서 주입 | 잔/병/샷 셀렉트 | 낮음 |
+| **C-5** | **6시 컷오프 toggle** | ✅ SharedPreferences + 설정 UI + 파서 주입 | on/off 스위치 | 낮음 |
 | **C-6** | **데이터 섹션** (기록수/술 수/초기화) | 없음 | ListTile 3개 | 중 |
 | **C-7** | **데이터 초기화 기능** | 없음 | 확인 다이얼로그 + DELETE | 중 |
 | **C-8** | **오픈소스 라이선스 화면** | 없음 | Flutter showLicensePage | 낮음 |
@@ -331,35 +331,33 @@
 > - 마지막 검증 시각 UI — [ai_settings_screen.dart:72-75](../lib/views/settings/ai_settings_screen.dart) `마지막 검증: M/d HH:mm`
 > - 키 마스킹 토글 (👁) — [ai_settings_screen.dart:92-97](../lib/views/settings/ai_settings_screen.dart) `Icons.visibility/off`
 
-**판정**: ⚠️ 부분 — **설정 메인 빈약**, **최근 처리 로그** 필요 (기획서 "알림 로그" 대응).
+**판정**: ✅ 완료 — 설정 메인/AI 로그/기본 단위/6시 컷오프 Gap 해결.
 
 ---
 
-## 7. 종합 Gap 스코어 (리뷰 정정 후)
+## 7. 종합 Gap 스코어 (최종 정합화 후)
 
-**2026-04-23 Phase A → C 구현으로 대부분 해결**. 남은 항목 아래 참조.
+**2026-05-05 최종 정합화로 39건 모두 해결**.
 
 | 카테고리 | 높음 | 중 | 낮음 | 총 | 완료 | 잔여 |
 |---------|------|---|------|-----|------|------|
 | 온보딩 | 0 | 0 | 3 | 3 | 3 | 0 |
-| 홈 | 0 | 4 | 1 | 5 | 4 | 1 (H-5) |
+| 홈 | 0 | 4 | 1 | 5 | 5 | 0 |
 | 초안 검토 | 1 | 2 | 2 | 5 | 5 | 0 |
 | 기록 (목록/상세) | 1 | 5 | 1 | 7 | 7 | 0 |
 | 아카이브 & 통계 | 1 | 7 | 2 | 10 | 10 | 0 |
-| 설정 | 0 | 6 | 3 | 9 | 7 | 2 (C-4, C-5) |
-| **합계** | **3** | **24** | **12** | **39** | **36** | **3** |
+| 설정 | 0 | 6 | 3 | 9 | 9 | 0 |
+| **합계** | **3** | **24** | **12** | **39** | **39** | **0** |
 
-### 잔여 3 건 (모두 낮음 우선)
-- **H-5** AI 로딩 취소 버튼 — dio CancelToken + orchestrator 인터페이스 변경 필요, 별도 작업 범위
-- **C-4** 기본 수량 단위 설정 — 실효성 낮음, 의도적 생략
-- **C-5** 6시 컷오프 toggle — 현재 하드코딩 ON 충분, 의도적 생략
+### 잔여
+- 없음
 
 ### 2026-04-23 상세 리뷰 교정 (기록 유지)
 6건 Gap 은 이미 구현 확인되어 제거: D-2 (신뢰도 뱃지), H-6/L-3 (요일 포맷), AI-2 (검증 시각), AI-4 (키 토글), L-9 (상세 ⋮ 메뉴).
 
 ---
 
-## 8. 구현 히스토리 (2026-04-23 세션)
+## 8. 구현 히스토리
 
 ### ✅ Phase A (`496d22e..0ea5126`, 4 커밋)
 - A0 drink_log update() entry id 보존 upsert (tastingNote CASCADE 유실 차단)
@@ -387,9 +385,13 @@
 - C-8 오픈소스 라이선스 (showLicensePage)
 - O-1/2/3 온보딩 비주얼 (변환 예시 · 파서 2카드 · benefit 그리드)
 
-### ⏸ 잔여 (의도적 미구현)
-- H-5 AI 로딩 취소 — 별도 작업 예정
-- C-4 기본 수량 단위 / C-5 6시 컷오프 toggle — 실효성 낮음으로 생략
+### ✅ Final Pass (2026-05-05)
+- H-5 AI 로딩 취소: `Dio CancelToken` 을 GeminiClient / ParseOrchestrator / HomeViewModel 에 연결
+- 사진 첨부 + AI 이미지 기반 보조: `image_picker`, `rawImagePath`, Gemini multimodal parts, 이미지 쿼터 반영
+- AI 테이스팅 노트 보완: 기록 상세 노트 편집 시 AI 보완 액션 추가
+- C-4/C-5 기본 수량 단위 + 6시 컷오프: SharedPreferences 설정 + LocalRuleParser 주입
+- 업적/게이미피케이션: 통계 화면 업적 배지 섹션 추가
+- View → ViewModel 경계 및 `DatabaseError` 쓰기 경계 보강
 
 ---
 
@@ -416,22 +418,22 @@
 ## 11. 검증 기준 (각 Phase 별)
 
 ### Phase A 완료 조건
-- [ ] Entry 상세에서 테이스팅 노트 섹션이 `향/맛/피니시/평점/메모` 표시
-- [ ] 노트 없는 entry 는 "+ 테이스팅 노트 작성" CTA 보임, 탭 시 편집 폼
-- [ ] 아카이브 리스트 item 탭 → 상세 화면 이동
-- [ ] 아카이브 상세에 `총 기록/평균 평점/총 음주량` 3 지표 + 히스토리 리스트 + 별칭 chips 표시
-- [ ] AI 실패 후 로컬 파서 사용 시 검토 화면 상단에 경고 배너
+- [x] Entry 상세에서 테이스팅 노트 섹션이 `향/맛/피니시/평점/메모` 표시
+- [x] 노트 없는 entry 는 "+ 테이스팅 노트 작성" CTA 보임, 탭 시 편집 폼
+- [x] 아카이브 리스트 item 탭 → 상세 화면 이동
+- [x] 아카이브 상세에 `총 기록/평균 평점/총 음주량` 3 지표 + 히스토리 리스트 + 별칭 chips 표시
+- [x] AI 실패 후 로컬 파서 사용 시 검토 화면 상단에 경고 배너
 
 ### Phase B 완료 조건
-- [ ] 통계 화면에 파이차트 + 라인차트 렌더링
-- [ ] 통계 기간 탭 동작 (이번 달/3개월/전체)
-- [ ] 설정 메인에 데이터 섹션 (기록 수/술 수/초기화)
-- [ ] AI 설정에 최근 처리 로그 5개 이상 표시
-- [ ] 기록 목록에 월별 헤더 + "저녁/밤" 시간대 표기
-- [ ] 아카이브 카드에 국가·ABV·평점·하트 토글
-- [ ] 홈에 이번 달 카운트 + 최근 마셔본 술 chips
+- [x] 통계 화면에 파이차트 + 라인차트 렌더링
+- [x] 통계 기간 탭 동작 (이번 달/3개월/전체)
+- [x] 설정 메인에 데이터 섹션 (기록 수/술 수/초기화)
+- [x] AI 설정에 최근 처리 로그 5개 이상 표시
+- [x] 기록 목록에 월별 헤더 + "저녁/밤" 시간대 표기
+- [x] 아카이브 카드에 국가·ABV·평점·하트 토글
+- [x] 홈에 이번 달 카운트 + 최근 마셔본 술 chips
 
 ### Phase C 완료 조건
-- [ ] 6시 컷오프 on/off 전환 가능
-- [ ] 오픈소스 라이선스 열람 가능
-- [ ] 빈 상태 화면에 일관된 CTA
+- [x] 6시 컷오프 on/off 전환 가능
+- [x] 오픈소스 라이선스 열람 가능
+- [x] 빈 상태 화면에 일관된 CTA

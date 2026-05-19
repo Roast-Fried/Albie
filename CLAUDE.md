@@ -39,6 +39,8 @@ lib/
 4. **failure path first** — 정상보다 비정상 복구가 더 중요
 5. **View 는 Repository 직접 접근 금지** — ViewModel 메서드 호출만
 6. **Repository 쓰기 경계는 try-catch + DatabaseError** — 읽기는 raw 통과 허용
+7. **Provider 는 autoDispose 미사용 default** — `lib/app.dart` 의 `IndexedStack` 이 3 탭 화면을 유지하므로 autoDispose 적용 시 사용자 입력/스크롤 상태 소실. 저사용 family provider 만 한정적으로 적용 가능 (현재 0건).
+8. **개인정보 cleanup** — 단일 기록 삭제 (`DrinkLogRepository.delete`) 시 같은 트랜잭션에서 `parseJob.rawRequest/rawResponse/errorMessage` 를 NULL 처리. 전체 삭제 (`settings_viewmodel.resetAllRecords`) 는 `parseJobRepo.deleteAll()` 로 행 자체 삭제.
 
 ## 에러 계층 (sealed)
 
@@ -177,9 +179,9 @@ GitHub Actions: push/PR → analyze → test → (main만) APK 빌드
 **Phase C ✅ 완료** (실질 가치 3건)
 - 다크 모드 선택 · 오픈소스 라이선스 · 온보딩 비주얼
 
-**잔여 3 건** (의도적 미구현 또는 별도 작업)
-- H-5 AI 로딩 취소 — dio CancelToken 필요, 난이도 고려
-- C-4 기본 수량 단위 / C-5 6시 컷오프 — 실효성 낮음 판단
+**잔여 0 건** — 와이어프레임 39 Gap 전체 완료.
+
+> H-5 AI 로딩 취소 / C-4 기본 수량 단위 / C-5 6시 컷오프 모두 완료 — 2026-05-18 /analyze 후속 검증에서 확인 (CancelToken: `gemini_client.dart:35` + `parse_orchestrator.dart:33` + `home_viewmodel.dart:76-106` / `defaultQuantityUnit` 와 `sixHourCutoffEnabled` 는 `app_settings_viewmodel.dart:5-6` + `settings_screen.dart` UI + `home_viewmodel.dart:19` 파서 전달).
 
 와이어프레임 정합성 **36/39 완료**. 세부는 [docs/plan-wireframe-diff.md](docs/plan-wireframe-diff.md) § 8 히스토리 참조.
 
