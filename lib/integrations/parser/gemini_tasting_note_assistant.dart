@@ -142,14 +142,27 @@ class TastingNoteEnhancementOrchestrator {
         isUserKey: config.keyMode == 'user_provided',
       );
       stopwatch.stop();
+      // parserUsed: source (ai_user_key / ai_app_key) — AI 로그 화면 일관성을 위해
+      // success / failed 모두 source 로 기록 (CDX-009). model 명은 로그 필요 시
+      // 별도 컬럼 추가 가능 (현재 schema 변경 회피).
+      // CDX-003: AI 가 빈 응답 (nose/palate/finish/note 전부 null) 을 반환하면
+      // UI 가 silent 갱신 0 — failed 로 분류해 reason=failed 메시지 노출.
+      final hasAny = suggestion.nose != null ||
+          suggestion.palate != null ||
+          suggestion.finish != null ||
+          suggestion.note != null;
       await _parseJobRepo.insert(
         ParseJob(
           sourceType: 'text_only',
-          parserUsed: config.selectedModel,
-          status: 'success',
+          parserUsed: source,
+          status: hasAny ? 'success' : 'failed',
+          errorMessage: hasAny ? null : 'AI 가 보강 결과를 만들지 못함',
           durationMs: stopwatch.elapsedMilliseconds,
         ),
       );
+      if (!hasAny) {
+        return const TastingNoteEnhanceResult(TastingNoteEnhanceReason.failed);
+      }
       return TastingNoteEnhanceResult(
           TastingNoteEnhanceReason.success, suggestion);
     } catch (e) {

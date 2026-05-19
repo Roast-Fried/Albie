@@ -66,23 +66,36 @@ class TastingNoteEnhanceController {
   }
 }
 
+/// View 가 직접 분기 가능한 reason — integration 의 enum 을 viewmodel layer 에
+/// 노출하기 위한 view-facing enum (ARCH-001 의존성 방향 fix).
+///
+/// View → ViewModel 만 import 하도록 integrations enum 을 직접 참조하지 않음.
+enum TastingEnhanceReason {
+  success,
+  quotaExceeded,
+  aiDisabled,
+  failed,
+  cancelled,
+}
+
 /// Sheet 가 reason 별 메시지 분기 가능하도록 reason + draft 반환.
 class TastingNoteEnhanceOutcome {
-  final TastingNoteEnhanceReason reason;
+  final TastingEnhanceReason reason;
   final TastingNoteDraft? draft;
-  final bool cancelled;
 
-  const TastingNoteEnhanceOutcome({
-    required this.reason,
-    this.draft,
-    this.cancelled = false,
-  });
+  const TastingNoteEnhanceOutcome({required this.reason, this.draft});
 
-  const TastingNoteEnhanceOutcome.cancelled()
-      : reason = TastingNoteEnhanceReason.failed,
-        draft = null,
-        cancelled = true;
+  bool get cancelled => reason == TastingEnhanceReason.cancelled;
 }
+
+/// integration → viewmodel enum mapping (View 비노출)
+TastingEnhanceReason _mapReason(TastingNoteEnhanceReason r) => switch (r) {
+      TastingNoteEnhanceReason.success => TastingEnhanceReason.success,
+      TastingNoteEnhanceReason.quotaExceeded =>
+        TastingEnhanceReason.quotaExceeded,
+      TastingNoteEnhanceReason.aiDisabled => TastingEnhanceReason.aiDisabled,
+      TastingNoteEnhanceReason.failed => TastingEnhanceReason.failed,
+    };
 
 Future<TastingNoteEnhanceOutcome> enhanceTastingNote(
   WidgetRef ref,
@@ -97,14 +110,15 @@ Future<TastingNoteEnhanceOutcome> enhanceTastingNote(
       cancelToken: token,
     );
     return TastingNoteEnhanceOutcome(
-      reason: result.reason,
+      reason: _mapReason(result.reason),
       draft: result.suggestion == null
           ? null
           : TastingNoteDraft.fromSuggestion(result.suggestion!),
     );
   } on DioException catch (e) {
     if (e.type == DioExceptionType.cancel) {
-      return const TastingNoteEnhanceOutcome.cancelled();
+      return const TastingNoteEnhanceOutcome(
+          reason: TastingEnhanceReason.cancelled);
     }
     rethrow;
   } finally {

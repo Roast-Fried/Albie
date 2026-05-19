@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/tasting_note.dart';
-import '../../../integrations/parser/gemini_tasting_note_assistant.dart';
 import '../../../viewmodels/tasting_note_viewmodel.dart';
 import 'star_rating.dart';
 
@@ -244,9 +243,11 @@ class _TastingNoteEditSheetState extends ConsumerState<TastingNoteEditSheet> {
       if (!mounted) return;
       if (outcome.cancelled) return; // 사용자 취소 — 메시지 불필요
       // reason 별 사용자 메시지 분기 (Codex closure D MEDIUM 처리)
+      // ViewModel layer 의 TastingEnhanceReason 사용 — View 가 integrations layer
+      // 직접 import 안 함 (ARCH-001 의존성 방향 fix).
       final suggestion = outcome.draft;
       switch (outcome.reason) {
-        case TastingNoteEnhanceReason.success:
+        case TastingEnhanceReason.success:
           if (suggestion != null) {
             _noseCtrl.text = suggestion.nose ?? _noseCtrl.text;
             _palateCtrl.text = suggestion.palate ?? _palateCtrl.text;
@@ -254,20 +255,23 @@ class _TastingNoteEditSheetState extends ConsumerState<TastingNoteEditSheet> {
             _memoCtrl.text = suggestion.note ?? _memoCtrl.text;
           }
           return;
-        case TastingNoteEnhanceReason.quotaExceeded:
+        case TastingEnhanceReason.quotaExceeded:
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('오늘 AI 보완 사용량을 모두 사용했습니다')),
           );
           return;
-        case TastingNoteEnhanceReason.aiDisabled:
+        case TastingEnhanceReason.aiDisabled:
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('AI 보완이 비활성화되어 있습니다 (설정에서 활성화 가능)')),
           );
           return;
-        case TastingNoteEnhanceReason.failed:
+        case TastingEnhanceReason.failed:
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('AI 보완에 실패했습니다. 잠시 후 다시 시도해 주세요.')),
           );
+          return;
+        case TastingEnhanceReason.cancelled:
+          // 사용자 취소 — 메시지 없이 silent
           return;
       }
     } catch (e) {

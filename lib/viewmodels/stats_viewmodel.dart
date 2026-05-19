@@ -37,22 +37,46 @@ class StatsData {
   });
 }
 
-/// 음주 단위 → ml 추정 매핑 (한국 시장 평균치 기준)
-/// 통계용 추정치 — 실제 용량과 다를 수 있음.
+/// 음주 단위 → ml 추정 매핑 (한국 시장 평균치 + 주종 보정)
+///
+/// 통계용 추정치 — 실제 용량과 다를 수 있음. UI 에서 "추정" 명시.
+/// 같은 단위라도 주종별 표준 용량이 다름 (CDX-001):
+/// - glass: 위스키 잔(45ml) / 와인 잔(150ml) / 맥주 잔(250ml) / 그 외(200ml)
+/// - bottle: 소주 360ml / 맥주 500ml / 와인 750ml / 위스키 700ml / 그 외(360ml)
 double _entryVolumeMl(DrinkEntry e) {
+  final cat = e.liquorCategory;
   switch (e.quantityUnit) {
     case 'ml':
       return e.quantityValue;
     case 'shot':
-      return e.quantityValue * 30; // 1 샷 ≈ 30ml
+      return e.quantityValue * 30; // 1 샷 ≈ 30ml (모든 주종 공통)
     case 'glass':
-      return e.quantityValue * 200; // 와인/위스키 잔 ≈ 200ml
+      // 주종별 잔 표준 용량
+      final mlPerGlass = switch (cat) {
+        'whisky' => 45.0, // 위스키 1 샷잔 ≈ 45ml
+        'wine' => 150.0,  // 와인 잔 ≈ 150ml
+        'beer' => 250.0,  // 맥주 잔 ≈ 250ml
+        'highball' => 250.0,
+        'cocktail' => 150.0,
+        'sake' => 100.0,
+        _ => 200.0, // 막걸리/소주/기타 잔 ≈ 200ml
+      };
+      return e.quantityValue * mlPerGlass;
     case 'cup':
       return e.quantityValue * 200;
     case 'can':
       return e.quantityValue * 355; // 일반 캔 ≈ 355ml
     case 'bottle':
-      return e.quantityValue * 360; // 소주 1병 ≈ 360ml (맥주 500ml 와 평균)
+      final mlPerBottle = switch (cat) {
+        'soju' => 360.0,
+        'beer' => 500.0,
+        'wine' => 750.0,
+        'whisky' => 700.0,
+        'sake' => 720.0,
+        'makgeolli' => 750.0,
+        _ => 360.0,
+      };
+      return e.quantityValue * mlPerBottle;
     case 'pint':
       return e.quantityValue * 473;
     default:

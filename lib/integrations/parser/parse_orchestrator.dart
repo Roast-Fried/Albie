@@ -184,19 +184,24 @@ class ParseOrchestrator {
 
   /// AI 파싱 중 발생한 예외를 [AppError] 계층으로 분류한다.
   /// 호출자(_tryAiParse)는 fallback 을 위해 throw 하지 않고 메시지만 저장한다.
+  ///
+  /// PII 보호: `DioException.message` / `e.toString()` 인터폴레이션 금지 — Dio 5.x
+  /// 일부 경로에서 request URL (API key 포함) 또는 응답 body 일부가 포함될 수 있다.
+  /// status code 별 정적 한국어 메시지만 노출. 원인은 `cause` 에 보존 (DB 저장 X).
   AppError _classifyAiError(Object e) {
     if (e is DioException) {
       final msg = switch (e.response?.statusCode) {
         401 => 'API 키가 유효하지 않습니다',
         429 => 'API 할당량을 초과했습니다',
-        _ =>
-          e.type == DioExceptionType.connectionTimeout
-              ? '네트워크 연결 시간 초과'
-              : 'AI 분석 실패: ${e.message}',
+        500 || 502 || 503 || 504 => 'AI 서버가 일시적으로 응답하지 못했습니다',
+        _ => e.type == DioExceptionType.connectionTimeout ||
+                e.type == DioExceptionType.receiveTimeout
+            ? '네트워크 연결 시간 초과'
+            : 'AI 분석에 실패했습니다 (네트워크 오류)',
       };
       return NetworkError(msg, cause: e, statusCode: e.response?.statusCode);
     }
-    return ParseError('AI 분석 실패', cause: e);
+    return ParseError('AI 분석에 실패했습니다', cause: e);
   }
 
   String _sourceType(ParseInput input) {

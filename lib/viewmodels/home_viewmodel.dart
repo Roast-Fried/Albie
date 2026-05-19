@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../core/exceptions.dart';
 import '../core/providers.dart';
 import '../integrations/parser/local_rule_parser.dart';
 import '../integrations/parser/parse_orchestrator.dart';
@@ -61,8 +62,9 @@ class HomeViewModel extends StateNotifier<HomeState> {
         imageName: picked.name,
         error: null,
       );
-    } catch (e) {
-      state = state.copyWith(error: '사진을 불러오지 못했습니다: $e');
+    } catch (_) {
+      // PII 보호: PlatformException raw 메시지 / stack 인터폴레이션 금지.
+      state = state.copyWith(error: '사진을 불러오지 못했습니다');
     }
   }
 
@@ -102,7 +104,10 @@ class HomeViewModel extends StateNotifier<HomeState> {
         state = state.copyWith(isLoading: false, error: null);
         return null;
       }
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // PII 보호: AppError 의 userMessage (한국어 정적) 만 노출. 비-AppError
+      // (예: 예상 외 DioException rethrow) 는 generic 안내로 통일.
+      final message = e is AppError ? e.userMessage : '입력을 처리하지 못했습니다';
+      state = state.copyWith(isLoading: false, error: message);
       return null;
     } finally {
       if (_activeCancelToken == cancelToken) _activeCancelToken = null;
