@@ -60,3 +60,19 @@ android/key.properties
 android/app/upload-keystore.jks
 android/app/*.jks
 android/app/*.keystore
+
+# Session checkpoint (temporary artifact)
+checkpoint.md
+
+# Build artifacts (Android)
+android/build/
+
+# Local tooling caches / AI agent metadata
+.claude/
+.playwright-mcp/
+
+# Design reference assets (Pinterest mood board — Phase D)
+pinterest-*.png
+
+# Agent / AI assistant metadata (Claude Agent SDK auto-generated)
+AGENTS.md
