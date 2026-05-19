@@ -1,16 +1,15 @@
+const Object _kUnset = Object();
+
 /// 파서 입력
 class ParseInput {
   final String text;
   final String? imagePath;
   final DateTime inputTime;
 
-  ParseInput({
-    required this.text,
-    this.imagePath,
-    DateTime? inputTime,
-  }) : inputTime = inputTime ?? DateTime.now();
+  ParseInput({required this.text, this.imagePath, DateTime? inputTime})
+    : inputTime = inputTime ?? DateTime.now();
 
-  bool get hasImage => imagePath != null;
+  bool get hasImage => imagePath != null && imagePath!.isNotEmpty;
 }
 
 /// 파서 출력 — AI든 로컬이든 동일한 형태
@@ -100,48 +99,59 @@ class DraftEntry {
 
   DraftEntry copyWith({
     int? id,
-    String? liquorName,
+    Object? liquorName = _kUnset,
     int? liquorMasterId,
     String? liquorNameRaw,
     String? liquorCategory,
-    String? ageStatement,
+    Object? ageStatement = _kUnset,
     double? quantityValue,
     String? quantityUnit,
     bool? isEstimated,
-    double? alcoholPercent,
+    Object? alcoholPercent = _kUnset,
   }) {
     return DraftEntry(
       id: id ?? this.id,
-      liquorName: liquorName ?? this.liquorName,
+      liquorName: identical(liquorName, _kUnset)
+          ? this.liquorName
+          : liquorName as String?,
       liquorMasterId: liquorMasterId ?? this.liquorMasterId,
       liquorNameRaw: liquorNameRaw ?? this.liquorNameRaw,
       liquorCategory: liquorCategory ?? this.liquorCategory,
-      ageStatement: ageStatement ?? this.ageStatement,
+      ageStatement: identical(ageStatement, _kUnset)
+          ? this.ageStatement
+          : ageStatement as String?,
       quantityValue: quantityValue ?? this.quantityValue,
       quantityUnit: quantityUnit ?? this.quantityUnit,
       isEstimated: isEstimated ?? this.isEstimated,
-      alcoholPercent: alcoholPercent ?? this.alcoholPercent,
+      alcoholPercent: identical(alcoholPercent, _kUnset)
+          ? this.alcoholPercent
+          : alcoholPercent as double?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        if (id != null) 'id': id,
-        'liquorName': liquorName,
-        'liquorMasterId': liquorMasterId,
-        'liquorNameRaw': liquorNameRaw,
-        'liquorCategory': liquorCategory,
-        'ageStatement': ageStatement,
-        'quantityValue': quantityValue,
-        'quantityUnit': quantityUnit,
-        'isEstimated': isEstimated,
-        'alcoholPercent': alcoholPercent,
-      };
+    if (id != null) 'id': id,
+    'liquorName': liquorName,
+    'liquorMasterId': liquorMasterId,
+    'liquorNameRaw': liquorNameRaw,
+    'liquorCategory': liquorCategory,
+    'ageStatement': ageStatement,
+    'quantityValue': quantityValue,
+    'quantityUnit': quantityUnit,
+    'isEstimated': isEstimated,
+    'alcoholPercent': alcoholPercent,
+  };
 
   factory DraftEntry.fromJson(Map<String, dynamic> json) {
+    // AI 가 liquorName 을 빈 문자열로 반환해도 nullable 로 정규화 — UI 에서
+    // "이름 없음" placeholder 노출이 가능하도록.
+    final rawName = json['liquorName'] as String?;
+    final normalizedName =
+        (rawName == null || rawName.trim().isEmpty) ? null : rawName.trim();
     return DraftEntry(
       id: json['id'] as int?,
-      liquorName: json['liquorName'] as String?,
-      liquorNameRaw: json['liquorName'] as String? ?? '',
+      liquorName: normalizedName,
+      liquorNameRaw: normalizedName ?? '',
       liquorCategory: json['liquorCategory'] as String? ?? 'other',
       ageStatement: json['ageStatement'] as String?,
       quantityValue: (json['quantityValue'] as num?)?.toDouble() ?? 1.0,

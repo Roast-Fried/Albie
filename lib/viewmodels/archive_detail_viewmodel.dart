@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 import '../domain/entities/drink_log.dart';
 import '../domain/entities/liquor_master.dart';
+import 'archive_viewmodel.dart';
 
 /// 아카이브 상세 화면 데이터 집계 결과.
 class ArchiveDetailData {
@@ -36,8 +37,10 @@ class ArchiveHistoryItem {
   });
 }
 
-final archiveDetailProvider =
-    FutureProvider.family<ArchiveDetailData, int>((ref, masterId) async {
+final archiveDetailProvider = FutureProvider.family<ArchiveDetailData, int>((
+  ref,
+  masterId,
+) async {
   final logRepo = ref.watch(drinkLogRepoProvider);
   final masterRepo = ref.watch(liquorMasterRepoProvider);
   final noteRepo = ref.watch(tastingNoteRepoProvider);
@@ -56,20 +59,23 @@ final archiveDetailProvider =
   var totalEntries = 0;
 
   for (final log in logs) {
-    final ownedEntries =
-        log.entries.where((e) => e.liquorMasterId == masterId).toList();
+    final ownedEntries = log.entries
+        .where((e) => e.liquorMasterId == masterId)
+        .toList();
     if (ownedEntries.isEmpty) continue;
     matchedLogs.add(log);
 
     for (final e in ownedEntries) {
       totalEntries++;
       if (e.id != null) matchingEntryIds.add(e.id!);
-      history.add(ArchiveHistoryItem(
-        drankAt: log.drankAt,
-        quantityValue: e.quantityValue,
-        quantityUnit: e.quantityUnit,
-        place: log.place,
-      ));
+      history.add(
+        ArchiveHistoryItem(
+          drankAt: log.drankAt,
+          quantityValue: e.quantityValue,
+          quantityUnit: e.quantityUnit,
+          place: log.place,
+        ),
+      );
     }
   }
 
@@ -77,10 +83,7 @@ final archiveDetailProvider =
   double? avgRating;
   if (matchingEntryIds.isNotEmpty) {
     final notes = await noteRepo.getByEntryIds(matchingEntryIds);
-    final ratings = notes
-        .map((n) => n.rating)
-        .whereType<double>()
-        .toList();
+    final ratings = notes.map((n) => n.rating).whereType<double>().toList();
     if (ratings.isNotEmpty) {
       avgRating = ratings.reduce((a, b) => a + b) / ratings.length;
 
@@ -92,16 +95,19 @@ final archiveDetailProvider =
       // 기록을 다시 돌며 rating 병합
       final enrichedHistory = <ArchiveHistoryItem>[];
       for (final log in matchedLogs) {
-        for (final e
-            in log.entries.where((e) => e.liquorMasterId == masterId)) {
+        for (final e in log.entries.where(
+          (e) => e.liquorMasterId == masterId,
+        )) {
           final r = e.id != null ? ratingByEntry[e.id!] : null;
-          enrichedHistory.add(ArchiveHistoryItem(
-            drankAt: log.drankAt,
-            quantityValue: e.quantityValue,
-            quantityUnit: e.quantityUnit,
-            rating: r,
-            place: log.place,
-          ));
+          enrichedHistory.add(
+            ArchiveHistoryItem(
+              drankAt: log.drankAt,
+              quantityValue: e.quantityValue,
+              quantityUnit: e.quantityUnit,
+              rating: r,
+              place: log.place,
+            ),
+          );
         }
       }
       history
@@ -120,3 +126,19 @@ final archiveDetailProvider =
     history: history,
   );
 });
+
+Future<void> toggleArchiveFavorite(
+  WidgetRef ref,
+  int masterId,
+  bool current,
+) async {
+  await ref.read(liquorMasterRepoProvider).toggleFavorite(masterId, !current);
+  ref.invalidate(archiveDetailProvider(masterId));
+  ref.invalidate(archiveListProvider);
+}
+
+Future<void> addArchiveAlias(WidgetRef ref, int masterId, String alias) async {
+  await ref.read(liquorMasterRepoProvider).addAlias(masterId, alias);
+  ref.invalidate(archiveDetailProvider(masterId));
+  ref.invalidate(archiveListProvider);
+}

@@ -22,28 +22,49 @@ class ParseOrchestrator {
     required ParseJobRepository parseJobRepo,
     GeminiClient? geminiClient,
     FlutterSecureStorage? secureStorage,
-  })  : _localParser = localParser,
-        _aiConfigRepo = aiConfigRepo,
-        _parseJobRepo = parseJobRepo,
-        _geminiClient = geminiClient ?? GeminiClient(),
-        _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  }) : _localParser = localParser,
+       _aiConfigRepo = aiConfigRepo,
+       _parseJobRepo = parseJobRepo,
+       _geminiClient = geminiClient ?? GeminiClient(),
+       _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
-  Future<OrchestrateResult> process(ParseInput input) async {
+  Future<OrchestrateResult> process(
+    ParseInput input, {
+    CancelToken? cancelToken,
+  }) async {
     final stopwatch = Stopwatch()..start();
     ParseResult result;
     String parserUsed;
     bool wasAiAttempted = false;
 
     if (input.hasImage) {
-      // 이미지는 AI만 가능 — R1.5
-      result = ParseResult.empty(
-        source: 'local_parser',
-        warnings: ['이미지 분석은 AI 연결이 필요합니다. 텍스트로 입력해주세요.'],
-      );
-      parserUsed = 'local_parser';
+      // 이미지가 있으면 AI를 우선 시도하되, 텍스트가 함께 있으면 로컬 텍스트 fallback을 유지한다.
+      final ai = await _tryAiParse(input, cancelToken: cancelToken);
+      wasAiAttempted = ai.wasAttempted;
+      if (ai.result != null) {
+        result = ai.result!.result;
+        parserUsed = ai.result!.parserUsed;
+      } else if (input.text.trim().isNotEmpty) {
+        result = await _localParser.parse(
+          ParseInput(text: input.text, inputTime: input.inputTime),
+        );
+        result = result.copyWith(
+          parseWarnings: [
+            '이미지 분석을 사용할 수 없어 텍스트 기준으로 초안을 만들었습니다.',
+            ...result.parseWarnings,
+          ],
+        );
+        parserUsed = 'local_parser';
+      } else {
+        result = ParseResult.empty(
+          source: 'local_parser',
+          warnings: ['이미지 분석을 사용할 수 없어 빈 초안을 만들었습니다. 내용을 직접 확인해주세요.'],
+        );
+        parserUsed = 'local_parser';
+      }
     } else {
       // 텍스트: AI 시도 → 실패 시 로컬 fallback
-      final ai = await _tryAiParse(input);
+      final ai = await _tryAiParse(input, cancelToken: cancelToken);
       wasAiAttempted = ai.wasAttempted;
       if (ai.result != null) {
         result = ai.result!.result;
@@ -56,13 +77,15 @@ class ParseOrchestrator {
 
     stopwatch.stop();
 
-    final jobId = await _parseJobRepo.insert(ParseJob(
-      sourceType: input.hasImage ? 'text_plus_image' : 'text_only',
-      parserUsed: parserUsed,
-      status: result.entries.isEmpty ? 'failed' : 'success',
-      rawRequest: input.text,
-      durationMs: stopwatch.elapsedMilliseconds,
-    ));
+    final jobId = await _parseJobRepo.insert(
+      ParseJob(
+        sourceType: _sourceType(input),
+        parserUsed: parserUsed,
+        status: result.entries.isEmpty ? 'failed' : 'success',
+        rawRequest: input.text,
+        durationMs: stopwatch.elapsedMilliseconds,
+      ),
+    );
 
     return OrchestrateResult(
       parseResult: result,
@@ -77,7 +100,9 @@ class ParseOrchestrator {
   /// - false: AI 비활성 / 키 없음 / 쿼터 초과 — 실제 API 호출은 없었음. 배너 미표시 기준.
   /// - true: `GeminiTextParser.parse` 호출까지 도달 — 성공이든 실패든 네트워크 시도 있었음.
   Future<({_AiParseResult? result, bool wasAttempted})> _tryAiParse(
-      ParseInput input) async {
+    ParseInput input, {
+    CancelToken? cancelToken,
+  }) async {
     final config = await _aiConfigRepo.get();
     if (!config.isEnabled) return (result: null, wasAttempted: false);
 
@@ -90,7 +115,12 @@ class ParseOrchestrator {
     } else if (config.keyMode == 'app_default') {
       // 기본 키: quota 체크
       final quota = await _aiConfigRepo.getQuotaToday();
-      if (!quota.canUseAppText) return (result: null, wasAttempted: false);
+      if (input.hasImage && !quota.canUseAppImage) {
+        return (result: null, wasAttempted: false);
+      }
+      if (!input.hasImage && !quota.canUseAppText) {
+        return (result: null, wasAttempted: false);
+      }
 
       apiKey = const String.fromEnvironment('GEMINI_API_KEY');
       if (apiKey.isEmpty) return (result: null, wasAttempted: false);
@@ -105,28 +135,48 @@ class ParseOrchestrator {
 
     // 여기서부터 실제 API 호출 — wasAttempted = true
     try {
-      final parser = GeminiTextParser(_geminiClient);
+      final parser = GeminiTextParser(
+        _geminiClient,
+        defaultQuantityUnit: _localParser.defaultQuantityUnit,
+        sixHourCutoffEnabled: _localParser.sixHourCutoffEnabled,
+      );
       final result = await parser.parse(
         input: input,
         apiKey: apiKey,
         model: config.selectedModel,
         source: source,
+        cancelToken: cancelToken,
       );
 
       // 사용량 증가
-      await _aiConfigRepo.incrementTextCount(
-        isUserKey: config.keyMode == 'user_provided',
-      );
+      if (input.hasImage) {
+        await _aiConfigRepo.incrementImageCount(
+          isUserKey: config.keyMode == 'user_provided',
+        );
+      } else {
+        await _aiConfigRepo.incrementTextCount(
+          isUserKey: config.keyMode == 'user_provided',
+        );
+      }
 
       return (
-        result: _AiParseResult(result: result, parserUsed: config.selectedModel),
+        result: _AiParseResult(
+          result: result,
+          parserUsed: config.selectedModel,
+        ),
         wasAttempted: true,
       );
     } catch (e) {
+      if (cancelToken?.isCancelled == true ||
+          (e is DioException && e.type == DioExceptionType.cancel)) {
+        rethrow;
+      }
       // AI 실패 → fallback to local. 타입화된 에러로 분류하지만 throw 하지 않음.
       final error = _classifyAiError(e);
       await _aiConfigRepo.update(
-        (await _aiConfigRepo.get()).copyWith(lastErrorMessage: error.userMessage),
+        (await _aiConfigRepo.get()).copyWith(
+          lastErrorMessage: error.userMessage,
+        ),
       );
       return (result: null, wasAttempted: true);
     }
@@ -139,13 +189,19 @@ class ParseOrchestrator {
       final msg = switch (e.response?.statusCode) {
         401 => 'API 키가 유효하지 않습니다',
         429 => 'API 할당량을 초과했습니다',
-        _ => e.type == DioExceptionType.connectionTimeout
-            ? '네트워크 연결 시간 초과'
-            : 'AI 분석 실패: ${e.message}',
+        _ =>
+          e.type == DioExceptionType.connectionTimeout
+              ? '네트워크 연결 시간 초과'
+              : 'AI 분석 실패: ${e.message}',
       };
       return NetworkError(msg, cause: e, statusCode: e.response?.statusCode);
     }
     return ParseError('AI 분석 실패', cause: e);
+  }
+
+  String _sourceType(ParseInput input) {
+    if (!input.hasImage) return 'text_only';
+    return input.text.trim().isEmpty ? 'image_only' : 'text_plus_image';
   }
 }
 

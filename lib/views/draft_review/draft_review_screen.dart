@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -51,11 +53,13 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
             content: const Text('저장하지 않고 나가시겠습니까?'),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('계속 작성')),
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('계속 작성'),
+              ),
               TextButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('나가기')),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('나가기'),
+              ),
             ],
           ),
         );
@@ -64,148 +68,183 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
         }
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: const Text('기록 검토'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : () => _save(context, ref),
-            child: _saving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('저장'),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // AI 실패 → 로컬 fallback 시 경고 배너
-          if (state.showAiFailBanner) ...[
-            Card(
-              color: Colors.orange.shade50,
-              child: ListTile(
-                leading: const Icon(Icons.warning_amber_rounded,
-                    color: Colors.orange),
-                title: const Text(
-                  'AI 실패 — 로컬 파서 결과예요. 내용을 확인해주세요.',
-                  style: TextStyle(fontSize: 13),
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: vm.dismissAiFailBanner,
-                ),
-                dense: true,
-              ),
+        appBar: AppBar(
+          title: const Text('기록 검토'),
+          actions: [
+            TextButton(
+              onPressed: _saving ? null : () => _save(context, ref),
+              child: _saving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('저장'),
             ),
-            const SizedBox(height: 12),
           ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // AI 실패 → 로컬 fallback 시 경고 배너 (Theme token 적용)
+            if (state.showAiFailBanner) ...[
+              Card(
+                color: Theme.of(context).colorScheme.errorContainer,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.warning_amber_rounded,
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                  title: Text(
+                    'AI 실패 — 로컬 파서 결과예요. 내용을 확인해주세요.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    onPressed: vm.dismissAiFailBanner,
+                  ),
+                  dense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
 
-          // 출처 + confidence
-          SourceBadgeWidget(
-            source: state.source,
-            confidence: state.confidence,
-          ),
+            // 출처 + confidence
+            SourceBadgeWidget(
+              source: state.source,
+              confidence: state.confidence,
+            ),
 
-          // 경고
-          if (state.parseWarnings.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            for (final w in state.parseWarnings)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber,
+            if (state.rawImagePath != null) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(state.rawImagePath!),
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  // temp 파일이 삭제되거나 권한 변경 시 깨진 위젯 대신 안내.
+                  errorBuilder: (_, _, _) => Container(
+                    height: 180,
+                    width: double.infinity,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    child: Text(
+                      '이미지를 불러올 수 없습니다',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
+            // 경고
+            if (state.parseWarnings.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              for (final w in state.parseWarnings)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber,
                         size: 16,
-                        color: Theme.of(context).colorScheme.error),
-                    const SizedBox(width: 4),
-                    Expanded(
-                        child: Text(w,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.error))),
-                  ],
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          w,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
+            ],
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // 날짜
-          _DateRow(
-            drankAt: state.drankAt,
-            onChanged: (dt) => vm.updateDrankAt(dt),
-          ),
-
-          const SizedBox(height: 12),
-
-          // 장소
-          TextField(
-            controller: _placeController,
-            decoration: const InputDecoration(
-              labelText: '장소',
-              prefixIcon: Icon(Icons.place_outlined),
+            // 날짜
+            _DateRow(
+              drankAt: state.drankAt,
+              onChanged: (dt) => vm.updateDrankAt(dt),
             ),
-            onChanged: (v) => vm.updatePlace(v.isEmpty ? null : v),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-          // 항목들
-          Text('항목',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          for (var i = 0; i < state.entries.length; i++) ...[
-            EntryCardWidget(
-              index: i,
-              entry: state.entries[i],
-              canDelete: state.entries.length > 1,
-              lowConfidence: state.confidence < 0.7,
-              onChanged: (e) => vm.updateEntry(i, e),
-              onDelete: () => vm.removeEntry(i),
+            // 장소
+            TextField(
+              controller: _placeController,
+              decoration: const InputDecoration(
+                labelText: '장소',
+                prefixIcon: Icon(Icons.place_outlined),
+              ),
+              onChanged: (v) => vm.updatePlace(v.isEmpty ? null : v),
+            ),
+
+            const SizedBox(height: 16),
+
+            // 항목들
+            Text(
+              '항목',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-          ],
-          OutlinedButton.icon(
-            onPressed: () => vm.addEntry(),
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('항목 추가'),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 음식
-          FoodChipsWidget(
-            foods: state.foodItems,
-            onAdd: (f) => vm.addFood(f),
-            onRemove: (i) => vm.removeFood(i),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 메모
-          TextField(
-            controller: _memoController,
-            decoration: const InputDecoration(
-              labelText: '메모',
-              prefixIcon: Icon(Icons.note_outlined),
+            for (var i = 0; i < state.entries.length; i++) ...[
+              EntryCardWidget(
+                index: i,
+                entry: state.entries[i],
+                canDelete: state.entries.length > 1,
+                lowConfidence: state.confidence < 0.7,
+                onChanged: (e) => vm.updateEntry(i, e),
+                onDelete: () => vm.removeEntry(i),
+              ),
+              const SizedBox(height: 8),
+            ],
+            OutlinedButton.icon(
+              onPressed: () => vm.addEntry(),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('항목 추가'),
             ),
-            maxLines: 3,
-            minLines: 1,
-            onChanged: (v) => vm.updateMemo(v.isEmpty ? null : v),
-          ),
 
-          const SizedBox(height: 80),
-        ],
+            const SizedBox(height: 16),
+
+            // 음식
+            FoodChipsWidget(
+              foods: state.foodItems,
+              onAdd: (f) => vm.addFood(f),
+              onRemove: (i) => vm.removeFood(i),
+            ),
+
+            const SizedBox(height: 16),
+
+            // 메모
+            TextField(
+              controller: _memoController,
+              decoration: const InputDecoration(
+                labelText: '메모',
+                prefixIcon: Icon(Icons.note_outlined),
+              ),
+              maxLines: 3,
+              minLines: 1,
+              onChanged: (v) => vm.updateMemo(v.isEmpty ? null : v),
+            ),
+
+            const SizedBox(height: 80),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Future<void> _save(BuildContext context, WidgetRef ref) async {
@@ -249,9 +288,9 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -300,8 +339,11 @@ class _DateRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(Icons.calendar_today,
-                size: 18, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.calendar_today,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(width: 8),
             Text(dateStr, style: Theme.of(context).textTheme.bodyLarge),
             const Spacer(),

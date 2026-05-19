@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../core/providers.dart';
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/archive_detail_viewmodel.dart';
-import '../../viewmodels/archive_viewmodel.dart';
 import '../common/error_state_widget.dart';
 import '../log/widgets/star_rating.dart';
 
@@ -26,15 +24,13 @@ class ArchiveDetailScreen extends ConsumerWidget {
             data: (d) => IconButton(
               icon: Icon(
                 d.master.isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: d.master.isFavorite ? Colors.red : null,
+                // Theme token — dark 모드 + brand color 일관성
+                color:
+                    d.master.isFavorite ? Theme.of(context).colorScheme.error : null,
               ),
-              onPressed: () async {
-                await ref
-                    .read(liquorMasterRepoProvider)
-                    .toggleFavorite(masterId, !d.master.isFavorite);
-                ref.invalidate(archiveDetailProvider(masterId));
-                ref.invalidate(archiveListProvider);
-              },
+              tooltip: d.master.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가',
+              onPressed: () =>
+                  toggleArchiveFavorite(ref, masterId, d.master.isFavorite),
             ),
             orElse: () => const SizedBox.shrink(),
           ),
@@ -50,15 +46,16 @@ class ArchiveDetailScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             // 헤더
-            Text(d.master.nameKo ?? d.master.canonicalName,
-                style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              d.master.nameKo ?? d.master.canonicalName,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 4),
             Text(
               _subtitle(d),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Theme.of(context).colorScheme.outline),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -83,11 +80,12 @@ class ArchiveDetailScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // 기록 히스토리
-            Text('기록 히스토리',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              '기록 히스토리',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             if (d.history.isEmpty)
               // WCAG AA fix — Colors.grey (~2.6:1) → onSurfaceVariant (~4.5:1+)
@@ -103,11 +101,12 @@ class ArchiveDetailScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // 별칭
-            Text('별칭',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              '별칭',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
@@ -160,11 +159,13 @@ class ArchiveDetailScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, null),
-              child: const Text('취소')),
+            onPressed: () => Navigator.pop(ctx, null),
+            child: const Text('취소'),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: const Text('추가')),
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('추가'),
+          ),
         ],
       ),
     );
@@ -172,13 +173,13 @@ class ArchiveDetailScreen extends ConsumerWidget {
     if (added == null || added.isEmpty) return;
     if (existing.contains(added)) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('이미 존재하는 별칭입니다')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('이미 존재하는 별칭입니다')));
       }
       return;
     }
-    await ref.read(liquorMasterRepoProvider).addAlias(masterId, added);
-    ref.invalidate(archiveDetailProvider(masterId));
+    await addArchiveAlias(ref, masterId, added);
   }
 }
 
@@ -200,17 +201,21 @@ class _Metric extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(value,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 4),
             Text(label, style: Theme.of(context).textTheme.labelSmall),
             if (sublabel != null)
-              Text(sublabel!,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.outline)),
+              Text(
+                sublabel!,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
           ],
         ),
       ),
@@ -238,18 +243,25 @@ class _HistoryTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(dateStr,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary)),
+                Text(
+                  dateStr,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Text('$qty ${unitLabel(item.quantityUnit)}',
-                        style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      '$qty ${unitLabel(item.quantityUnit)}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                     if (item.place != null) ...[
                       const SizedBox(width: 8),
-                      Text('📍 ${item.place}',
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        '📍 ${item.place}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ],
                   ],
                 ),

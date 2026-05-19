@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import '../core/database/sqflite_row_ext.dart';
 import '../core/exceptions.dart';
 import '../domain/entities/drink_log.dart';
 
@@ -62,9 +63,7 @@ class DrinkLogRepository {
         // entry 상태 파악
         final existingRows = await txn.query('drinkEntry',
             columns: ['id'], where: 'logId = ?', whereArgs: [log.id]);
-        final existingIds = existingRows
-            .map((r) => r['id'] as int)
-            .toSet();
+        final existingIds = existingRows.map((r) => r.requireInt('id')).toSet();
         final incomingIds = log.entries
             .map((e) => e.id)
             .whereType<int>()
@@ -108,9 +107,28 @@ class DrinkLogRepository {
     }
   }
 
+  /// 단일 기록 삭제. FK CASCADE 로 drinkEntry/drinkLogFood/tastingNote 삭제됨.
+  ///
+  /// 개인정보 보호: `parseJob.logId` 는 ON DELETE SET NULL 이라 행이 남는다 →
+  /// 같은 트랜잭션에서 rawRequest/rawResponse/errorMessage 를 NULL 로 정리.
+  /// 통계 메타데이터 (parserUsed, status, durationMs, errorCode) 는 보존.
   Future<void> delete(int logId) async {
     try {
-      await _db.delete('drinkLog', where: 'id = ?', whereArgs: [logId]);
+      await _db.transaction((txn) async {
+        // 1) 개인정보 정리 — parseJob.rawRequest 등 NULL
+        await txn.update(
+          'parseJob',
+          {
+            'rawRequest': null,
+            'rawResponse': null,
+            'errorMessage': null,
+          },
+          where: 'logId = ?',
+          whereArgs: [logId],
+        );
+        // 2) drinkLog 삭제 (FK CASCADE 로 연결 row 함께 삭제)
+        await txn.delete('drinkLog', where: 'id = ?', whereArgs: [logId]);
+      });
     } on DatabaseException catch (e) {
       throw DatabaseError('음주 기록 삭제 실패', cause: e);
     }
@@ -181,7 +199,7 @@ class DrinkLogRepository {
         logIds);
     final entriesByLog = <int, List<DrinkEntry>>{};
     for (final row in entriesRows) {
-      final logId = row['logId'] as int;
+      final logId = row.requireInt('logId');
       entriesByLog.putIfAbsent(logId, () => []).add(DrinkEntry.fromMap(row));
     }
 
@@ -190,7 +208,7 @@ class DrinkLogRepository {
         'SELECT * FROM drinkLogFood WHERE logId IN ($ph)', logIds);
     final foodsByLog = <int, List<String>>{};
     for (final row in foodsRows) {
-      final logId = row['logId'] as int;
+      final logId = row.requireInt('logId');
       foodsByLog
           .putIfAbsent(logId, () => [])
           .add(row['foodName'] as String);

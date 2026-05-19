@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -20,11 +22,22 @@ class LogListScreen extends ConsumerStatefulWidget {
 class _LogListScreenState extends ConsumerState<LogListScreen> {
   final _searchCtrl = TextEditingController();
   bool _searching = false;
+  Timer? _searchDebounce;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    // debounce 300ms — 빠른 타이핑 시 DB query 폭주 방지
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      ref.read(logListProvider.notifier).search(value);
+    });
   }
 
   @override
@@ -42,8 +55,7 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
                   border: InputBorder.none,
                   filled: false,
                 ),
-                onChanged: (v) =>
-                    ref.read(logListProvider.notifier).search(v),
+                onChanged: _onSearchChanged,
               )
             : const Text('기록'),
         actions: [
@@ -53,6 +65,7 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
               setState(() {
                 _searching = !_searching;
                 if (!_searching) {
+                  _searchDebounce?.cancel();
                   _searchCtrl.clear();
                   ref.read(logListProvider.notifier).refresh();
                 }
@@ -130,7 +143,7 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
         .then((_) => ref.read(logListProvider.notifier).refresh());
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, DrinkLog log) async {
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, DrinkLog log) async {
     final confirmed = await showDeleteConfirmDialog(context);
     if (confirmed == true) {
       await ref.read(logListProvider.notifier).delete(log.id!);

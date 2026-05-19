@@ -1,14 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers.dart';
-import '../../../domain/entities/liquor_master.dart';
 import '../../../integrations/parser/parse_result.dart';
-
-/// liquorMaster 조회 FutureProvider — 검토 화면 Entry 카드에서 매칭 상태 확인.
-final _entryDraftMasterProvider =
-    FutureProvider.family<LiquorMaster?, int>((ref, masterId) async {
-  return ref.watch(liquorMasterRepoProvider).getById(masterId);
-});
+import '../../../viewmodels/draft_review_viewmodel.dart';
 
 class EntryCardWidget extends ConsumerStatefulWidget {
   final int index;
@@ -44,11 +37,13 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
     _nameCtrl = TextEditingController(text: widget.entry.liquorNameRaw);
     _ageCtrl = TextEditingController(text: widget.entry.ageStatement ?? '');
     _qtyCtrl = TextEditingController(
-        text: widget.entry.quantityValue % 1 == 0
-            ? widget.entry.quantityValue.toInt().toString()
-            : widget.entry.quantityValue.toString());
+      text: widget.entry.quantityValue % 1 == 0
+          ? widget.entry.quantityValue.toInt().toString()
+          : widget.entry.quantityValue.toString(),
+    );
     _abvCtrl = TextEditingController(
-        text: widget.entry.alcoholPercent?.toString() ?? '');
+      text: widget.entry.alcoholPercent?.toString() ?? '',
+    );
   }
 
   @override
@@ -70,19 +65,23 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
         ? parsedAbv
         : null;
 
-    widget.onChanged(widget.entry.copyWith(
-      liquorNameRaw: _nameCtrl.text,
-      ageStatement: _ageCtrl.text.isEmpty ? null : _ageCtrl.text,
-      quantityValue: qty,
-      alcoholPercent: abv,
-    ));
+    widget.onChanged(
+      widget.entry.copyWith(
+        liquorNameRaw: _nameCtrl.text,
+        ageStatement: _ageCtrl.text.isEmpty ? null : _ageCtrl.text,
+        quantityValue: qty,
+        alcoholPercent: abv,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = widget.lowConfidence
-        ? Colors.orange.shade300
-        : Theme.of(context).colorScheme.outlineVariant;
+    // lowConfidence 시 tertiary (warm warning) 사용 — error 만큼 강하지 않은
+    // semantic. Theme token 으로 dark 모드 일관성 확보.
+    final scheme = Theme.of(context).colorScheme;
+    final borderColor =
+        widget.lowConfidence ? scheme.tertiary : scheme.outlineVariant;
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -97,11 +96,12 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
             // 헤더
             Row(
               children: [
-                Text('항목 ${widget.index + 1}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  '항목 ${widget.index + 1}',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const Spacer(),
                 if (widget.canDelete)
                   // tap target 48dp 보장 (음주 후 사용 시나리오 — Round 6 P1 fix)
@@ -126,13 +126,18 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
                     value: widget.entry.liquorCategory,
                     decoration: const InputDecoration(labelText: '주종'),
                     items: _categories.entries
-                        .map((e) =>
-                            DropdownMenuItem(value: e.key, child: Text(e.value)))
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) {
                       if (v != null) {
                         widget.onChanged(
-                            widget.entry.copyWith(liquorCategory: v));
+                          widget.entry.copyWith(liquorCategory: v),
+                        );
                       }
                     },
                   ),
@@ -168,13 +173,18 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
                     value: widget.entry.quantityUnit,
                     decoration: const InputDecoration(labelText: '단위'),
                     items: _units.entries
-                        .map((e) =>
-                            DropdownMenuItem(value: e.key, child: Text(e.value)))
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) {
                       if (v != null) {
-                        widget
-                            .onChanged(widget.entry.copyWith(quantityUnit: v));
+                        widget.onChanged(
+                          widget.entry.copyWith(quantityUnit: v),
+                        );
                       }
                     },
                   ),
@@ -194,9 +204,12 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
             if (widget.entry.isEstimated)
               Padding(
                 padding: const EdgeInsets.only(top: 6, left: 4),
-                child: Text('⚠ 수량이 추정치입니다',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.orange.shade700)),
+                child: Text(
+                  '⚠ 수량이 추정치입니다',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.tertiary,
+                  ),
+                ),
               ),
           ],
         ),
@@ -208,7 +221,7 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
   Widget _buildNameField(BuildContext context) {
     final masterId = widget.entry.liquorMasterId;
     final masterAsync = masterId != null
-        ? ref.watch(_entryDraftMasterProvider(masterId))
+        ? ref.watch(entryDraftMasterProvider(masterId))
         : null;
     final master = masterAsync?.valueOrNull;
     final rawFilled = _nameCtrl.text.trim().isNotEmpty;
@@ -217,18 +230,22 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
     String? helper;
     Color? helperColor;
 
+    final scheme = Theme.of(context).colorScheme;
     if (master != null) {
-      suffix = Icon(Icons.check_circle,
-          size: 18, color: Colors.green.shade600);
+      // 매칭 성공 — primary (brand) 로 표현 (green 의 의미와 동등하나 token 통일)
+      suffix = Icon(Icons.check_circle, size: 18, color: scheme.primary);
       if (master.canonicalName != _nameCtrl.text.trim()) {
         helper = '(${master.canonicalName})';
       }
     } else if (rawFilled) {
-      // master 매칭 실패 + 이름 입력됨
-      suffix = Icon(Icons.warning_amber_rounded,
-          size: 18, color: Colors.orange.shade700);
+      // master 매칭 실패 + 이름 입력됨 — tertiary (mild warning)
+      suffix = Icon(
+        Icons.warning_amber_rounded,
+        size: 18,
+        color: scheme.tertiary,
+      );
       helper = '⚠ 이름을 정확히 확인하지 못했습니다';
-      helperColor = Colors.orange.shade700;
+      helperColor = scheme.tertiary;
     }
 
     return TextField(
@@ -238,7 +255,7 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
         suffixIcon: suffix,
         helperText: helper,
         helperStyle: helperColor != null
-            ? TextStyle(color: helperColor, fontSize: 11)
+            ? Theme.of(context).textTheme.labelSmall?.copyWith(color: helperColor)
             : null,
         helperMaxLines: 2,
       ),

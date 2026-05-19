@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import '../core/database/sqflite_row_ext.dart';
 import '../core/exceptions.dart';
 import '../domain/entities/tasting_note.dart';
 
@@ -18,7 +19,7 @@ class TastingNoteRepository {
         } else {
           await txn.update('tastingNote', note.toMap(),
               where: 'entryId = ?', whereArgs: [note.entryId]);
-          return existing.first['id'] as int;
+          return existing.first.requireInt('id');
         }
       });
     } on DatabaseException catch (e) {

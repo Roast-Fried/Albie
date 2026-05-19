@@ -2,89 +2,116 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/label_utils.dart';
+import '../../core/utils/standard_drink_utils.dart';
+import '../../viewmodels/achievements_viewmodel.dart';
 import '../../viewmodels/stats_viewmodel.dart';
 import '../common/error_state_widget.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
 
-  static const _pieColors = [
-    Color(0xFFBF7B3A),
-    Color(0xFF8B5E3C),
-    Color(0xFFD4A574),
-    Color(0xFF6B8E7F),
-    Color(0xFF9B7B9B),
-    Color(0xFFB68363),
-  ];
+  /// Theme ColorScheme 에서 파생된 6 색 — kAlbiAmber seed 기반.
+  /// dark/light 모두 일관 + WCAG AA 가독성 자동 보장.
+  static List<Color> _pieColorsFor(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return [
+      s.primary,
+      s.secondary,
+      s.tertiary,
+      s.primaryContainer,
+      s.secondaryContainer,
+      s.tertiaryContainer,
+    ];
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(statsProvider);
+    final achievementsAsync = ref.watch(achievementsProvider);
     final period = ref.watch(statsPeriodProvider);
+    final pieColors = _pieColorsFor(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('통계')),
       body: statsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorStateWidget(
-            message: '통계를 불러올 수 없습니다',
-            onRetry: () => ref.invalidate(statsProvider)),
+          message: '통계를 불러올 수 없습니다',
+          onRetry: () => ref.invalidate(statsProvider),
+        ),
         data: (stats) => stats.totalCount == 0
-            ? const Center(child: Text('기록이 없어요'))
+            ? _StatsEmptyState(scheme: Theme.of(context).colorScheme)
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
                   // 기간 탭
                   SegmentedButton<StatsPeriod>(
                     segments: StatsPeriod.values
-                        .map((p) =>
-                            ButtonSegment(value: p, label: Text(p.label)))
+                        .map(
+                          (p) => ButtonSegment(value: p, label: Text(p.label)),
+                        )
                         .toList(),
                     selected: {period},
-                    onSelectionChanged: (s) => ref
-                        .read(statsPeriodProvider.notifier)
-                        .state = s.first,
+                    onSelectionChanged: (s) =>
+                        ref.read(statsPeriodProvider.notifier).state = s.first,
                   ),
                   const SizedBox(height: 16),
 
                   // 지표 카드 3개 (전체 기준)
                   Row(
                     children: [
-                      _StatCard(
-                          label: '총 기록', value: '${stats.totalCount}건'),
+                      _StatCard(label: '총 기록', value: '${stats.totalCount}건'),
                       const SizedBox(width: 8),
                       _StatCard(
-                          label: '이번 달',
-                          value: '${stats.thisMonthCount}건'),
+                        label: '이번 달',
+                        value: '${stats.thisMonthCount}건',
+                      ),
                       const SizedBox(width: 8),
                       _StatCard(
-                          label: '최근 7일',
-                          value: '${stats.last7DaysCount}건'),
+                        label: '최근 7일',
+                        value: '${stats.last7DaysCount}건',
+                      ),
                     ],
+                  ),
+                  if (stats.thisMonthStandardDrinks > 0) ...[
+                    const SizedBox(height: 8),
+                    _StandardDrinkCard(
+                      drinks: stats.thisMonthStandardDrinks,
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+
+                  achievementsAsync.when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                    data: (items) => _AchievementSection(items: items),
                   ),
                   const SizedBox(height: 24),
 
                   // 주종별 분포 — 파이차트
                   if (stats.categoryDistribution.isNotEmpty) ...[
-                    Text('주종별 분포 (${period.label})',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      '주종별 분포 (${period.label})',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     _CategoryPieChart(
-                        data: stats.categoryDistribution,
-                        colors: _pieColors),
+                      data: stats.categoryDistribution,
+                      colors: pieColors,
+                    ),
                     const SizedBox(height: 24),
                   ],
 
                   // TOP 5 술
                   if (stats.topLiquors.isNotEmpty) ...[
-                    Text('자주 마신 술 TOP 5 (${period.label})',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      '자주 마신 술 TOP 5 (${period.label})',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     for (var i = 0; i < stats.topLiquors.length; i++)
                       _RankTile(
@@ -97,17 +124,60 @@ class StatsScreen extends ConsumerWidget {
 
                   // 월별 기록 추이 — 라인차트 (최근 6개월 고정)
                   if (stats.monthlyTrend.isNotEmpty) ...[
-                    Text('월별 기록 추이 (최근 6개월)',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      '월별 기록 추이 (최근 6개월)',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     _MonthlyTrendChart(data: stats.monthlyTrend),
                   ],
                 ],
               ),
       ),
+    );
+  }
+}
+
+class _AchievementSection extends StatelessWidget {
+  final List<Achievement> items;
+
+  const _AchievementSection({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '업적',
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final item in items)
+              Tooltip(
+                message: item.description,
+                child: Chip(
+                  avatar: Icon(
+                    item.unlocked ? Icons.emoji_events : Icons.lock_outline,
+                    size: 16,
+                  ),
+                  label: Text(item.title),
+                  backgroundColor: item.unlocked
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : null,
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -125,11 +195,12 @@ class _StatCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           child: Column(
             children: [
-              Text(value,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(label, style: Theme.of(context).textTheme.labelSmall),
             ],
@@ -203,17 +274,18 @@ class _CategoryPieChart extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(categoryLabel(sorted[i].key),
-                            style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          categoryLabel(sorted[i].key),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                         const SizedBox(width: 4),
-                        Text('${sorted[i].value}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .outline)),
+                        Text(
+                          '${sorted[i].value}',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                        ),
                       ],
                     ),
                   ),
@@ -231,8 +303,11 @@ class _RankTile extends StatelessWidget {
   final String name;
   final int count;
 
-  const _RankTile(
-      {required this.rank, required this.name, required this.count});
+  const _RankTile({
+    required this.rank,
+    required this.name,
+    required this.count,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -242,12 +317,13 @@ class _RankTile extends StatelessWidget {
         children: [
           SizedBox(
             width: 28,
-            child: Text('$rank',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: rank <= 3
-                        ? Theme.of(context).colorScheme.primary
-                        : null)),
+            child: Text(
+              '$rank',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: rank <= 3 ? Theme.of(context).colorScheme.primary : null,
+              ),
+            ),
           ),
           Expanded(child: Text(name)),
           Text('$count회', style: Theme.of(context).textTheme.bodySmall),
@@ -295,12 +371,14 @@ class _MonthlyTrendChart extends StatelessWidget {
           ),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
-                sideTitles:
-                    SideTitles(showTitles: true, reservedSize: 28)),
+              sideTitles: SideTitles(showTitles: true, reservedSize: 28),
+            ),
             rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
             topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -314,9 +392,10 @@ class _MonthlyTrendChart extends StatelessWidget {
                   final month = months[idx].split('-').last;
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text('${int.parse(month)}월',
-                        style:
-                            Theme.of(context).textTheme.labelSmall),
+                    child: Text(
+                      '${int.parse(month)}월',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
                   );
                 },
               ),
@@ -341,6 +420,105 @@ class _MonthlyTrendChart extends StatelessWidget {
                 show: true,
                 color: primary.withValues(alpha: 0.15),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 표준잔 합 카드 — "이번 달 N.N 표준잔" + 부연 설명 1줄.
+///
+/// 한국 기준 1 표준잔 = 8g 순알코올 (`standard_drink_utils.dart`).
+/// alcoholPercent 가 있는 entry 만 누적 → 수치는 추정치임을 명시.
+class _StandardDrinkCard extends StatelessWidget {
+  const _StandardDrinkCard({required this.drinks});
+
+  final double drinks;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      color: scheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.local_bar_outlined,
+              color: scheme.onPrimaryContainer,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '이번 달 ${formatStandardDrinks(drinks)} (추정)',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  Text(
+                    '한국 기준 1 표준잔 = 순알코올 8g',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 통계 빈 상태 — icon + title + subtitle (Material 3 empty state 패턴)
+class _StatsEmptyState extends StatelessWidget {
+  const _StatsEmptyState({required this.scheme});
+
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.bar_chart_rounded,
+                size: 40,
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '통계를 만들 데이터가 없어요',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '음주 기록을 추가하면 여기에 분포와 추이가 표시돼요',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

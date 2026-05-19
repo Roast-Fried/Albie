@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
+import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/home_viewmodel.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
 import '../common/error_state_widget.dart';
@@ -38,8 +39,7 @@ class HomeScreen extends ConsumerWidget {
             tooltip: 'AI 처리 로그',
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (_) => const AiSettingsScreen()),
+              MaterialPageRoute(builder: (_) => const AiSettingsScreen()),
             ),
           ),
         ],
@@ -55,13 +55,13 @@ class HomeScreen extends ConsumerWidget {
                   ? const SizedBox.shrink()
                   : RecentLogsWidget(
                       logs: logs,
-                      onMore: () => ref
-                          .read(appTabIndexProvider.notifier)
-                          .state = 1,
+                      onMore: () =>
+                          ref.read(appTabIndexProvider.notifier).state = 1,
                     ),
               loading: () => const SizedBox(
-                  height: 100,
-                  child: Center(child: CircularProgressIndicator())),
+                height: 100,
+                child: Center(child: CircularProgressIndicator()),
+              ),
               error: (_, _) => ErrorStateWidget(
                 message: '최근 기록을 불러오지 못했습니다',
                 onRetry: () => ref.invalidate(recentLogsProvider),
@@ -74,17 +74,27 @@ class HomeScreen extends ConsumerWidget {
             InputSectionWidget(
               placeholders: _placeholders,
               inputText: homeState.inputText,
+              imagePath: homeState.imagePath,
+              imageName: homeState.imageName,
               isLoading: homeState.isLoading,
               onChanged: (text) =>
                   ref.read(homeViewModelProvider.notifier).updateInput(text),
+              onPickImage: () =>
+                  ref.read(homeViewModelProvider.notifier).pickImage(),
+              onRemoveImage: () =>
+                  ref.read(homeViewModelProvider.notifier).removeImage(),
               onGenerateDraft: () => _onGenerateDraft(context, ref),
+              onCancelGenerate: () =>
+                  ref.read(homeViewModelProvider.notifier).cancelGenerate(),
               onManualInput: () => _onManualInput(context, ref),
             ),
 
             if (homeState.error != null) ...[
               const SizedBox(height: 8),
-              Text(homeState.error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              Text(
+                homeState.error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ],
 
             const SizedBox(height: 20),
@@ -96,11 +106,11 @@ class HomeScreen extends ConsumerWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('최근 마셔본 술',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          '최근 마셔본 술',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
                         const SizedBox(height: 8),
                         SizedBox(
                           height: 36,
@@ -128,12 +138,16 @@ class HomeScreen extends ConsumerWidget {
                   : Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Row(children: [
-                          Icon(Icons.local_bar,
-                              color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 12),
-                          Text('이번 달 $count회 기록'),
-                        ]),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.local_bar,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Text('이번 달 $count회 기록'),
+                          ],
+                        ),
                       ),
                     ),
               loading: () => const SizedBox.shrink(),
@@ -152,7 +166,9 @@ class HomeScreen extends ConsumerWidget {
 
   Future<void> _onGenerateDraft(BuildContext context, WidgetRef ref) async {
     final vm = ref.read(homeViewModelProvider.notifier);
-    final inputText = ref.read(homeViewModelProvider).inputText;
+    final homeState = ref.read(homeViewModelProvider);
+    final inputText = homeState.inputText;
+    final imagePath = homeState.imagePath;
     final result = await vm.generateDraft();
     if (result == null || !context.mounted) return;
 
@@ -162,6 +178,7 @@ class HomeScreen extends ConsumerWidget {
       DraftReviewState.fromParseResult(
         result.parseResult,
         rawInputText: inputText,
+        rawImagePath: imagePath,
         parseJobId: result.parseJobId,
         wasAiAttempted: result.wasAiAttempted,
       ),
@@ -170,23 +187,33 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _onManualInput(BuildContext context, WidgetRef ref) {
-    final inputText = ref.read(homeViewModelProvider).inputText;
+    final state = ref.read(homeViewModelProvider);
+    final settings =
+        ref.read(appSettingsProvider).valueOrNull ?? const AppSettingsState();
     _navigateToReview(
       context,
       ref,
-      DraftReviewState.manual(rawInputText: inputText),
+      DraftReviewState.manual(
+        rawInputText: state.inputText,
+        rawImagePath: state.imagePath,
+        defaultQuantityUnit: settings.defaultQuantityUnit,
+      ),
     );
     ref.read(homeViewModelProvider.notifier).clearInput();
   }
 
   void _navigateToReview(
-      BuildContext context, WidgetRef ref, DraftReviewState initialState) {
+    BuildContext context,
+    WidgetRef ref,
+    DraftReviewState initialState,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ProviderScope(
           overrides: [
-            draftReviewProvider
-                .overrideWith((_) => DraftReviewViewModel(initialState)),
+            draftReviewProvider.overrideWith(
+              (_) => DraftReviewViewModel(initialState),
+            ),
           ],
           child: const DraftReviewScreen(),
         ),
@@ -200,19 +227,43 @@ class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
+      // 살짝 강조된 surfaceContainer 로 첫 인상 polishing — 너무 밝지 않게.
+      color: scheme.surfaceContainerLow,
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
         child: Column(
           children: [
-            Icon(Icons.wine_bar_outlined,
-                size: 48, color: Theme.of(context).colorScheme.outline),
-            const SizedBox(height: 12),
-            Text('아직 기록이 없어요',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text('위에서 오늘 뭐 마셨는지 입력해보세요',
-                style: Theme.of(context).textTheme.bodySmall),
+            // 원형 backdrop + icon — Material 3 empty state 패턴
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.wine_bar_outlined,
+                size: 40,
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '아직 기록이 없어요',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '위에서 오늘 마신 술을 자연어로 입력해보세요',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/usage_quota.dart';
+import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/ai_settings_viewmodel.dart';
 import '../../viewmodels/settings_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
@@ -34,8 +35,10 @@ class SettingsScreen extends ConsumerWidget {
             ),
             data: (state) {
               final quota = state.quota;
-              final total = quota.appDefaultTextCount +
-                  quota.userKeyTextCount;
+              final textTotal =
+                  quota.appDefaultTextCount + quota.userKeyTextCount;
+              final imageTotal =
+                  quota.appDefaultImageCount + quota.userKeyImageCount;
               return Column(
                 children: [
                   SwitchListTile(
@@ -53,16 +56,20 @@ class SettingsScreen extends ConsumerWidget {
                       leading: const Icon(Icons.speed_outlined),
                       title: const Text('오늘 사용량'),
                       subtitle: Text(
-                          '텍스트 $total / ${UsageQuota.maxAppTextPerDay}회'),
+                        '텍스트 $textTotal/${UsageQuota.maxAppTextPerDay}회 · '
+                        '이미지 $imageTotal/${UsageQuota.maxAppImagePerDay}회',
+                      ),
                     ),
                   ListTile(
                     leading: const Icon(Icons.tune_outlined),
                     title: const Text('AI 설정 상세'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const AiSettingsScreen())),
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AiSettingsScreen(),
+                      ),
+                    ),
                   ),
                 ],
               );
@@ -73,17 +80,50 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── 일반 ──
           const _SectionHeader('일반'),
-          Consumer(builder: (context, ref, _) {
-            final modeAsync = ref.watch(themeModeProvider);
-            final mode = modeAsync.valueOrNull ?? ThemeMode.system;
-            return ListTile(
-              leading: const Icon(Icons.brightness_6_outlined),
-              title: const Text('다크 모드'),
-              subtitle: Text(themeModeLabel(mode)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showThemeDialog(context, ref, mode),
-            );
-          }),
+          Consumer(
+            builder: (context, ref, _) {
+              final modeAsync = ref.watch(themeModeProvider);
+              final mode = modeAsync.valueOrNull ?? ThemeMode.system;
+              return ListTile(
+                leading: const Icon(Icons.brightness_6_outlined),
+                title: const Text('다크 모드'),
+                subtitle: Text(themeModeLabel(mode)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showThemeDialog(context, ref, mode),
+              );
+            },
+          ),
+          Consumer(
+            builder: (context, ref, _) {
+              final settings =
+                  ref.watch(appSettingsProvider).valueOrNull ??
+                  const AppSettingsState();
+              return ListTile(
+                leading: const Icon(Icons.local_bar_outlined),
+                title: const Text('기본 수량 단위'),
+                subtitle: Text(quantityUnitLabel(settings.defaultQuantityUnit)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () =>
+                    _showUnitDialog(context, ref, settings.defaultQuantityUnit),
+              );
+            },
+          ),
+          Consumer(
+            builder: (context, ref, _) {
+              final settings =
+                  ref.watch(appSettingsProvider).valueOrNull ??
+                  const AppSettingsState();
+              return SwitchListTile(
+                secondary: const Icon(Icons.schedule_outlined),
+                title: const Text('6시 컷오프'),
+                subtitle: const Text('새벽 기록을 전날 음주로 분류'),
+                value: settings.sixHourCutoffEnabled,
+                onChanged: (v) => ref
+                    .read(appSettingsProvider.notifier)
+                    .setSixHourCutoffEnabled(v),
+              );
+            },
+          ),
 
           const Divider(),
 
@@ -91,11 +131,13 @@ class SettingsScreen extends ConsumerWidget {
           const _SectionHeader('데이터'),
           dataAsync.when(
             loading: () => const ListTile(
-                leading: Icon(Icons.inventory_2_outlined),
-                title: Text('로딩 중...')),
+              leading: Icon(Icons.inventory_2_outlined),
+              title: Text('로딩 중...'),
+            ),
             error: (_, _) => const ListTile(
-                leading: Icon(Icons.inventory_2_outlined),
-                title: Text('데이터 로드 실패')),
+              leading: Icon(Icons.inventory_2_outlined),
+              title: Text('데이터 로드 실패'),
+            ),
             data: (snap) => Column(
               children: [
                 ListTile(
@@ -109,11 +151,16 @@ class SettingsScreen extends ConsumerWidget {
                   trailing: Text('${snap.totalMasters}종'),
                 ),
                 ListTile(
-                  leading: Icon(Icons.delete_forever,
-                      color: Theme.of(context).colorScheme.error),
-                  title: Text('데이터 초기화',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
+                  leading: Icon(
+                    Icons.delete_forever,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: Text(
+                    '데이터 초기화',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                   onTap: () => _confirmReset(context, ref),
                 ),
               ],
@@ -145,18 +192,23 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _showThemeDialog(
-      BuildContext context, WidgetRef ref, ThemeMode current) async {
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode current,
+  ) async {
     final selected = await showDialog<ThemeMode>(
       context: context,
       builder: (ctx) => SimpleDialog(
         title: const Text('다크 모드'),
         children: ThemeMode.values
-            .map((m) => RadioListTile<ThemeMode>(
-                  title: Text(themeModeLabel(m)),
-                  value: m,
-                  groupValue: current,
-                  onChanged: (v) => Navigator.pop(ctx, v),
-                ))
+            .map(
+              (m) => RadioListTile<ThemeMode>(
+                title: Text(themeModeLabel(m)),
+                value: m,
+                groupValue: current,
+                onChanged: (v) => Navigator.pop(ctx, v),
+              ),
+            )
             .toList(),
       ),
     );
@@ -165,19 +217,47 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _showUnitDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    const units = ['glass', 'shot', 'bottle', 'can', 'ml', 'unknown'];
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('기본 수량 단위'),
+        children: units
+            .map(
+              (u) => RadioListTile<String>(
+                title: Text(quantityUnitLabel(u)),
+                value: u,
+                groupValue: current,
+                onChanged: (v) => Navigator.pop(ctx, v),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (selected != null) {
+      await ref
+          .read(appSettingsProvider.notifier)
+          .setDefaultQuantityUnit(selected);
+    }
+  }
+
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
     final ok = await showDeleteConfirmDialog(
       context,
       title: '데이터 초기화',
-      content:
-          '모든 음주 기록과 테이스팅 노트가 삭제됩니다.\n복구할 수 없습니다.\n계속하시겠습니까?',
+      content: '모든 음주 기록과 테이스팅 노트가 삭제됩니다.\n복구할 수 없습니다.\n계속하시겠습니까?',
     );
     if (ok != true) return;
     await resetAllRecords(ref);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('모든 기록이 삭제되었습니다')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('모든 기록이 삭제되었습니다')));
   }
 }
 
@@ -189,11 +269,12 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(title,
-          style: Theme.of(context)
-              .textTheme
-              .labelLarge
-              ?.copyWith(color: Theme.of(context).colorScheme.primary)),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
     );
   }
 }

@@ -1,13 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../core/providers.dart';
 import '../../core/utils/date_utils.dart' as dt_utils;
 import '../../core/utils/label_utils.dart';
 import '../../domain/entities/drink_log.dart';
 import '../../domain/entities/liquor_master.dart';
 import '../../integrations/parser/parse_result.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
+import '../../viewmodels/log_detail_viewmodel.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
 import '../common/delete_confirm_dialog.dart';
 import '../common/error_state_widget.dart';
@@ -21,32 +23,57 @@ class LogDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final logFuture = ref.watch(_logDetailProvider(logId));
+    final logFuture = ref.watch(logDetailProvider(logId));
 
     return logFuture.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(
-          appBar: AppBar(),
-          body: ErrorStateWidget(
-              message: '기록을 불러올 수 없습니다',
-              onRetry: () => ref.invalidate(_logDetailProvider(logId)))),
+        appBar: AppBar(),
+        body: ErrorStateWidget(
+          message: '기록을 불러올 수 없습니다',
+          onRetry: () => ref.invalidate(logDetailProvider(logId)),
+        ),
+      ),
       data: (log) {
         if (log == null) {
+          final scheme = Theme.of(context).colorScheme;
           return Scaffold(
-              appBar: AppBar(), body: const Center(child: Text('기록 없음')));
+            appBar: AppBar(),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.history_rounded,
+                      size: 48,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '기록을 찾을 수 없습니다',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '삭제되었거나 접근 권한이 없어요',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
         return _DetailBody(log: log);
       },
     );
   }
 }
-
-final _logDetailProvider =
-    FutureProvider.family<DrinkLog?, int>((ref, logId) async {
-  final repo = ref.watch(drinkLogRepoProvider);
-  return repo.getById(logId);
-});
 
 class _DetailBody extends ConsumerWidget {
   final DrinkLog log;
@@ -81,8 +108,34 @@ class _DetailBody extends ConsumerWidget {
           Text(dateStr, style: Theme.of(context).textTheme.titleMedium),
           if (log.place != null) ...[
             const SizedBox(height: 4),
-            Text('📍 ${log.place}',
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              '📍 ${log.place}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+
+          if (log.rawImagePath != null) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                File(log.rawImagePath!),
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                // temp 파일이 삭제되거나 권한 변경 시 깨진 위젯 대신 안내.
+                errorBuilder: (_, _, _) => Container(
+                  height: 180,
+                  width: double.infinity,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  alignment: Alignment.center,
+                  child: Text(
+                    '이미지를 불러올 수 없습니다',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+            ),
           ],
 
           const SizedBox(height: 16),
@@ -96,18 +149,22 @@ class _DetailBody extends ConsumerWidget {
           // 음식
           if (log.foodItems.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text('음식',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              '음식',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 4),
             Wrap(
               spacing: 6,
               children: log.foodItems
-                  .map((f) => Chip(
+                  .map(
+                    (f) => Chip(
                       label: Text(f),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap))
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -115,11 +172,12 @@ class _DetailBody extends ConsumerWidget {
           // 메모
           if (log.overallMemo != null && log.overallMemo!.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text('메모',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              '메모',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 4),
             Text(log.overallMemo!),
           ],
@@ -128,13 +186,17 @@ class _DetailBody extends ConsumerWidget {
           if (log.rawInputText != null && log.rawInputText!.isNotEmpty) ...[
             const SizedBox(height: 16),
             ExpansionTile(
-              title: Text('원본 입력',
-                  style: Theme.of(context).textTheme.labelMedium),
+              title: Text(
+                '원본 입력',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
               children: [
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text(log.rawInputText!,
-                      style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(
+                    log.rawInputText!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
               ],
             ),
@@ -149,39 +211,45 @@ class _DetailBody extends ConsumerWidget {
       editingLogId: log.id,
       source: log.parseSource,
       entries: log.entries
-          .map((e) => DraftEntry(
-                id: e.id,
-                liquorMasterId: e.liquorMasterId,
-                liquorNameRaw: e.liquorNameRaw,
-                liquorCategory: e.liquorCategory,
-                ageStatement: e.ageStatement,
-                quantityValue: e.quantityValue,
-                quantityUnit: e.quantityUnit,
-                isEstimated: e.isEstimated,
-                alcoholPercent: e.alcoholPercent,
-              ))
+          .map(
+            (e) => DraftEntry(
+              id: e.id,
+              liquorMasterId: e.liquorMasterId,
+              liquorNameRaw: e.liquorNameRaw,
+              liquorCategory: e.liquorCategory,
+              ageStatement: e.ageStatement,
+              quantityValue: e.quantityValue,
+              quantityUnit: e.quantityUnit,
+              isEstimated: e.isEstimated,
+              alcoholPercent: e.alcoholPercent,
+            ),
+          )
           .toList(),
       foodItems: log.foodItems,
       place: log.place,
       overallMemo: log.overallMemo,
       drankAt: log.drankAt,
       rawInputText: log.rawInputText,
+      rawImagePath: log.rawImagePath,
     );
 
     Navigator.of(context)
-        .push(MaterialPageRoute(
-          builder: (_) => ProviderScope(
-            overrides: [
-              draftReviewProvider
-                  .overrideWith((_) => DraftReviewViewModel(state)),
-            ],
-            child: const DraftReviewScreen(),
+        .push(
+          MaterialPageRoute(
+            builder: (_) => ProviderScope(
+              overrides: [
+                draftReviewProvider.overrideWith(
+                  (_) => DraftReviewViewModel(state),
+                ),
+              ],
+              child: const DraftReviewScreen(),
+            ),
           ),
-        ))
+        )
         .then((_) {
-      ref.invalidate(_logDetailProvider(log.id!));
-      // saveToDb이 logList, recentLogs, logCount를 이미 갱신함
-    });
+          ref.invalidate(logDetailProvider(log.id!));
+          // saveToDb이 logList, recentLogs, logCount를 이미 갱신함
+        });
   }
 
   void _delete(BuildContext context, WidgetRef ref) async {
@@ -191,14 +259,7 @@ class _DetailBody extends ConsumerWidget {
       if (context.mounted) Navigator.of(context).pop();
     }
   }
-
 }
-
-/// liquorMaster 조회 FutureProvider — Entry 카드에서 canonicalName/subcategory 조회.
-final _entryMasterProvider =
-    FutureProvider.family<LiquorMaster?, int>((ref, masterId) async {
-  return ref.watch(liquorMasterRepoProvider).getById(masterId);
-});
 
 class _EntryCard extends ConsumerWidget {
   final DrinkEntry entry;
@@ -208,7 +269,7 @@ class _EntryCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final masterAsync = entry.liquorMasterId != null
-        ? ref.watch(_entryMasterProvider(entry.liquorMasterId!))
+        ? ref.watch(entryMasterProvider(entry.liquorMasterId!))
         : null;
     final LiquorMaster? master = masterAsync?.valueOrNull;
 
@@ -222,8 +283,9 @@ class _EntryCard extends ConsumerWidget {
       if (entry.ageStatement != null) entry.ageStatement!,
       if (entry.alcoholPercent != null) '${entry.alcoholPercent}%',
     ];
-    final qty =
-        entry.quantityValue % 1 == 0 ? entry.quantityValue.toInt() : entry.quantityValue;
+    final qty = entry.quantityValue % 1 == 0
+        ? entry.quantityValue.toInt()
+        : entry.quantityValue;
 
     return Card(
       child: Padding(
@@ -236,29 +298,38 @@ class _EntryCard extends ConsumerWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Flexible(
-                  child: Text(titleKo,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  child: Text(
+                    titleKo,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 if (titleEn != null && titleEn != titleKo) ...[
                   const SizedBox(width: 6),
                   Flexible(
-                    child: Text('($titleEn)',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.outline)),
+                    child: Text(
+                      '($titleEn)',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
                   ),
                 ],
               ],
             ),
             const SizedBox(height: 4),
-            Text(subtitleParts.join(' · '),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline)),
+            Text(
+              subtitleParts.join(' · '),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text('$qty ${unitLabel(entry.quantityUnit)}',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              '$qty ${unitLabel(entry.quantityUnit)}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             if (entry.id != null) TastingNoteSection(entryId: entry.id!),
           ],
         ),

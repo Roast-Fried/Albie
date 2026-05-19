@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 import '../domain/entities/drink_log.dart';
+import 'achievements_viewmodel.dart';
+import 'stats_viewmodel.dart';
 
 final logListProvider =
     AsyncNotifierProvider<LogListViewModel, List<DrinkLog>>(
@@ -28,11 +30,19 @@ class LogListViewModel extends AsyncNotifier<List<DrinkLog>> {
         () => ref.read(drinkLogRepoProvider).search(keyword));
   }
 
-  /// 삭제 후 관련 provider 일괄 갱신
+  /// 삭제 후 관련 provider 일괄 갱신.
+  ///
+  /// 삭제는 stats / achievements / 월 카운트 / 자주 마신 술 / 최근 목록 모두에
+  /// 영향 — save 흐름 (draft_review_viewmodel.saveToDb) 의 invalidate 셋과
+  /// 대칭으로 유지해야 stale UI 방지 (Codex closure audit B HIGH 처리).
   Future<void> delete(int logId) async {
     await ref.read(drinkLogRepoProvider).delete(logId);
     ref.invalidate(recentLogsProvider);
     ref.invalidate(logCountProvider);
+    ref.invalidate(thisMonthLogCountProvider);
+    ref.invalidate(recentFrequentLiquorsProvider);
+    ref.invalidate(achievementsProvider);
+    ref.invalidate(statsProvider);
     await refresh();
   }
 }

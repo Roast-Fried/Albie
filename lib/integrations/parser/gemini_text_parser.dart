@@ -1,34 +1,62 @@
 import 'dart:convert';
+import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:cross_file/cross_file.dart';
+import 'package:dio/dio.dart';
+
 import '../gemini/gemini_client.dart';
 import '../gemini/gemini_schemas.dart';
 import 'parse_result.dart';
 
 class GeminiTextParser {
-  final GeminiClient _client;
+  static const _maxImageSide = 1600;
 
-  GeminiTextParser(this._client);
+  final GeminiClient _client;
+  final String defaultQuantityUnit;
+  final bool sixHourCutoffEnabled;
+
+  GeminiTextParser(
+    this._client, {
+    this.defaultQuantityUnit = 'unknown',
+    this.sixHourCutoffEnabled = true,
+  });
 
   Future<ParseResult> parse({
     required ParseInput input,
     required String apiKey,
     required String model,
     required String source, // ai_user_key | ai_app_key
+    CancelToken? cancelToken,
   }) async {
+    final image = await _prepareImage(input.imagePath);
     final response = await _client.generateContent(
       model: model,
       apiKey: apiKey,
-      systemPrompt: buildSystemPrompt(input.inputTime),
+      systemPrompt: buildSystemPrompt(
+        input.inputTime,
+        defaultQuantityUnit: defaultQuantityUnit,
+        sixHourCutoffEnabled: sixHourCutoffEnabled,
+      ),
       userText: input.text,
       responseSchema: geminiParseResponseSchema,
+      imageBytes: image?.bytes,
+      imageMimeType: image?.mimeType,
+      cancelToken: cancelToken,
     );
 
     // Gemini 응답에서 텍스트 추출
     final candidates = response['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) {
+    if (candidates == null) {
       throw Exception('Gemini 응답에 candidates가 없습니다');
     }
 
-    final content = candidates[0]['content'] as Map<String, dynamic>?;
+    if (candidates.isEmpty) throw Exception('Gemini 응답에 candidates가 없습니다');
+    final candidateMap = candidates[0] is Map<String, dynamic>
+        ? candidates[0] as Map<String, dynamic>
+        : <String, dynamic>{};
+    final content = candidateMap['content'] as Map<String, dynamic>?;
     final parts = content?['parts'] as List?;
     if (parts == null || parts.isEmpty) {
       throw Exception('Gemini 응답에 parts가 없습니다');
@@ -47,7 +75,8 @@ class GeminiTextParser {
       throw Exception('Gemini 응답 JSON 파싱 실패: $e');
     }
 
-    final entries = (json['entries'] as List?)
+    final entries =
+        (json['entries'] as List?)
             ?.map((e) => DraftEntry.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
@@ -56,15 +85,15 @@ class GeminiTextParser {
       throw Exception('Gemini가 항목을 추출하지 못했습니다');
     }
 
-    final foodItems = (json['foodItems'] as List?)
-            ?.map((e) => e.toString())
-            .toList() ??
+    final foodItems =
+        (json['foodItems'] as List?)?.map((e) => e.toString()).toList() ?? [];
+
+    final warnings =
+        (json['parseWarnings'] as List?)?.map((e) => e.toString()).toList() ??
         [];
 
-    final warnings = (json['parseWarnings'] as List?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        [];
+    // Dart side 방어: AI 가 liquorName 을 비워서 보낸 entry 가 있으면 경고 추가.
+    warnings.addAll(warningsForMissingLiquorNames(entries));
 
     DateTime? drankAt;
     if (json['drankAt'] != null) {
@@ -84,4 +113,63 @@ class GeminiTextParser {
       drankAt: drankAt,
     );
   }
+
+  Future<_PreparedImage?> _prepareImage(String? path) async {
+    if (path == null || path.isEmpty) return null;
+
+    final originalBytes = await XFile(path).readAsBytes();
+    final buffer = await ui.ImmutableBuffer.fromUint8List(originalBytes);
+    ui.ImageDescriptor? descriptor;
+    ui.Codec? codec;
+    ui.Image? decoded;
+
+    try {
+      descriptor = await ui.ImageDescriptor.encoded(buffer);
+      final longestSide = math.max(descriptor.width, descriptor.height);
+      final scale = longestSide > _maxImageSide
+          ? _maxImageSide / longestSide
+          : 1.0;
+      final targetWidth = math.max(1, (descriptor.width * scale).round());
+      final targetHeight = math.max(1, (descriptor.height * scale).round());
+
+      codec = await descriptor.instantiateCodec(
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+      );
+      final frame = await codec.getNextFrame();
+      decoded = frame.image;
+      final data = await decoded.toByteData(format: ui.ImageByteFormat.png);
+      if (data == null) {
+        throw Exception('이미지를 AI 전송용으로 변환하지 못했습니다');
+      }
+
+      final bytes = Uint8List.fromList(data.buffer.asUint8List());
+      return _PreparedImage(bytes: bytes, mimeType: 'image/png');
+    } finally {
+      decoded?.dispose();
+      codec?.dispose();
+      descriptor?.dispose();
+      buffer.dispose();
+    }
+  }
+}
+
+class _PreparedImage {
+  final Uint8List bytes;
+  final String mimeType;
+
+  const _PreparedImage({required this.bytes, required this.mimeType});
+}
+
+/// AI 가 liquorName 을 비워서 보낸 entry 가 있으면 경고 텍스트를 생성한다.
+///
+/// schema `required` 만으로는 빈 문자열을 차단하지 못한다 — DraftReview 화면에서
+/// 사용자가 직접 채울 수 있도록 warning surface. test 가 직접 호출하기 위해
+/// top-level 로 export (production 호출은 `GeminiTextParser.parse` 내부에서만).
+List<String> warningsForMissingLiquorNames(List<DraftEntry> entries) {
+  final emptyCount = entries
+      .where((e) => e.liquorName == null || e.liquorName!.trim().isEmpty)
+      .length;
+  if (emptyCount == 0) return const [];
+  return ['AI가 술 이름을 찾지 못한 항목이 $emptyCount개 있습니다'];
 }

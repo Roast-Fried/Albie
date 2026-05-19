@@ -1,8 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 import '../domain/entities/drink_log.dart';
+import '../domain/entities/liquor_master.dart';
 import '../integrations/parser/parse_result.dart';
+import 'achievements_viewmodel.dart';
 import 'log_list_viewmodel.dart';
+import 'stats_viewmodel.dart';
+
+/// 검토 화면 Entry 카드에서 매칭된 liquorMaster 표시용.
+final entryDraftMasterProvider = FutureProvider.family<LiquorMaster?, int>((
+  ref,
+  masterId,
+) async {
+  return ref.watch(liquorMasterRepoProvider).getById(masterId);
+});
 
 // --- ViewModel ---
 
@@ -19,7 +30,10 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
 
   void addEntry() {
     state = state.copyWith(
-      entries: [...state.entries, DraftEntry(liquorNameRaw: '')],
+      entries: [
+        ...state.entries,
+        DraftEntry(liquorNameRaw: '', quantityUnit: state.defaultQuantityUnit),
+      ],
     );
   }
 
@@ -61,6 +75,7 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
   DrinkLog toSaveable() {
     return DrinkLog(
       rawInputText: state.rawInputText,
+      rawImagePath: state.rawImagePath,
       parseSource: state.source,
       place: state.place,
       overallMemo: state.overallMemo,
@@ -68,17 +83,19 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
       userConfirmedAt: DateTime.now(),
       entries: state.entries
           .where((e) => e.liquorNameRaw.isNotEmpty)
-          .map((e) => DrinkEntry(
-                id: e.id,
-                liquorMasterId: e.liquorMasterId,
-                liquorNameRaw: e.liquorNameRaw,
-                liquorCategory: e.liquorCategory,
-                ageStatement: e.ageStatement,
-                quantityValue: e.quantityValue,
-                quantityUnit: e.quantityUnit,
-                isEstimated: e.isEstimated,
-                alcoholPercent: e.alcoholPercent,
-              ))
+          .map(
+            (e) => DrinkEntry(
+              id: e.id,
+              liquorMasterId: e.liquorMasterId,
+              liquorNameRaw: e.liquorNameRaw,
+              liquorCategory: e.liquorCategory,
+              ageStatement: e.ageStatement,
+              quantityValue: e.quantityValue,
+              quantityUnit: e.quantityUnit,
+              isEstimated: e.isEstimated,
+              alcoholPercent: e.alcoholPercent,
+            ),
+          )
           .toList(),
       foodItems: state.foodItems,
     );
@@ -103,6 +120,11 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
     ref.invalidate(recentLogsProvider);
     ref.invalidate(logCountProvider);
     ref.invalidate(logListProvider);
+    // 업적/통계는 로그 수/주류 다양성에 의존 — 저장 직후 invalidate 필요.
+    ref.invalidate(achievementsProvider);
+    ref.invalidate(statsProvider);
+    ref.invalidate(thisMonthLogCountProvider);
+    ref.invalidate(recentFrequentLiquorsProvider);
   }
 }
 
@@ -120,8 +142,10 @@ class DraftReviewState {
   final String? overallMemo;
   final DateTime drankAt;
   final String? rawInputText;
+  final String? rawImagePath;
   final int? parseJobId;
   final int? editingLogId; // null이면 신규, 값이면 수정 모드
+  final String defaultQuantityUnit;
 
   /// AI 네트워크 호출이 실제로 있었는데 로컬 파서로 fallback 된 경우 true.
   /// AI 비활성/키 없음/쿼터 초과는 false — 배너 미표시.
@@ -137,20 +161,22 @@ class DraftReviewState {
     this.overallMemo,
     required this.drankAt,
     this.rawInputText,
+    this.rawImagePath,
     this.parseJobId,
     this.editingLogId,
+    this.defaultQuantityUnit = 'glass',
     this.wasAiAttempted = false,
   });
 
   bool get isEditing => editingLogId != null;
 
   /// 배너 표시 조건: AI 실패 → 로컬 fallback 시에만.
-  bool get showAiFailBanner =>
-      wasAiAttempted && source == 'local_parser';
+  bool get showAiFailBanner => wasAiAttempted && source == 'local_parser';
 
   factory DraftReviewState.fromParseResult(
     ParseResult result, {
     String? rawInputText,
+    String? rawImagePath,
     int? parseJobId,
     bool wasAiAttempted = false,
   }) {
@@ -164,19 +190,29 @@ class DraftReviewState {
       overallMemo: result.overallMemo,
       drankAt: result.drankAt ?? DateTime.now(),
       rawInputText: rawInputText,
+      rawImagePath: rawImagePath,
       parseJobId: parseJobId,
       wasAiAttempted: wasAiAttempted,
     );
   }
 
   /// 직접 입력 모드 (빈 폼)
-  factory DraftReviewState.manual({String? rawInputText}) {
+  factory DraftReviewState.manual({
+    String? rawInputText,
+    String? rawImagePath,
+    String defaultQuantityUnit = 'glass',
+    DateTime? drankAt,
+  }) {
     return DraftReviewState(
       source: 'manual',
       confidence: 1.0,
-      entries: [DraftEntry(liquorNameRaw: '')],
-      drankAt: DateTime.now(),
+      entries: [
+        DraftEntry(liquorNameRaw: '', quantityUnit: defaultQuantityUnit),
+      ],
+      drankAt: drankAt ?? DateTime.now(),
       rawInputText: rawInputText,
+      rawImagePath: rawImagePath,
+      defaultQuantityUnit: defaultQuantityUnit,
     );
   }
 
@@ -200,8 +236,10 @@ class DraftReviewState {
           : overallMemo as String?,
       drankAt: drankAt ?? this.drankAt,
       rawInputText: rawInputText,
+      rawImagePath: rawImagePath,
       parseJobId: parseJobId,
       editingLogId: editingLogId,
+      defaultQuantityUnit: defaultQuantityUnit,
       wasAiAttempted: wasAiAttempted ?? this.wasAiAttempted,
     );
   }
@@ -210,5 +248,5 @@ class DraftReviewState {
 /// DraftReview용 provider — 화면 진입 시 override해서 사용
 final draftReviewProvider =
     StateNotifierProvider<DraftReviewViewModel, DraftReviewState>((ref) {
-  return DraftReviewViewModel(DraftReviewState.manual());
-});
+      return DraftReviewViewModel(DraftReviewState.manual());
+    });

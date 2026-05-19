@@ -7,10 +7,16 @@ import 'parse_result.dart';
 
 class LocalRuleParser {
   final LiquorMasterRepository _liquorRepo;
+  final String defaultQuantityUnit;
+  final bool sixHourCutoffEnabled;
   List<Map<String, dynamic>>? _foodDict;
   Map<String, dynamic>? _placeKeywords;
 
-  LocalRuleParser(this._liquorRepo);
+  LocalRuleParser(
+    this._liquorRepo, {
+    this.defaultQuantityUnit = 'glass',
+    this.sixHourCutoffEnabled = true,
+  });
 
   Future<ParseResult> parse(ParseInput input) async {
     await _ensureDictsLoaded();
@@ -23,8 +29,13 @@ class LocalRuleParser {
     final warnings = <String>[];
 
     // 1. 날짜 추출
-    final drankAt = parseRelativeDate(text, input.inputTime) ??
-        applySixHourCutoff(input.inputTime);
+    final drankAt =
+        parseRelativeDate(
+          text,
+          input.inputTime,
+          sixHourCutoffEnabled: sixHourCutoffEnabled,
+        ) ??
+        applySixHourCutoff(input.inputTime, enabled: sixHourCutoffEnabled);
 
     // 2. 장소 추출
     final place = _extractPlace(text);
@@ -44,12 +55,14 @@ class LocalRuleParser {
     // 아무것도 못 뽑았으면 기본 entry
     if (entries.isEmpty) {
       warnings.add('술 정보를 추출하지 못했습니다. 직접 입력해주세요.');
-      entries.add(DraftEntry(
-        liquorNameRaw: text,
-        liquorCategory: 'other',
-        isEstimated: true,
-        quantityUnit: 'unknown',
-      ));
+      entries.add(
+        DraftEntry(
+          liquorNameRaw: text,
+          liquorCategory: 'other',
+          isEstimated: true,
+          quantityUnit: 'unknown',
+        ),
+      );
     }
 
     final confidence = _calcConfidence(entries, place, foods, warnings);
@@ -67,7 +80,13 @@ class LocalRuleParser {
 
   // --- Segment splitting ---
 
+  // 다중 음주 분리용 술 카테고리 키워드
+  static const _drinkSplitKeywords = [
+    '소주', '맥주', '위스키', '와인', '하이볼', '막걸리', '사케', '칵테일', '소맥',
+  ];
+
   /// "글렌피딕 한 잔이랑 맥주 두 캔" → ["글렌피딕 한 잔", "맥주 두 캔"]
+  /// 접속사 없어도 카테고리 키워드 2회 + 수량 패턴 등장 시 분리
   List<String> _splitSegments(String text) {
     // 접속사/구분자로 분리
     final parts = text
@@ -78,13 +97,72 @@ class LocalRuleParser {
         .toList();
 
     if (parts.isEmpty) return [text];
-    return parts;
+
+    // 접속사 없는 다중 음주 분리: "소주 2병 맥주 3잔" 같은 경우
+    final result = <String>[];
+    for (final part in parts) {
+      result.addAll(_splitByDrinkKeyword(part));
+    }
+    return result;
+  }
+
+  /// 단일 세그먼트 안에 술 카테고리 키워드가 2회 이상 + 각 키워드 뒤에 수량 패턴이 있으면 분리.
+  /// "맥주집에서" 같은 false positive 방지:
+  ///   키워드 바로 뒤 문자가 한글이면 복합어로 간주해 분리 금지.
+  List<String> _splitByDrinkKeyword(String text) {
+    // 수량 패턴: 숫자+단위 또는 한글 수량어
+    final qtyPattern = RegExp(r'\d+\s*(잔|병|캔|샷|ml|미리|모금)|한\s*(잔|병|캔)|두\s*(잔|병|캔)|세\s*(잔|병|캔)');
+
+    // 각 카테고리 키워드의 위치 찾기
+    final hits = <({int start, int end, String kw})>[];
+    for (final kw in _drinkSplitKeywords) {
+      int searchFrom = 0;
+      while (searchFrom < text.length) {
+        final idx = text.indexOf(kw, searchFrom);
+        if (idx < 0) break;
+        final afterIdx = idx + kw.length;
+        // 키워드 뒤 문자가 한글이면 복합어 — 분리 금지
+        if (afterIdx < text.length) {
+          final nextChar = text[afterIdx];
+          final isKorean = RegExp(r'[가-힣]').hasMatch(nextChar);
+          if (isKorean) {
+            searchFrom = afterIdx;
+            continue;
+          }
+        }
+        hits.add((start: idx, end: afterIdx, kw: kw));
+        searchFrom = afterIdx;
+      }
+    }
+
+    // 위치 순 정렬
+    hits.sort((a, b) => a.start.compareTo(b.start));
+
+    // 2개 이상의 hit 가 있고 각각 뒤에 수량 패턴이 있는지 확인
+    if (hits.length < 2) return [text];
+
+    // 각 hit 에 수량 패턴이 근접(30자 이내)해 있는지 확인
+    final validHits = hits.where((h) {
+      final tail = text.substring(h.start, (h.start + 30).clamp(0, text.length));
+      return qtyPattern.hasMatch(tail);
+    }).toList();
+
+    if (validHits.length < 2) return [text];
+
+    // 첫 번째 hit 의 시작 위치에서 분리
+    // 두 번째 hit 의 시작 바로 앞에서 split
+    final splitAt = validHits[1].start;
+    final first = text.substring(0, splitAt).trim();
+    final rest = text.substring(splitAt).trim();
+    if (first.isEmpty || rest.isEmpty) return [text];
+
+    // 재귀적으로 rest 도 분리 시도
+    return [first, ..._splitByDrinkKeyword(rest)];
   }
 
   // --- Per-segment parsing ---
 
-  Future<DraftEntry?> _parseSegment(
-      String seg, List<String> warnings) async {
+  Future<DraftEntry?> _parseSegment(String seg, List<String> warnings) async {
     // 음식/장소/시간 전용 세그먼트면 skip
     if (_isNonDrinkSegment(seg)) return null;
 
@@ -110,7 +188,7 @@ class LocalRuleParser {
       liquorCategory: category,
       ageStatement: age,
       quantityValue: qty?.value ?? 1.0,
-      quantityUnit: qty?.unit ?? 'glass',
+      quantityUnit: qty?.unit ?? defaultQuantityUnit,
       isEstimated: qty == null,
       alcoholPercent: match?.defaultAbv,
     );
@@ -134,8 +212,7 @@ class LocalRuleParser {
 
   _Quantity? _extractQuantity(String text) {
     // 패턴 1: "2잔", "3캔", "1병", "0.5병"
-    final numUnit =
-        RegExp(r'(\d+(?:\.\d+)?)\s*(잔|샷|병|캔|모금|개|컵|파인트)');
+    final numUnit = RegExp(r'(\d+(?:\.\d+)?)\s*(잔|샷|병|캔|모금|개|컵|파인트)');
     final m1 = numUnit.firstMatch(text);
     if (m1 != null) {
       final val = double.tryParse(m1.group(1)!) ?? 1.0;
@@ -145,7 +222,8 @@ class LocalRuleParser {
 
     // 패턴 2: "두 잔", "한 병", "세 캔"
     final korUnit = RegExp(
-        r'(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|열한|열두|반)\s*(잔|샷|병|캔|모금|개|컵)');
+      r'(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|열한|열두|반)\s*(잔|샷|병|캔|모금|개|컵)',
+    );
     final m2 = korUnit.firstMatch(text);
     if (m2 != null) {
       final val = parseKoreanNumber(m2.group(1)!) ?? 1.0;
@@ -162,7 +240,7 @@ class LocalRuleParser {
     }
 
     // 패턴 4: "{숫자}ml"
-    final ml = RegExp(r'(\d+)\s*(ml|미리)');
+    final ml = RegExp(r'(\d+(?:\.\d+)?)\s*(ml|미리)');
     final m4 = ml.firstMatch(text);
     if (m4 != null) {
       return _Quantity(double.tryParse(m4.group(1)!) ?? 0, 'ml');
@@ -193,8 +271,7 @@ class LocalRuleParser {
       // age statement로 그럴듯한 범위: 3~50
       if (num >= 3 && num <= 50) {
         // 수량으로 이미 매칭된 숫자인지 확인
-        final qtyMatch =
-            RegExp(r'\d+\s*(잔|샷|병|캔|ml|미리|개)').firstMatch(text);
+        final qtyMatch = RegExp(r'\d+\s*(잔|샷|병|캔|ml|미리|개)').firstMatch(text);
         if (qtyMatch != null && qtyMatch.group(0)!.contains(m.group(0)!)) {
           continue;
         }
@@ -207,21 +284,19 @@ class LocalRuleParser {
 
   // --- Liquor matching ---
 
-  Future<_LiquorMatch?> _matchLiquor(
-      String seg, List<String> warnings) async {
+  Future<_LiquorMatch?> _matchLiquor(String seg, List<String> warnings) async {
     // 텍스트에서 숫자/단위/접속사 제거 → 술 이름 후보
     final cleaned = seg
         .replaceAll(
-            RegExp(
-                r'\d+(?:\.\d+)?\s*(잔|샷|병|캔|ml|미리|개|모금|컵|년산?)\s*'),
-            '')
+          RegExp(r'\d+(?:\.\d+)?\s*(잔|샷|병|캔|ml|미리|개|모금|컵|년산?)\s*'),
+          '',
+        )
         .replaceAll(
-            RegExp(
-                r'(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|반)\s*(잔|샷|병|캔|개|컵)\s*'),
-            '')
+          RegExp(r'(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|반)\s*(잔|샷|병|캔|개|컵)\s*'),
+          '',
+        )
         .replaceAll(RegExp(r'(마셨어|마심|마셨는데|마셨음|먹음|먹었어|마시고|더)'), '')
-        .replaceAll(
-            RegExp(r'(어제|오늘|그저께|지난주|나|에서|좀|조금|정도)'), '')
+        .replaceAll(RegExp(r'(어제|오늘|그저께|지난주|나|에서|좀|조금|정도)'), '')
         .trim();
 
     if (cleaned.isEmpty) return null;
@@ -305,14 +380,11 @@ class LocalRuleParser {
   /// 세그먼트에서 가장 그럴듯한 술 토큰 추출
   String _extractLiquorToken(String seg) {
     final cleaned = seg
+        .replaceAll(RegExp(r'\d+(?:\.\d+)?\s*(잔|샷|병|캔|ml|미리|개|모금|년산?)\s*'), '')
         .replaceAll(
-            RegExp(
-                r'\d+(?:\.\d+)?\s*(잔|샷|병|캔|ml|미리|개|모금|년산?)\s*'),
-            '')
-        .replaceAll(
-            RegExp(
-                r'(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|반)\s*(잔|샷|병|캔|개)\s*'),
-            '')
+          RegExp(r'(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|반)\s*(잔|샷|병|캔|개)\s*'),
+          '',
+        )
         .replaceAll(RegExp(r'(마셨어|마심|마셨는데|마셨음|먹음|먹었어|마시고|더)'), '')
         .replaceAll(RegExp(r'(어제|오늘|그저께|나|에서|좀|조금|정도)\s*'), '')
         .trim();
@@ -320,6 +392,11 @@ class LocalRuleParser {
   }
 
   // --- Food extraction ---
+
+  /// RegExp 메타문자 이스케이프 (Dart 는 RegExp.escape 미지원)
+  String _escapeRegExp(String s) {
+    return s.replaceAllMapped(RegExp(r'[\^$.|?*+()[\]{}]'), (m) => '\\${m.group(0)}');
+  }
 
   List<String> _extractFoods(String text) {
     if (_foodDict == null) return [];
@@ -330,7 +407,20 @@ class LocalRuleParser {
       final name = f['name'] as String;
       final aliases = (f['aliases'] as List).cast<String>();
       for (final alias in aliases) {
-        if (lower.contains(alias.toLowerCase())) {
+        final a = alias.toLowerCase();
+        // 단글자 alias: 한글/영문/숫자 경계 검사 (예: '회사' 안의 '회' 오탐 방지)
+        // 2글자 이상: contains 그대로 (치즈랑 같은 조사 붙은 경우도 매칭)
+        final bool matches;
+        if (a.length == 1) {
+          final escaped = _escapeRegExp(a);
+          // 앞뒤에 한글/영문/숫자가 없으면 매칭 (공백/구두점/문장 경계만 허용)
+          matches = RegExp(
+            '(?<![가-힣A-Za-z0-9])$escaped(?![가-힣A-Za-z0-9])',
+          ).hasMatch(lower);
+        } else {
+          matches = lower.contains(a);
+        }
+        if (matches) {
           if (!found.contains(name)) found.add(name);
           break;
         }
@@ -341,31 +431,27 @@ class LocalRuleParser {
 
   // --- Place extraction ---
 
+  // 술 카테고리 키워드 (장소 후보에서 제외)
+  static const _drinkCategoryKeywords = [
+    '소주', '맥주', '위스키', '와인', '하이볼', '막걸리', '사케', '칵테일', '소맥',
+  ];
+
   String? _extractPlace(String text) {
     if (_placeKeywords == null) return null;
 
-    // 패턴 1: "~에서"
-    final atPattern = RegExp(r'(\S+?)에서');
-    final m = atPattern.firstMatch(text);
-    if (m != null) {
-      final candidate = m.group(1)!;
-      // 술 이름이 아닌지 간단 체크
-      if (candidate.isNotEmpty) return candidate;
-    }
-
-    // 패턴 2: exact match
+    // 패턴 1: exact match (highest priority)
     final exact = (_placeKeywords!['exactMatch'] as List).cast<String>();
     for (final p in exact) {
       if (text.contains(p)) return p;
     }
 
-    // 패턴 3: 지역명
+    // 패턴 2: 지역명
     final areas = (_placeKeywords!['areas'] as List).cast<String>();
     for (final area in areas) {
       if (text.contains(area)) return area;
     }
 
-    // 패턴 4: 접미사 ("~바", "~펍")
+    // 패턴 3: 접미사 ("~바", "~펍")
     final suffixes = (_placeKeywords!['suffixes'] as List).cast<String>();
     for (final suf in suffixes) {
       final pattern = RegExp('(\\S+$suf)');
@@ -373,13 +459,29 @@ class LocalRuleParser {
       if (m != null) return m.group(1);
     }
 
+    // 패턴 4: '~에서' — fallback 최후순위.
+    // 후보 검증: 길이 >= 2 + 술 카테고리 키워드가 아닌 경우만 채택
+    final atPattern = RegExp(r'(\S+?)에서');
+    final m = atPattern.firstMatch(text);
+    if (m != null) {
+      final candidate = m.group(1)!;
+      if (candidate.length >= 2 &&
+          !_drinkCategoryKeywords.contains(candidate)) {
+        return candidate;
+      }
+    }
+
     return null;
   }
 
   // --- Confidence ---
 
-  double _calcConfidence(List<DraftEntry> entries, String? place,
-      List<String> foods, List<String> warnings) {
+  double _calcConfidence(
+    List<DraftEntry> entries,
+    String? place,
+    List<String> foods,
+    List<String> warnings,
+  ) {
     var score = 0.5;
     if (entries.isNotEmpty) score += 0.1;
     if (entries.any((e) => e.liquorMasterId != null)) score += 0.15;
@@ -395,8 +497,9 @@ class LocalRuleParser {
   Future<void> _ensureDictsLoaded() async {
     if (_foodDict == null) {
       try {
-        final str =
-            await rootBundle.loadString('assets/seed/food_dictionary.json');
+        final str = await rootBundle.loadString(
+          'assets/seed/food_dictionary.json',
+        );
         _foodDict = (jsonDecode(str) as List).cast<Map<String, dynamic>>();
       } on Exception catch (_) {
         _foodDict = [];
@@ -404,8 +507,9 @@ class LocalRuleParser {
     }
     if (_placeKeywords == null) {
       try {
-        final str =
-            await rootBundle.loadString('assets/seed/place_keywords.json');
+        final str = await rootBundle.loadString(
+          'assets/seed/place_keywords.json',
+        );
         _placeKeywords = jsonDecode(str) as Map<String, dynamic>;
       } on Exception catch (_) {
         _placeKeywords = {'suffixes': [], 'exactMatch': [], 'areas': []};

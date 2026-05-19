@@ -1,21 +1,30 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 
 class InputSectionWidget extends StatefulWidget {
   final List<String> placeholders;
   final String inputText;
+  final String? imagePath;
+  final String? imageName;
   final bool isLoading;
   final ValueChanged<String> onChanged;
+  final VoidCallback onPickImage;
+  final VoidCallback onRemoveImage;
   final VoidCallback onGenerateDraft;
+  final VoidCallback onCancelGenerate;
   final VoidCallback onManualInput;
 
   const InputSectionWidget({
     super.key,
     required this.placeholders,
     required this.inputText,
+    this.imagePath,
+    this.imageName,
     required this.isLoading,
     required this.onChanged,
+    required this.onPickImage,
+    required this.onRemoveImage,
     required this.onGenerateDraft,
+    required this.onCancelGenerate,
     required this.onManualInput,
   });
 
@@ -31,8 +40,7 @@ class _InputSectionWidgetState extends State<InputSectionWidget> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.inputText);
-    _placeholder = widget.placeholders[
-        Random().nextInt(widget.placeholders.length)];
+    _placeholder = widget.placeholders.first;
   }
 
   @override
@@ -52,6 +60,8 @@ class _InputSectionWidgetState extends State<InputSectionWidget> {
   @override
   Widget build(BuildContext context) {
     final hasInput = widget.inputText.trim().isNotEmpty;
+    final hasImage = widget.imagePath != null;
+    final canGenerate = hasInput || hasImage;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -81,6 +91,25 @@ class _InputSectionWidgetState extends State<InputSectionWidget> {
           ),
         ),
 
+        const SizedBox(height: 8),
+
+        if (hasImage)
+          InputChip(
+            avatar: const Icon(Icons.image_outlined, size: 18),
+            label: Text(widget.imageName ?? '첨부 이미지'),
+            onDeleted: widget.isLoading ? null : widget.onRemoveImage,
+            deleteIcon: const Icon(Icons.close, size: 18),
+          )
+        else
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: widget.isLoading ? null : widget.onPickImage,
+              icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+              label: const Text('사진 첨부'),
+            ),
+          ),
+
         const SizedBox(height: 12),
 
         // 액션 버튼
@@ -88,16 +117,15 @@ class _InputSectionWidgetState extends State<InputSectionWidget> {
           children: [
             Expanded(
               child: FilledButton.icon(
-                onPressed:
-                    hasInput && !widget.isLoading ? widget.onGenerateDraft : null,
+                onPressed: widget.isLoading
+                    ? widget.onCancelGenerate
+                    : canGenerate
+                    ? widget.onGenerateDraft
+                    : null,
                 icon: widget.isLoading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
+                    ? const Icon(Icons.close, size: 18)
                     : const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('AI로 생성'),
+                label: Text(widget.isLoading ? '취소' : 'AI로 생성'),
               ),
             ),
             const SizedBox(width: 8),
