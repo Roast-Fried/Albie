@@ -103,6 +103,118 @@ void main() {
     });
   });
 
+  group('DrinkLogRepository.delete — 개인정보 cleanup', () {
+    test('단일 기록 삭제 시 parseJob.rawRequest/rawResponse/errorMessage 가 NULL 로 정리된다',
+        () async {
+      // 2026-05-18 /goal CRITICAL 4 잔여: FK ON DELETE SET NULL 만으로는
+      // parseJob 행의 raw 컬럼이 영구 잔류 → DrinkLogRepository.delete 가 명시적
+      // cleanup 해야 함.
+      final db = await openDatabase(
+        inMemoryDatabasePath,
+        version: 1,
+        onConfigure: (db) async {
+          await db.execute('PRAGMA foreign_keys = ON');
+        },
+        onCreate: (db, _) async {
+          await db.execute('''
+            CREATE TABLE drinkLog (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              rawInputText TEXT,
+              rawImagePath TEXT,
+              parseSource TEXT NOT NULL DEFAULT 'manual',
+              place TEXT,
+              overallMemo TEXT,
+              drankAt TEXT NOT NULL,
+              userConfirmedAt TEXT,
+              createdAt TEXT NOT NULL,
+              updatedAt TEXT NOT NULL
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE drinkEntry (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              logId INTEGER NOT NULL REFERENCES drinkLog(id) ON DELETE CASCADE,
+              liquorMasterId INTEGER,
+              liquorNameRaw TEXT NOT NULL,
+              liquorCategory TEXT NOT NULL DEFAULT 'other',
+              ageStatement TEXT,
+              quantityValue REAL NOT NULL DEFAULT 1.0,
+              quantityUnit TEXT NOT NULL DEFAULT 'glass',
+              isEstimated INTEGER NOT NULL DEFAULT 1,
+              alcoholPercent REAL,
+              createdAt TEXT NOT NULL,
+              updatedAt TEXT NOT NULL
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE drinkLogFood (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              logId INTEGER NOT NULL REFERENCES drinkLog(id) ON DELETE CASCADE,
+              foodName TEXT NOT NULL
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE parseJob (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              logId INTEGER REFERENCES drinkLog(id) ON DELETE SET NULL,
+              sourceType TEXT NOT NULL,
+              parserUsed TEXT NOT NULL,
+              status TEXT NOT NULL DEFAULT 'success',
+              rawRequest TEXT,
+              rawResponse TEXT,
+              errorCode TEXT,
+              errorMessage TEXT,
+              durationMs INTEGER,
+              createdAt TEXT NOT NULL
+            )
+          ''');
+        },
+      );
+      try {
+        final now = DateTime.now().toIso8601String();
+        final logId = await db.insert('drinkLog', {
+          'rawInputText': '시크릿 입력',
+          'parseSource': 'ai_app_key',
+          'drankAt': now,
+          'createdAt': now,
+          'updatedAt': now,
+        });
+        // 같은 log 에 연결된 parseJob 두 행 — raw 컬럼 + 메타데이터 모두 채움
+        await db.insert('parseJob', {
+          'logId': logId,
+          'sourceType': 'text',
+          'parserUsed': 'ai_app_key',
+          'status': 'success',
+          'rawRequest': '소주 한 잔', // 개인정보
+          'rawResponse': '{...}',
+          'errorMessage': '개인 식별 가능 텍스트',
+          'durationMs': 1234,
+          'createdAt': now,
+        });
+
+        final repo = DrinkLogRepository(db);
+        await repo.delete(logId);
+
+        // drinkLog 삭제 확인
+        final logRows = await db.query('drinkLog', where: 'id = ?', whereArgs: [logId]);
+        expect(logRows, isEmpty);
+
+        // parseJob 행은 (logId 가 NULL 되어) 유지되지만 raw 컬럼은 모두 NULL
+        final jobRows = await db.query('parseJob');
+        expect(jobRows.length, 1, reason: 'parseJob 행은 메타데이터 보존');
+        expect(jobRows.first['rawRequest'], isNull);
+        expect(jobRows.first['rawResponse'], isNull);
+        expect(jobRows.first['errorMessage'], isNull);
+        // 통계 메타데이터는 보존
+        expect(jobRows.first['parserUsed'], 'ai_app_key');
+        expect(jobRows.first['status'], 'success');
+        expect(jobRows.first['durationMs'], 1234);
+      } finally {
+        await db.close();
+      }
+    });
+  });
+
   group('DrinkEntry serialization', () {
     test('toMap/fromMap roundtrip', () {
       final entry = DrinkEntry(

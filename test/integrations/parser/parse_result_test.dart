@@ -31,6 +31,29 @@ void main() {
       expect(entry.quantityUnit, 'glass');
       expect(entry.isEstimated, true);
     });
+
+    test('fromJson 빈 문자열 liquorName 은 null 로 정규화된다', () {
+      // 2026-05-18 /goal: AI 가 liquorName 을 "" 로 반환해도 UI 가 placeholder
+      // 처리할 수 있도록 nullable 로 정규화. liquorNameRaw 도 null fallback.
+      final entry = DraftEntry.fromJson({
+        'liquorName': '',
+        'liquorCategory': 'beer',
+        'quantityValue': 1.0,
+        'quantityUnit': 'can',
+        'isEstimated': false,
+      });
+      expect(entry.liquorName, isNull);
+      expect(entry.liquorNameRaw, '');
+      expect(entry.liquorCategory, 'beer');
+    });
+
+    test('fromJson 공백만의 liquorName 도 null 로 정규화된다', () {
+      final entry = DraftEntry.fromJson({
+        'liquorName': '   ',
+        'liquorCategory': 'other',
+      });
+      expect(entry.liquorName, isNull);
+    });
   });
 
   group('ParseResult', () {

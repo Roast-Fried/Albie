@@ -39,8 +39,9 @@ void main() {
         goldenWrapper(
           const DraftReviewScreen(),
           overrides: [
-            draftReviewProvider
-                .overrideWith((_) => DraftReviewViewModel(state)),
+            draftReviewProvider.overrideWith(
+              (_) => DraftReviewViewModel(state),
+            ),
           ],
         ),
       );
@@ -75,8 +76,9 @@ void main() {
         goldenWrapper(
           const DraftReviewScreen(),
           overrides: [
-            draftReviewProvider
-                .overrideWith((_) => DraftReviewViewModel(state)),
+            draftReviewProvider.overrideWith(
+              (_) => DraftReviewViewModel(state),
+            ),
           ],
         ),
       );
@@ -93,8 +95,11 @@ void main() {
         goldenWrapper(
           const DraftReviewScreen(),
           overrides: [
-            draftReviewProvider
-                .overrideWith((_) => DraftReviewViewModel(DraftReviewState.manual())),
+            draftReviewProvider.overrideWith(
+              (_) => DraftReviewViewModel(
+                DraftReviewState.manual(drankAt: DateTime(2026, 3, 30, 22, 0)),
+              ),
+            ),
           ],
         ),
       );
