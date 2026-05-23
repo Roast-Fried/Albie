@@ -1,5 +1,9 @@
 name: CI
 
+# Artifact upload 제거 — GitHub Actions free tier storage (500 MB) 회피.
+# 빌드 자체는 검증 (빌드 깨짐 감지). release 배포는 로컬 빌드 → GitHub Release
+# 수동 업로드로 전환.
+
 on:
   push:
     branches: [main]
@@ -7,26 +11,6 @@ on:
     branches: [main]
 
 jobs:
-  # GitHub Actions free tier 의 artifact storage (500 MB) 초과 방지.
-  # main push 시 본 repo 의 최신 2 개 artifact 만 유지하고 나머지 삭제.
-  # (storage 재계산이 6-12h 라 즉시 효과는 없으나 누적 방지 효과.)
-  cleanup-old-artifacts:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      actions: write
-    steps:
-      - name: Delete old artifacts (keep latest 2)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api repos/${{ github.repository }}/actions/artifacts --paginate \
-            --jq '.artifacts | sort_by(.created_at) | reverse | .[2:] | .[].id' \
-            | while read id; do
-              echo "Deleting artifact $id"
-              gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$id || true
-            done
-
   analyze-and-test:
     runs-on: ubuntu-latest
     steps:
@@ -74,15 +58,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK (debug)
+      - name: Build APK (debug) — 검증만, artifact 업로드 안 함
         run: flutter build apk --debug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: albi-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 3
 
   build-ios:
     runs-on: macos-latest
@@ -100,12 +77,5 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build iOS (no codesign)
+      - name: Build iOS (no codesign) — 검증만, artifact 업로드 안 함
         run: flutter build ios --no-codesign --debug
-
-      - name: Upload iOS build
-        uses: actions/upload-artifact@v4
-        with:
-          name: albi-ios-build
-          path: build/ios/iphoneos/Runner.app
-          retention-days: 3
