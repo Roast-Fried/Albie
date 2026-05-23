@@ -7,6 +7,26 @@ on:
     branches: [main]
 
 jobs:
+  # GitHub Actions free tier 의 artifact storage (500 MB) 초과 방지.
+  # main push 시 본 repo 의 최신 2 개 artifact 만 유지하고 나머지 삭제.
+  # (storage 재계산이 6-12h 라 즉시 효과는 없으나 누적 방지 효과.)
+  cleanup-old-artifacts:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      actions: write
+    steps:
+      - name: Delete old artifacts (keep latest 2)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/actions/artifacts --paginate \
+            --jq '.artifacts | sort_by(.created_at) | reverse | .[2:] | .[].id' \
+            | while read id; do
+              echo "Deleting artifact $id"
+              gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$id || true
+            done
+
   analyze-and-test:
     runs-on: ubuntu-latest
     steps:
@@ -62,7 +82,7 @@ jobs:
         with:
           name: albi-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 14
+          retention-days: 3
 
   build-ios:
     runs-on: macos-latest
@@ -88,4 +108,4 @@ jobs:
         with:
           name: albi-ios-build
           path: build/ios/iphoneos/Runner.app
-          retention-days: 14
+          retention-days: 3
