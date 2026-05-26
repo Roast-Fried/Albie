@@ -14,8 +14,14 @@ extension StatsPeriodLabel on StatsPeriod {
 }
 
 /// 현재 선택된 기간 필터.
+///
+/// `autoDispose` — 통계 화면 이탈 시 `thisMonth` 로 reset.
+/// 이유: 전역 `StateProvider` 로 두면 다음 진입 시 stale 한 직전 선택이 유지되어
+/// 사용자가 "왜 기본값이 thisMonth 가 아니지?" 라고 혼란.
+/// Albi 의 IndexedStack 정책상 autoDispose 는 default 금지지만,
+/// statsPeriod 는 단순 UI 필터라 화면 이탈 후 reset 이 자연스러움.
 final statsPeriodProvider =
-    StateProvider<StatsPeriod>((ref) => StatsPeriod.thisMonth);
+    StateProvider.autoDispose<StatsPeriod>((ref) => StatsPeriod.thisMonth);
 
 class StatsData {
   final int totalCount;
@@ -89,7 +95,9 @@ double _entryVolumeMl(DrinkEntry e) {
 /// `categoryDistribution` / `topLiquors` 는 선택 기간 기준,
 /// `monthlyTrend` 는 최근 6개월 고정 (라인차트 전용).
 /// `totalCount`, `last7DaysCount`, `thisMonthCount` 는 참조용 전체 지표.
-final statsProvider = FutureProvider<StatsData>((ref) async {
+// statsPeriodProvider 가 autoDispose 라 statsProvider 도 cascading autoDispose 필요
+// (non-autoDispose 가 autoDispose 를 watch 하면 Riverpod 컴파일 에러).
+final statsProvider = FutureProvider.autoDispose<StatsData>((ref) async {
   final repo = ref.watch(drinkLogRepoProvider);
   final period = ref.watch(statsPeriodProvider);
   final logs = await repo.getAll();

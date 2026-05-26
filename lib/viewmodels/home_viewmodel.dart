@@ -97,9 +97,12 @@ class HomeViewModel extends StateNotifier<HomeState> {
         ParseInput(text: state.inputText.trim(), imagePath: imagePath),
         cancelToken: cancelToken,
       );
+      // dispose 후 resume 가능성 가드 (Codex audit, 2026-05-26)
+      if (!mounted) return null;
       state = state.copyWith(isLoading: false);
       return result;
     } catch (e) {
+      if (!mounted) return null;
       if (e is DioException && e.type == DioExceptionType.cancel) {
         state = state.copyWith(isLoading: false, error: null);
         return null;
@@ -124,6 +127,16 @@ class HomeViewModel extends StateNotifier<HomeState> {
     _activeCancelToken?.cancel('입력 초기화');
     _activeCancelToken = null;
     state = const HomeState();
+  }
+
+  /// ProviderScope dispose 시 in-flight AI 호출 cleanup.
+  /// Albi 는 autoDispose 미사용 (IndexedStack 정책) 이라 실질 호출 빈도 낮지만,
+  /// 명시적 token cancel 로 cleanup 의도를 코드로 보장.
+  @override
+  void dispose() {
+    _activeCancelToken?.cancel('HomeViewModel dispose');
+    _activeCancelToken = null;
+    super.dispose();
   }
 }
 

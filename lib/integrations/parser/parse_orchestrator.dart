@@ -77,12 +77,14 @@ class ParseOrchestrator {
 
     stopwatch.stop();
 
+    // 개인정보 보호 (Codex C6 fix, 2026-05-26):
+    // rawRequest 는 즉시 저장하지 않고 DrinkLog 저장 성공 시점에 linkToLog 에서 update.
+    // 사용자가 DraftReview 에서 이탈하면 orphan parseJob 의 rawRequest 는 영구 NULL.
     final jobId = await _parseJobRepo.insert(
       ParseJob(
         sourceType: _sourceType(input),
         parserUsed: parserUsed,
         status: result.entries.isEmpty ? 'failed' : 'success',
-        rawRequest: input.text,
         durationMs: stopwatch.elapsedMilliseconds,
       ),
     );
@@ -113,17 +115,17 @@ class ParseOrchestrator {
       apiKey = await _secureStorage.read(key: 'gemini_api_key');
       source = 'ai_user_key';
     } else if (config.keyMode == 'app_default') {
-      // 기본 키: quota 체크
-      final quota = await _aiConfigRepo.getQuotaToday();
-      if (input.hasImage && !quota.canUseAppImage) {
-        return (result: null, wasAttempted: false);
-      }
-      if (!input.hasImage && !quota.canUseAppText) {
-        return (result: null, wasAttempted: false);
-      }
-
       apiKey = const String.fromEnvironment('GEMINI_API_KEY');
       if (apiKey.isEmpty) return (result: null, wasAttempted: false);
+
+      // Codex C4 fix: atomic reserve (check + increment 단일 UPDATE) 로 race 방지.
+      // reserve 성공 시 +1 됨 → API 실패해도 quota 차감 (AI 호출 비용은 already incurred).
+      final reserved = input.hasImage
+          ? await _aiConfigRepo.reserveAppImage()
+          : await _aiConfigRepo.reserveAppText();
+      if (!reserved) {
+        return (result: null, wasAttempted: false);
+      }
       source = 'ai_app_key';
     } else {
       return (result: null, wasAttempted: false);
@@ -148,15 +150,13 @@ class ParseOrchestrator {
         cancelToken: cancelToken,
       );
 
-      // 사용량 증가
-      if (input.hasImage) {
-        await _aiConfigRepo.incrementImageCount(
-          isUserKey: config.keyMode == 'user_provided',
-        );
-      } else {
-        await _aiConfigRepo.incrementTextCount(
-          isUserKey: config.keyMode == 'user_provided',
-        );
+      // 사용량 증가 (user 키만 — app 키는 reserveApp* 에서 이미 +1)
+      if (config.keyMode == 'user_provided') {
+        if (input.hasImage) {
+          await _aiConfigRepo.incrementImageCount(isUserKey: true);
+        } else {
+          await _aiConfigRepo.incrementTextCount(isUserKey: true);
+        }
       }
 
       return (

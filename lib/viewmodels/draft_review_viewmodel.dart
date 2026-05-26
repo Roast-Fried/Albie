@@ -113,7 +113,12 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
       final logId = await repo.save(log);
       if (state.parseJobId != null) {
         final jobRepo = ref.read(parseJobRepoProvider);
-        await jobRepo.linkToLog(state.parseJobId!, logId);
+        // Codex C6 fix: rawRequest 는 본 시점에서 처음 저장 (orphan 잔존 방지).
+        await jobRepo.linkToLog(
+          state.parseJobId!,
+          logId,
+          rawRequest: state.rawInputText,
+        );
       }
     }
 

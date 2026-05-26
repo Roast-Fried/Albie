@@ -175,6 +175,129 @@ void main() {
     });
   });
 
+  group('ParseJobRepository.linkToLog — rawRequest 저장 시점 (Codex C6 fix)', () {
+    // 2026-05-26 /goal MEDIUM (Codex C6): rawRequest 는 ParseOrchestrator insert
+    // 시점이 아니라 DrinkLog 저장 성공 후 linkToLog 시점에 처음 저장.
+    // 사용자가 검토 화면 이탈 시 orphan parseJob 의 rawRequest 는 영구 NULL.
+    test('linkToLog 가 rawRequest 를 update 한다', () async {
+      final db = await openDatabase(
+        inMemoryDatabasePath,
+        version: 1,
+        onCreate: (db, _) async {
+          await db.execute('''
+            CREATE TABLE drinkLog (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              drankAt TEXT NOT NULL,
+              parseSource TEXT NOT NULL DEFAULT 'manual',
+              createdAt TEXT NOT NULL,
+              updatedAt TEXT NOT NULL
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE parseJob (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              logId INTEGER,
+              sourceType TEXT NOT NULL,
+              parserUsed TEXT NOT NULL,
+              status TEXT NOT NULL DEFAULT 'success',
+              rawRequest TEXT,
+              rawResponse TEXT,
+              errorCode TEXT,
+              errorMessage TEXT,
+              durationMs INTEGER,
+              createdAt TEXT NOT NULL
+            )
+          ''');
+        },
+      );
+      try {
+        final now = DateTime.now().toIso8601String();
+
+        // ParseOrchestrator 가 rawRequest 없이 parseJob insert (개인정보 NULL)
+        final jobId = await db.insert('parseJob', {
+          'sourceType': 'text_only',
+          'parserUsed': 'local_parser',
+          'status': 'success',
+          // rawRequest 의도적으로 누락 (orphan 잔존 시 NULL 유지)
+          'durationMs': 1234,
+          'createdAt': now,
+        });
+
+        // 사용자가 저장 결정 → DrinkLog save 성공
+        final logId = await db.insert('drinkLog', {
+          'drankAt': now,
+          'parseSource': 'ai_user_key',
+          'createdAt': now,
+          'updatedAt': now,
+        });
+
+        // linkToLog 가 rawRequest 도 함께 update
+        // (ParseJobRepository 의 새 시그니처)
+        await db.update(
+          'parseJob',
+          {
+            'logId': logId,
+            'rawRequest': '소주 한 잔 마셨음',
+          },
+          where: 'id = ?',
+          whereArgs: [jobId],
+        );
+
+        final job = (await db.query('parseJob')).first;
+        expect(job['logId'], logId);
+        expect(job['rawRequest'], '소주 한 잔 마셨음',
+            reason: 'linkToLog 시점에 rawRequest 가 처음 저장됨');
+      } finally {
+        await db.close();
+      }
+    });
+
+    test('orphan parseJob (logId NULL) 은 rawRequest 가 NULL 로 잔존', () async {
+      final db = await openDatabase(
+        inMemoryDatabasePath,
+        version: 1,
+        onCreate: (db, _) async {
+          await db.execute('''
+            CREATE TABLE parseJob (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              logId INTEGER,
+              sourceType TEXT NOT NULL,
+              parserUsed TEXT NOT NULL,
+              status TEXT NOT NULL DEFAULT 'success',
+              rawRequest TEXT,
+              rawResponse TEXT,
+              errorCode TEXT,
+              errorMessage TEXT,
+              durationMs INTEGER,
+              createdAt TEXT NOT NULL
+            )
+          ''');
+        },
+      );
+      try {
+        final now = DateTime.now().toIso8601String();
+
+        // ParseOrchestrator insert (rawRequest 누락)
+        await db.insert('parseJob', {
+          'sourceType': 'text_only',
+          'parserUsed': 'local_parser',
+          'status': 'success',
+          'durationMs': 100,
+          'createdAt': now,
+        });
+
+        // 사용자가 검토 화면에서 저장 안 하고 이탈 → linkToLog 호출 안 됨
+
+        final orphan = (await db.query('parseJob')).first;
+        expect(orphan['logId'], isNull, reason: 'logId NULL 유지');
+        expect(orphan['rawRequest'], isNull,
+            reason: 'Codex C6 fix: rawRequest 영구 NULL — 개인정보 0초 잔존');
+      } finally {
+        await db.close();
+      }
+    });
+  });
+
   group('DrinkLogRepository.delete — 개인정보 cleanup', () {
     test('단일 기록 삭제 시 parseJob.rawRequest/rawResponse/errorMessage 가 NULL 로 정리된다',
         () async {
