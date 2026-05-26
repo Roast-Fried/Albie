@@ -276,6 +276,23 @@ void main() {
       expect(result.entries.first.alcoholPercent, 43.0);
     });
 
+    // Codex F3 (2026-05-26 MEDIUM): 복수 ABV 패턴 세그먼트도 정확 처리
+    test('"위스키 13도 보드카 40% 각 한 잔" 복수 ABV 패턴 모두 age 오인 안 됨',
+        () async {
+      final result = await parser.parse(
+        ParseInput(
+            text: '위스키 13도 보드카 40% 각 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      // 두 entry 모두 age 가 abv 숫자로 오추출되면 안 됨
+      for (final entry in result.entries) {
+        expect(entry.ageStatement, isNot('40년'),
+            reason: 'F3 fix: 40% 의 40 은 두 번째 abv span — age 제외');
+        expect(entry.ageStatement, isNot('13년'),
+            reason: 'F3 fix: 13도 의 13 은 첫 abv span — age 제외');
+      }
+    });
+
     test('"벤로막 15년 한 잔" 의 15년 은 정상 age 추출 (regression guard)',
         () async {
       final result = await parser.parse(

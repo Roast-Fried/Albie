@@ -310,26 +310,31 @@ class LocalRuleParser {
     // 이건 liquor 매칭 후 남은 숫자로 판단
     final standalone = RegExp(r'\b(\d{1,3})\b');
     final matches = standalone.allMatches(text).toList();
+
+    // 수량 패턴 span 사전 계산 — text 내 모든 quantity match.
+    final qtySpans = RegExp(r'\d+\s*(잔|샷|병|캔|ml|미리|개)').allMatches(text).toList();
+
+    // Codex F3 fix (2026-05-26): 복수 ABV 패턴 세그먼트도 cover.
+    // firstMatch + contains 대신 allMatches 의 span overlap check.
+    // 예: "위스키 13도 보드카 40%" 의 40 도 abv span 안이므로 age 제외.
+    final abvSpans = RegExp(
+      r'\d+(?:\.\d+)?\s*(?:%|도(?![수가년]))'
+      r'|도수\s*[:=]?\s*\d+(?:\.\d+)?'
+      r'|\babv\s*[:=]?\s*\d+(?:\.\d+)?',
+      caseSensitive: false,
+    ).allMatches(text).toList();
+
     for (final m in matches) {
       final num = int.tryParse(m.group(1)!) ?? 0;
       // age statement로 그럴듯한 범위: 3~50
       if (num >= 3 && num <= 50) {
-        // 수량으로 이미 매칭된 숫자인지 확인
-        final qtyMatch = RegExp(r'\d+\s*(잔|샷|병|캔|ml|미리|개)').firstMatch(text);
-        if (qtyMatch != null && qtyMatch.group(0)!.contains(m.group(0)!)) {
-          continue;
-        }
-        // Codex F1 fix (2026-05-26): 명시 도수 숫자 ("40%", "17도", "도수 43",
-        // "abv 5.5") 는 age 가 아님 — abv 패턴에 속한 숫자면 skip.
-        final abvMatch = RegExp(
-          r'\d+(?:\.\d+)?\s*(?:%|도(?![수가년]))'
-          r'|도수\s*[:=]?\s*\d+(?:\.\d+)?'
-          r'|\babv\s*[:=]?\s*\d+(?:\.\d+)?',
-          caseSensitive: false,
-        ).firstMatch(text);
-        if (abvMatch != null && abvMatch.group(0)!.contains(m.group(0)!)) {
-          continue;
-        }
+        // 수량 매칭된 숫자인지 — 모든 qty span 과 position overlap 확인
+        final inQty = qtySpans.any((s) => m.start >= s.start && m.end <= s.end);
+        if (inQty) continue;
+        // 명시 도수 숫자 ("40%", "17도", "도수 43", "abv 5.5") 인지 — 모든
+        // abv span 과 overlap 확인. 복수 ABV 패턴 세그먼트 대응.
+        final inAbv = abvSpans.any((s) => m.start >= s.start && m.end <= s.end);
+        if (inAbv) continue;
         return '$num년';
       }
     }
