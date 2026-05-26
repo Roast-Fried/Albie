@@ -319,6 +319,17 @@ class LocalRuleParser {
         if (qtyMatch != null && qtyMatch.group(0)!.contains(m.group(0)!)) {
           continue;
         }
+        // Codex F1 fix (2026-05-26): 명시 도수 숫자 ("40%", "17도", "도수 43",
+        // "abv 5.5") 는 age 가 아님 — abv 패턴에 속한 숫자면 skip.
+        final abvMatch = RegExp(
+          r'\d+(?:\.\d+)?\s*(?:%|도(?![수가년]))'
+          r'|도수\s*[:=]?\s*\d+(?:\.\d+)?'
+          r'|\babv\s*[:=]?\s*\d+(?:\.\d+)?',
+          caseSensitive: false,
+        ).firstMatch(text);
+        if (abvMatch != null && abvMatch.group(0)!.contains(m.group(0)!)) {
+          continue;
+        }
         return '$num년';
       }
     }

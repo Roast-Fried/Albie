@@ -246,6 +246,47 @@ void main() {
           reason: 'abv 96 초과 시 명시 값 거부 + master 매칭 없으면 null');
     });
 
+    // Codex final sanity F1 (2026-05-26 MEDIUM BUG): 명시 도수 숫자는 age 가 아님
+    test('"위스키 40%" 입력 시 ageStatement 는 null (40 은 abv 이지 age 아님)', () async {
+      final result = await parser.parse(
+        ParseInput(text: '위스키 40% 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.first.ageStatement, isNull,
+          reason: 'F1 fix: 40% 의 40 은 abv 패턴 — age 추출 skip');
+      expect(result.entries.first.alcoholPercent, 40.0);
+    });
+
+    test('"소주 17도" 입력 시 ageStatement 는 null', () async {
+      final result = await parser.parse(
+        ParseInput(text: '소주 17도 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.first.ageStatement, isNull,
+          reason: 'F1 fix: 17도 의 17 은 abv suffix — age 추출 skip');
+      expect(result.entries.first.alcoholPercent, 17.0);
+    });
+
+    test('"도수 43 위스키" prefix 도 age 로 오인되지 않음', () async {
+      final result = await parser.parse(
+        ParseInput(text: '도수 43 위스키 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.first.ageStatement, isNull);
+      expect(result.entries.first.alcoholPercent, 43.0);
+    });
+
+    test('"벤로막 15년 한 잔" 의 15년 은 정상 age 추출 (regression guard)',
+        () async {
+      final result = await parser.parse(
+        ParseInput(text: '벤로막 15년 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      // F1 fix 후에도 명시 "15년" age 는 그대로 추출되어야 함
+      expect(result.entries.first.ageStatement, '15년',
+          reason: 'F1 fix 가 정상 age 추출을 망가뜨리면 안 됨');
+    });
+
     test('"15년" age statement 는 alcoholPercent 로 오인되지 않음', () async {
       final result = await parser.parse(
         ParseInput(text: '벤로막 15년 한 잔', inputTime: DateTime(2026, 5, 18)),
