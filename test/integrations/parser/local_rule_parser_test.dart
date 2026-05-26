@@ -218,6 +218,24 @@ void main() {
       expect(result.entries.first.alcoholPercent, 5.5);
     });
 
+    // Codex code-review Iteration 2 LOW: 0% / 0도 (무알콜) 인정
+    test('"0%" 무알콜 명시 시 alcoholPercent == 0.0 (silent drop 금지)', () async {
+      final result = await parser.parse(
+        ParseInput(text: '논알콜 맥주 0% 한 캔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.first.alcoholPercent, 0.0,
+          reason: 'Codex LOW fix: 명시 0% 는 무알콜 표기로 인정 (v >= 0)');
+    });
+
+    test('"0도" 무알콜 명시 시 alcoholPercent == 0.0', () async {
+      final result = await parser.parse(
+        ParseInput(text: '맥주 0도 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.first.alcoholPercent, 0.0);
+    });
+
     test('명시 도수가 범위 밖(>96)이면 무시되고 fallback', () async {
       final result = await parser.parse(
         ParseInput(text: '맥주 200% 한 잔', inputTime: DateTime(2026, 5, 18)),

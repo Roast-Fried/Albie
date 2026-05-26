@@ -202,15 +202,15 @@ class LocalRuleParser {
   }
 
   /// 입력 텍스트에서 명시 도수를 추출한다.
-  /// 매칭 예: "40%", "40 %", "17도", "도수 43", "abv 5.5"
-  /// 범위: 0 < abv <= 96 (96 = 95% 이상의 spirits 상한, 100 은 비현실)
+  /// 매칭 예: "40%", "40 %", "17도", "도수 43", "abv 5.5", "0%" (무알콜 맥주)
+  /// 범위: 0 <= abv <= 96 (96 = 95% 이상의 spirits 상한, 0 = 무알콜 명시 인정)
   /// 매칭 실패 또는 범위 밖이면 null → 호출자가 master defaultAbv 로 fallback.
   double? _extractAbv(String text) {
-    // 패턴 A: "40%", "5.5 %"
+    // 패턴 A: "40%", "5.5 %", "0%"
     final percent = RegExp(r'(\d+(?:\.\d+)?)\s*%').firstMatch(text);
     if (percent != null) {
       final v = double.tryParse(percent.group(1)!);
-      if (v != null && v > 0 && v <= 96) return v;
+      if (v != null && v >= 0 && v <= 96) return v;
     }
 
     // 패턴 B: "17도", "도수 43", "도수: 43", "abv 5.5"
@@ -218,13 +218,13 @@ class LocalRuleParser {
     final doSuffix = RegExp(r'(\d+(?:\.\d+)?)\s*도(?![수가년])').firstMatch(text);
     if (doSuffix != null) {
       final v = double.tryParse(doSuffix.group(1)!);
-      if (v != null && v > 0 && v <= 96) return v;
+      if (v != null && v >= 0 && v <= 96) return v;
     }
 
     final doPrefix = RegExp(r'도수\s*[:=]?\s*(\d+(?:\.\d+)?)').firstMatch(text);
     if (doPrefix != null) {
       final v = double.tryParse(doPrefix.group(1)!);
-      if (v != null && v > 0 && v <= 96) return v;
+      if (v != null && v >= 0 && v <= 96) return v;
     }
 
     final abvPrefix =
@@ -232,7 +232,7 @@ class LocalRuleParser {
             .firstMatch(text);
     if (abvPrefix != null) {
       final v = double.tryParse(abvPrefix.group(1)!);
-      if (v != null && v > 0 && v <= 96) return v;
+      if (v != null && v >= 0 && v <= 96) return v;
     }
 
     return null;
