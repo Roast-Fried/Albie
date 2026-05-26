@@ -81,8 +81,11 @@ class LocalRuleParser {
   // --- Segment splitting ---
 
   // 다중 음주 분리용 술 카테고리 키워드
+  // 분리 trigger 카테고리 키워드 — liquorMaster seed 의 주요 한국 시장 카테고리.
+  // 신규 카테고리 추가 시 _drinkCategoryKeywords (장소 분리용) 와 함께 갱신.
   static const _drinkSplitKeywords = [
     '소주', '맥주', '위스키', '와인', '하이볼', '막걸리', '사케', '칵테일', '소맥',
+    '보드카', '럼', '진', '데킬라', '브랜디', '코냑', '리큐어', '샴페인', '스파클링',
   ];
 
   /// "글렌피딕 한 잔이랑 맥주 두 캔" → ["글렌피딕 한 잔", "맥주 두 캔"]
@@ -492,8 +495,10 @@ class LocalRuleParser {
   // --- Place extraction ---
 
   // 술 카테고리 키워드 (장소 후보에서 제외)
+  // 장소 분리 시 술 카테고리 후보 제외용 — _drinkSplitKeywords 와 동기화 유지.
   static const _drinkCategoryKeywords = [
     '소주', '맥주', '위스키', '와인', '하이볼', '막걸리', '사케', '칵테일', '소맥',
+    '보드카', '럼', '진', '데킬라', '브랜디', '코냑', '리큐어', '샴페인', '스파클링',
   ];
 
   String? _extractPlace(String text) {

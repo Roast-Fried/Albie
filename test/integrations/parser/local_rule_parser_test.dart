@@ -284,13 +284,19 @@ void main() {
             text: '위스키 13도 보드카 40% 각 한 잔', inputTime: DateTime(2026, 5, 18)),
       );
 
+      // _drinkSplitKeywords 에 보드카 추가 → 2 entry 로 분리되어야 함
+      expect(result.entries.length, 2,
+          reason: 'Iter 7: 위스키/보드카 split keyword 추가로 2 entry 분리');
       // 두 entry 모두 age 가 abv 숫자로 오추출되면 안 됨
       for (final entry in result.entries) {
         expect(entry.ageStatement, isNot('40년'),
-            reason: 'F3 fix: 40% 의 40 은 두 번째 abv span — age 제외');
+            reason: 'F3 fix: 40% 의 40 은 abv span — age 제외');
         expect(entry.ageStatement, isNot('13년'),
-            reason: 'F3 fix: 13도 의 13 은 첫 abv span — age 제외');
+            reason: 'F3 fix: 13도 의 13 은 abv span — age 제외');
       }
+      // 도수 자체는 각 entry 에 정확히 반영
+      final abvs = result.entries.map((e) => e.alcoholPercent).toSet();
+      expect(abvs, containsAll([13.0, 40.0]));
     });
 
     test('"벤로막 15년 한 잔" 의 15년 은 정상 age 추출 (regression guard)',
