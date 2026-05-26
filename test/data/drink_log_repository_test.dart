@@ -101,6 +101,78 @@ void main() {
         await db.close();
       }
     });
+
+    // 2026-05-26 /goal HIGH 4 (Codex C5): 존재하지 않는 id 로 update 시
+    // txn.update 의 affected row 가 0 이면 ValidationError throw (silent no-op 금지).
+    test('존재하지 않는 id 로 update 호출 시 ValidationError 를 던진다', () async {
+      final db = await openDatabase(
+        inMemoryDatabasePath,
+        version: 1,
+        onCreate: (db, _) async {
+          await db.execute('''
+            CREATE TABLE drinkLog (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              rawInputText TEXT,
+              rawImagePath TEXT,
+              parseSource TEXT NOT NULL DEFAULT 'manual',
+              place TEXT,
+              overallMemo TEXT,
+              drankAt TEXT NOT NULL,
+              userConfirmedAt TEXT,
+              createdAt TEXT NOT NULL,
+              updatedAt TEXT NOT NULL
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE drinkEntry (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              logId INTEGER NOT NULL,
+              liquorMasterId INTEGER,
+              liquorNameRaw TEXT NOT NULL,
+              liquorCategory TEXT NOT NULL DEFAULT 'other',
+              ageStatement TEXT,
+              quantityValue REAL NOT NULL DEFAULT 1.0,
+              quantityUnit TEXT NOT NULL DEFAULT 'glass',
+              isEstimated INTEGER NOT NULL DEFAULT 1,
+              alcoholPercent REAL,
+              createdAt TEXT NOT NULL,
+              updatedAt TEXT NOT NULL
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE drinkLogFood (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              logId INTEGER NOT NULL,
+              foodName TEXT NOT NULL
+            )
+          ''');
+        },
+      );
+      try {
+        final repo = DrinkLogRepository(db);
+        final log = DrinkLog(
+          id: 99999,
+          rawInputText: 'phantom',
+          drankAt: DateTime(2026, 5, 18),
+        );
+
+        expect(
+          () => repo.update(log),
+          throwsA(isA<ValidationError>().having(
+            (e) => e.userMessage,
+            'userMessage',
+            contains('99999'),
+          )),
+          reason: 'Codex C5 fix: nonexistent id 는 silent no-op 대신 ValidationError',
+        );
+
+        // 실패 시에도 entry 가 부분 삽입되지 않았는지 확인 (트랜잭션 rollback)
+        final entries = await db.query('drinkEntry');
+        expect(entries, isEmpty, reason: '트랜잭션 rollback 으로 entry 부분 삽입 없음');
+      } finally {
+        await db.close();
+      }
+    });
   });
 
   group('DrinkLogRepository.delete — 개인정보 cleanup', () {

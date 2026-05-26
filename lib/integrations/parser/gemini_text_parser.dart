@@ -30,7 +30,7 @@ class GeminiTextParser {
     required String source, // ai_user_key | ai_app_key
     CancelToken? cancelToken,
   }) async {
-    final image = await _prepareImage(input.imagePath);
+    final image = await _prepareImage(input.imagePath, cancelToken: cancelToken);
     final response = await _client.generateContent(
       model: model,
       apiKey: apiKey,
@@ -114,16 +114,22 @@ class GeminiTextParser {
     );
   }
 
-  Future<_PreparedImage?> _prepareImage(String? path) async {
+  Future<_PreparedImage?> _prepareImage(
+    String? path, {
+    CancelToken? cancelToken,
+  }) async {
     if (path == null || path.isEmpty) return null;
 
+    _throwIfCancelled(cancelToken);
     final originalBytes = await XFile(path).readAsBytes();
+    _throwIfCancelled(cancelToken);
     final buffer = await ui.ImmutableBuffer.fromUint8List(originalBytes);
     ui.ImageDescriptor? descriptor;
     ui.Codec? codec;
     ui.Image? decoded;
 
     try {
+      _throwIfCancelled(cancelToken);
       descriptor = await ui.ImageDescriptor.encoded(buffer);
       final longestSide = math.max(descriptor.width, descriptor.height);
       final scale = longestSide > _maxImageSide
@@ -132,12 +138,14 @@ class GeminiTextParser {
       final targetWidth = math.max(1, (descriptor.width * scale).round());
       final targetHeight = math.max(1, (descriptor.height * scale).round());
 
+      _throwIfCancelled(cancelToken);
       codec = await descriptor.instantiateCodec(
         targetWidth: targetWidth,
         targetHeight: targetHeight,
       );
       final frame = await codec.getNextFrame();
       decoded = frame.image;
+      _throwIfCancelled(cancelToken);
       final data = await decoded.toByteData(format: ui.ImageByteFormat.png);
       if (data == null) {
         throw Exception('이미지를 AI 전송용으로 변환하지 못했습니다');
@@ -151,6 +159,18 @@ class GeminiTextParser {
       descriptor?.dispose();
       buffer.dispose();
     }
+  }
+
+  /// CancelToken 이 취소 상태면 즉시 throw — decode/resize 루프 사이에서 호출.
+  /// Dio 의 cancelError 를 그대로 던져 상위 retry/rethrow 로직과 호환.
+  void _throwIfCancelled(CancelToken? token) {
+    if (token == null || !token.isCancelled) return;
+    final err = token.cancelError;
+    if (err != null) throw err;
+    throw DioException.requestCancelled(
+      requestOptions: RequestOptions(path: ''),
+      reason: 'image preparation cancelled',
+    );
   }
 }
 

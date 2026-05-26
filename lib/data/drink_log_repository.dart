@@ -57,8 +57,15 @@ class DrinkLogRepository {
       await _db.transaction((txn) async {
         final now = DateTime.now().toIso8601String();
 
-        await txn.update('drinkLog', {...log.toMap(), 'updatedAt': now},
-            where: 'id = ?', whereArgs: [log.id]);
+        final affected = await txn.update(
+          'drinkLog',
+          {...log.toMap(), 'updatedAt': now},
+          where: 'id = ?',
+          whereArgs: [log.id],
+        );
+        if (affected == 0) {
+          throw ValidationError('존재하지 않는 음주 기록입니다 (id=${log.id})');
+        }
 
         // entry 상태 파악
         final existingRows = await txn.query('drinkEntry',

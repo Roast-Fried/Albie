@@ -146,6 +146,134 @@ void main() {
     });
   });
 
+  group('LocalRuleParser — qtyPattern 통일 (Codex C2 fix, 2026-05-26)', () {
+    // 2026-05-26 /goal HIGH 1: _splitByDrinkKeyword 의 qtyPattern 이 _extractQuantity
+    // 와 동일 한글 수량어 범위 (한~열두, 반) 를 cover 하는지 회귀 lock.
+    test('"소주 두 잔 맥주 네 잔" 도 분리된다 (네 잔은 기존 qtyPattern 누락 케이스)',
+        () async {
+      final result = await parser.parse(
+        ParseInput(text: '소주 두 잔 맥주 네 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.length, 2,
+          reason: 'qtyPattern 통일: "네 잔" 도 split trigger 로 인정');
+      final categories = result.entries.map((e) => e.liquorCategory).toSet();
+      expect(categories, containsAll(['soju', 'beer']));
+    });
+
+    test('"와인 반 병 위스키 한 잔" 도 분리된다 (반 병 케이스)', () async {
+      final result = await parser.parse(
+        ParseInput(text: '와인 반 병 위스키 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.length, 2,
+          reason: 'qtyPattern 통일: "반 병" 도 split trigger 로 인정');
+    });
+
+    test('"막걸리 다섯 잔 맥주 두 캔" 다섯/두 수량어 분리', () async {
+      final result = await parser.parse(
+        ParseInput(
+            text: '막걸리 다섯 잔 맥주 두 캔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.length, 2,
+          reason: 'qtyPattern 통일: 다섯 / 여섯 / .. / 열두 도 인정');
+    });
+  });
+
+  group('LocalRuleParser — 명시 도수 파싱 (Codex C1 fix, 2026-05-26)', () {
+    // 2026-05-26 /goal HIGH 2: alcoholPercent 가 master defaultAbv 가 아니라
+    // 입력 텍스트의 명시 도수(40%, 17도, 도수 43, abv 5.5)를 우선 채택하는지.
+    test('"40%" 명시 도수가 alcoholPercent 로 반영된다', () async {
+      final result = await parser.parse(
+        ParseInput(text: '위스키 40% 두 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.length, 1);
+      expect(result.entries.first.alcoholPercent, 40.0,
+          reason: '명시 도수 % 패턴이 우선 반영');
+    });
+
+    test('"17도" 명시 도수가 반영된다', () async {
+      final result = await parser.parse(
+        ParseInput(text: '소주 17도 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.first.alcoholPercent, 17.0);
+    });
+
+    test('"도수 43" prefix 명시 도수가 반영된다', () async {
+      final result = await parser.parse(
+        ParseInput(text: '위스키 도수 43 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.first.alcoholPercent, 43.0);
+    });
+
+    test('"abv 5.5" 영문 prefix 명시 도수가 반영된다', () async {
+      final result = await parser.parse(
+        ParseInput(text: '맥주 abv 5.5 두 캔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      expect(result.entries.first.alcoholPercent, 5.5);
+    });
+
+    test('명시 도수가 범위 밖(>96)이면 무시되고 fallback', () async {
+      final result = await parser.parse(
+        ParseInput(text: '맥주 200% 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      // 200% 는 비현실 → null, master 매칭 없으므로 결과는 null
+      expect(result.entries.first.alcoholPercent, isNull,
+          reason: 'abv 96 초과 시 명시 값 거부 + master 매칭 없으면 null');
+    });
+
+    test('"15년" age statement 는 alcoholPercent 로 오인되지 않음', () async {
+      final result = await parser.parse(
+        ParseInput(text: '벤로막 15년 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      // 15년 은 age statement, abv 가 아님 — "도수" / "%" 패턴 매칭 안 됨
+      expect(result.entries.first.ageStatement, '15년');
+      // alcoholPercent 는 master 매칭이 있으면 defaultAbv, 없으면 null
+    });
+
+    // Codex audit 권고 1: false positive negative control 3 케이스 보강.
+    test('"도수가 좋은 위스키" prefix false positive 아님', () async {
+      final result = await parser.parse(
+        ParseInput(
+            text: '도수가 좋은 위스키 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      // "도수가" 는 도수 + 가 (조사) — 숫자 prefix 패턴 매칭 안 됨
+      expect(result.entries.first.alcoholPercent, isNull,
+          reason: '"도수가" 는 [:=]?\\s*(\\d+) 미매칭');
+    });
+
+    test('"어제 5시에 마셨음" 시간 숫자 false positive 아님', () async {
+      final result = await parser.parse(
+        ParseInput(
+            text: '어제 5시에 맥주 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      // "5시" 의 5 는 abv 패턴 미매칭 (% / 도 / 도수 prefix / abv prefix 어느 것도 매칭 안 됨)
+      // master 매칭이 있으면 defaultAbv 사용 — alcoholPercent 가 5.0 이 아니어야 함
+      expect(result.entries.first.alcoholPercent, isNot(5.0),
+          reason: '"5시" 의 숫자 5 는 abv 로 오인되면 안 됨');
+    });
+
+    test('"15년산 위스키" 의 15년산 도 abv 로 오인되지 않음', () async {
+      final result = await parser.parse(
+        ParseInput(
+            text: '15년산 위스키 한 잔', inputTime: DateTime(2026, 5, 18)),
+      );
+
+      // "15년산" 의 15 는 negative lookahead `(?![수가년])` 로 차단
+      expect(result.entries.first.alcoholPercent, isNot(15.0),
+          reason: '"15년" 은 abv 로 오인되면 안 됨 (도 패턴 negative lookahead)');
+    });
+  });
+
   group('LocalRuleParser — Bug A 복합 명사 false positive 방어', () {
     // Codex 2026-05-18 최종 audit: 복합 장소명은 split 대상이 아니어야 함.
     // Bug A fix 의 false-positive guard (drink keyword 뒤 한글 char 면 skip)

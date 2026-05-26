@@ -110,8 +110,12 @@ class LocalRuleParser {
   /// "맥주집에서" 같은 false positive 방지:
   ///   키워드 바로 뒤 문자가 한글이면 복합어로 간주해 분리 금지.
   List<String> _splitByDrinkKeyword(String text) {
-    // 수량 패턴: 숫자+단위 또는 한글 수량어
-    final qtyPattern = RegExp(r'\d+\s*(잔|병|캔|샷|ml|미리|모금)|한\s*(잔|병|캔)|두\s*(잔|병|캔)|세\s*(잔|병|캔)');
+    // 수량 패턴: 숫자+단위 또는 한글 수량어 (_extractQuantity 와 동일 범위 유지)
+    final qtyPattern = RegExp(
+      r'\d+(?:\.\d+)?\s*(?:잔|병|캔|샷|ml|미리|모금|개|컵|파인트)'
+      r'|(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|열한|열두|반)\s*(?:잔|병|캔|샷|모금|개|컵)'
+      r'|반\s*(?:병|잔)',
+    );
 
     // 각 카테고리 키워드의 위치 찾기
     final hits = <({int start, int end, String kw})>[];
@@ -175,6 +179,9 @@ class LocalRuleParser {
     // age statement 추출
     final age = _extractAge(seg);
 
+    // 명시 도수 추출 ("40%", "17도", "도수 43" 등) — 마스터의 defaultAbv 보다 우선.
+    final explicitAbv = _extractAbv(seg);
+
     // 주종 추론
     final category = match?.category ?? _inferCategory(seg) ?? 'other';
 
@@ -190,8 +197,45 @@ class LocalRuleParser {
       quantityValue: qty?.value ?? 1.0,
       quantityUnit: qty?.unit ?? defaultQuantityUnit,
       isEstimated: qty == null,
-      alcoholPercent: match?.defaultAbv,
+      alcoholPercent: explicitAbv ?? match?.defaultAbv,
     );
+  }
+
+  /// 입력 텍스트에서 명시 도수를 추출한다.
+  /// 매칭 예: "40%", "40 %", "17도", "도수 43", "abv 5.5"
+  /// 범위: 0 < abv <= 96 (96 = 95% 이상의 spirits 상한, 100 은 비현실)
+  /// 매칭 실패 또는 범위 밖이면 null → 호출자가 master defaultAbv 로 fallback.
+  double? _extractAbv(String text) {
+    // 패턴 A: "40%", "5.5 %"
+    final percent = RegExp(r'(\d+(?:\.\d+)?)\s*%').firstMatch(text);
+    if (percent != null) {
+      final v = double.tryParse(percent.group(1)!);
+      if (v != null && v > 0 && v <= 96) return v;
+    }
+
+    // 패턴 B: "17도", "도수 43", "도수: 43", "abv 5.5"
+    // "도" 는 "년도" 와 충돌 가능 → 앞뒤 컨텍스트로 분리
+    final doSuffix = RegExp(r'(\d+(?:\.\d+)?)\s*도(?![수가년])').firstMatch(text);
+    if (doSuffix != null) {
+      final v = double.tryParse(doSuffix.group(1)!);
+      if (v != null && v > 0 && v <= 96) return v;
+    }
+
+    final doPrefix = RegExp(r'도수\s*[:=]?\s*(\d+(?:\.\d+)?)').firstMatch(text);
+    if (doPrefix != null) {
+      final v = double.tryParse(doPrefix.group(1)!);
+      if (v != null && v > 0 && v <= 96) return v;
+    }
+
+    final abvPrefix =
+        RegExp(r'\babv\s*[:=]?\s*(\d+(?:\.\d+)?)', caseSensitive: false)
+            .firstMatch(text);
+    if (abvPrefix != null) {
+      final v = double.tryParse(abvPrefix.group(1)!);
+      if (v != null && v > 0 && v <= 96) return v;
+    }
+
+    return null;
   }
 
   bool _isNonDrinkSegment(String seg) {
