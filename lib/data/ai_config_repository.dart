@@ -48,6 +48,38 @@ class AiConfigRepository {
     }
   }
 
+  /// 앱 키 텍스트 quota rollback. (Codex F2 fix, 2026-05-26)
+  ///
+  /// reserve 후 실제 API 호출이 발생하지 않았을 때 (사용자 취소 등) +1 된
+  /// quota 를 되돌린다. `count > 0` 가드로 underflow 방지 — 잘못된 호출 시
+  /// 0 으로 clamp (race-free).
+  Future<void> decrementAppText() async {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    try {
+      await _db.rawUpdate(
+        'UPDATE usageQuota SET appDefaultTextCount = appDefaultTextCount - 1 '
+        'WHERE dayKey = ? AND appDefaultTextCount > 0',
+        [today],
+      );
+    } on DatabaseException catch (e) {
+      throw DatabaseError('AI 텍스트 사용량 rollback 실패', cause: e);
+    }
+  }
+
+  /// 앱 키 이미지 quota rollback. (Codex F2 fix)
+  Future<void> decrementAppImage() async {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    try {
+      await _db.rawUpdate(
+        'UPDATE usageQuota SET appDefaultImageCount = appDefaultImageCount - 1 '
+        'WHERE dayKey = ? AND appDefaultImageCount > 0',
+        [today],
+      );
+    } on DatabaseException catch (e) {
+      throw DatabaseError('AI 이미지 사용량 rollback 실패', cause: e);
+    }
+  }
+
   /// 앱 키 이미지 quota 를 원자적으로 reserve. (Codex C4 fix)
   Future<bool> reserveAppImage() async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());

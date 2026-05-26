@@ -169,6 +169,16 @@ class ParseOrchestrator {
     } catch (e) {
       if (cancelToken?.isCancelled == true ||
           (e is DioException && e.type == DioExceptionType.cancel)) {
+        // Codex F2 fix (2026-05-26): 사용자 취소 시 app 키 quota rollback.
+        // 취소는 실제 API 호출 비용이 발생하지 않은 경우 — reserve 된 카운트 환원.
+        // (일반 AI 실패는 호출 발생 후이므로 차감 유지.)
+        if (config.keyMode == 'app_default') {
+          if (input.hasImage) {
+            await _aiConfigRepo.decrementAppImage();
+          } else {
+            await _aiConfigRepo.decrementAppText();
+          }
+        }
         rethrow;
       }
       // AI 실패 → fallback to local. 타입화된 에러로 분류하지만 throw 하지 않음.

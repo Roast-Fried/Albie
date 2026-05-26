@@ -118,4 +118,51 @@ void main() {
       }
     });
   });
+
+  // Codex F2 fix (2026-05-26): 취소 시 quota rollback 회귀.
+  group('decrementAppText/Image — rollback on cancel', () {
+    test('reserve 후 decrement 하면 count 가 0 으로 복귀', () async {
+      final db = await openTestDb();
+      try {
+        final repo = AiConfigRepository(db);
+        expect(await repo.reserveAppText(), isTrue);
+        var quota = await repo.getQuotaToday();
+        expect(quota.appDefaultTextCount, 1);
+
+        await repo.decrementAppText();
+        quota = await repo.getQuotaToday();
+        expect(quota.appDefaultTextCount, 0,
+            reason: 'F2 fix: 취소 시 reserve 환원 → 0 으로 복귀');
+      } finally {
+        await db.close();
+      }
+    });
+
+    test('count == 0 에서 decrement 호출 시 underflow 없이 0 유지', () async {
+      final db = await openTestDb();
+      try {
+        final repo = AiConfigRepository(db);
+        // reserve 없이 decrement 호출 (잘못된 사용)
+        await repo.decrementAppText();
+        final quota = await repo.getQuotaToday();
+        expect(quota.appDefaultTextCount, 0,
+            reason: 'WHERE count > 0 가드로 underflow 방지 (clamp at 0)');
+      } finally {
+        await db.close();
+      }
+    });
+
+    test('decrementAppImage 도 동일하게 동작', () async {
+      final db = await openTestDb();
+      try {
+        final repo = AiConfigRepository(db);
+        expect(await repo.reserveAppImage(), isTrue);
+        await repo.decrementAppImage();
+        final quota = await repo.getQuotaToday();
+        expect(quota.appDefaultImageCount, 0);
+      } finally {
+        await db.close();
+      }
+    });
+  });
 }
