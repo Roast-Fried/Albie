@@ -69,12 +69,7 @@ class AiSettingsViewModel extends AsyncNotifier<AiSettingsState> {
     ref.invalidateSelf();
   }
 
-  Future<void> setKeyMode(String mode) async {
-    final repo = ref.read(aiConfigRepoProvider);
-    final config = (await future).config;
-    await repo.update(config.copyWith(keyMode: mode));
-    ref.invalidateSelf();
-  }
+  // 2026-05-26: app_default 제거 — setKeyMode 외부 호출처 없음. saveApiKey/deleteApiKey 에서 직접 'user_provided' / 'none' 설정.
 
   Future<void> selectModel(String model) async {
     final repo = ref.read(aiConfigRepoProvider);
@@ -107,7 +102,7 @@ class AiSettingsViewModel extends AsyncNotifier<AiSettingsState> {
     await _storage.delete(key: 'gemini_api_key');
     final repo = ref.read(aiConfigRepoProvider);
     final config = (await future).config;
-    await repo.update(config.copyWith(keyMode: 'app_default'));
+    await repo.update(config.copyWith(keyMode: 'none', isEnabled: false));
     ref.invalidateSelf();
   }
 }

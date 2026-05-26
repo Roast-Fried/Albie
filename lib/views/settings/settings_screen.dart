@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/usage_quota.dart';
 import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/ai_settings_viewmodel.dart';
 import '../../viewmodels/settings_viewmodel.dart';
@@ -34,11 +33,6 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: Text('로드 실패'),
             ),
             data: (state) {
-              final quota = state.quota;
-              final textTotal =
-                  quota.appDefaultTextCount + quota.userKeyTextCount;
-              final imageTotal =
-                  quota.appDefaultImageCount + quota.userKeyImageCount;
               return Column(
                 children: [
                   SwitchListTile(
@@ -51,15 +45,6 @@ class SettingsScreen extends ConsumerWidget {
                     onChanged: (v) =>
                         ref.read(aiConfigProvider.notifier).toggleEnabled(v),
                   ),
-                  if (state.config.keyMode == 'app_default')
-                    ListTile(
-                      leading: const Icon(Icons.speed_outlined),
-                      title: const Text('오늘 사용량'),
-                      subtitle: Text(
-                        '텍스트 $textTotal/${UsageQuota.maxAppTextPerDay}회 · '
-                        '이미지 $imageTotal/${UsageQuota.maxAppImagePerDay}회',
-                      ),
-                    ),
                   ListTile(
                     leading: const Icon(Icons.tune_outlined),
                     title: const Text('AI 설정 상세'),

@@ -107,23 +107,13 @@ class TastingNoteEnhancementOrchestrator {
           TastingNoteEnhanceReason.aiDisabled);
     }
 
-    String? apiKey;
-    String source;
-    if (config.keyMode == 'user_provided') {
-      apiKey = await _secureStorage.read(key: 'gemini_api_key');
-      source = 'ai_user_key';
-    } else if (config.keyMode == 'app_default') {
-      final quota = await _aiConfigRepo.getQuotaToday();
-      if (!quota.canUseAppText) {
-        return const TastingNoteEnhanceResult(
-            TastingNoteEnhanceReason.quotaExceeded);
-      }
-      apiKey = const String.fromEnvironment('GEMINI_API_KEY');
-      source = 'ai_app_key';
-    } else {
+    // 2026-05-26: app_default 키 모드 제거. user_provided 만 허용.
+    if (config.keyMode != 'user_provided') {
       return const TastingNoteEnhanceResult(
           TastingNoteEnhanceReason.aiDisabled);
     }
+    final apiKey = await _secureStorage.read(key: 'gemini_api_key');
+    const source = 'ai_user_key';
     if (apiKey == null || apiKey.isEmpty) {
       return const TastingNoteEnhanceResult(
           TastingNoteEnhanceReason.aiDisabled);
@@ -138,9 +128,7 @@ class TastingNoteEnhancementOrchestrator {
             model: config.selectedModel,
             cancelToken: cancelToken,
           );
-      await _aiConfigRepo.incrementTextCount(
-        isUserKey: config.keyMode == 'user_provided',
-      );
+      await _aiConfigRepo.incrementUserText();
       stopwatch.stop();
       // parserUsed: source (ai_user_key / ai_app_key) — AI 로그 화면 일관성을 위해
       // success / failed 모두 source 로 기록 (CDX-009). model 명은 로그 필요 시

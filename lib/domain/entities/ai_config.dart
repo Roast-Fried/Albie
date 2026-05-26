@@ -1,6 +1,6 @@
 class AiConfig {
   final String provider;
-  final String keyMode; // none | app_default | user_provided
+  final String keyMode; // none | user_provided  (2026-05-26: app_default 제거 — env var 미동작)
   final String selectedModel; // gemini-2.5-flash-lite | gemini-2.5-flash
   final bool isEnabled;
   final DateTime? lastValidatedAt;
@@ -8,9 +8,9 @@ class AiConfig {
 
   AiConfig({
     this.provider = 'gemini',
-    this.keyMode = 'app_default',
+    this.keyMode = 'none',
     this.selectedModel = 'gemini-2.5-flash-lite',
-    this.isEnabled = true,
+    this.isEnabled = false,
     this.lastValidatedAt,
     this.lastErrorMessage,
   });
@@ -47,7 +47,8 @@ class AiConfig {
   factory AiConfig.fromMap(Map<String, dynamic> map) {
     return AiConfig(
       provider: map['provider'] as String? ?? 'gemini',
-      keyMode: map['keyMode'] as String? ?? 'app_default',
+      // Legacy normalize: 기존 'app_default' row 는 'none' 으로 강등 (env var 미동작).
+      keyMode: (map['keyMode'] == 'user_provided') ? 'user_provided' : 'none',
       selectedModel:
           map['selectedModel'] as String? ?? 'gemini-2.5-flash-lite',
       isEnabled: (map['isEnabled'] as int?) == 1,

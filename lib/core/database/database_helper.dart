@@ -122,9 +122,9 @@ class DatabaseHelper {
       CREATE TABLE aiConfig (
         id INTEGER PRIMARY KEY DEFAULT 1,
         provider TEXT NOT NULL DEFAULT 'gemini',
-        keyMode TEXT NOT NULL DEFAULT 'app_default',
+        keyMode TEXT NOT NULL DEFAULT 'none',
         selectedModel TEXT NOT NULL DEFAULT 'gemini-2.5-flash-lite',
-        isEnabled INTEGER NOT NULL DEFAULT 1,
+        isEnabled INTEGER NOT NULL DEFAULT 0,
         lastValidatedAt TEXT,
         lastErrorMessage TEXT
       )
@@ -157,13 +157,13 @@ class DatabaseHelper {
     await db.execute(
         'CREATE INDEX idx_parseJob_createdAt ON parseJob(createdAt)');
 
-    // 기본 AI 설정 삽입
+    // 기본 AI 설정 삽입 (2026-05-26: app_default 제거 — 사용자가 자신의 API 키 발급 후 enable)
     await db.insert('aiConfig', {
       'id': 1,
       'provider': 'gemini',
-      'keyMode': 'app_default',
+      'keyMode': 'none',
       'selectedModel': 'gemini-2.5-flash-lite',
-      'isEnabled': 1,
+      'isEnabled': 0,
     });
 
     // 시드 데이터 적재

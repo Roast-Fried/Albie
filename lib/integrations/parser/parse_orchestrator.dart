@@ -111,25 +111,12 @@ class ParseOrchestrator {
     String? apiKey;
     String source;
 
-    if (config.keyMode == 'user_provided') {
-      apiKey = await _secureStorage.read(key: 'gemini_api_key');
-      source = 'ai_user_key';
-    } else if (config.keyMode == 'app_default') {
-      apiKey = const String.fromEnvironment('GEMINI_API_KEY');
-      if (apiKey.isEmpty) return (result: null, wasAttempted: false);
-
-      // Codex C4 fix: atomic reserve (check + increment 단일 UPDATE) 로 race 방지.
-      // reserve 성공 시 +1 됨 → API 실패해도 quota 차감 (AI 호출 비용은 already incurred).
-      final reserved = input.hasImage
-          ? await _aiConfigRepo.reserveAppImage()
-          : await _aiConfigRepo.reserveAppText();
-      if (!reserved) {
-        return (result: null, wasAttempted: false);
-      }
-      source = 'ai_app_key';
-    } else {
+    // 2026-05-26: app_default 키 모드 제거. user_provided 만 허용.
+    if (config.keyMode != 'user_provided') {
       return (result: null, wasAttempted: false);
     }
+    apiKey = await _secureStorage.read(key: 'gemini_api_key');
+    source = 'ai_user_key';
 
     if (apiKey == null || apiKey.isEmpty) {
       return (result: null, wasAttempted: false);
@@ -150,13 +137,11 @@ class ParseOrchestrator {
         cancelToken: cancelToken,
       );
 
-      // 사용량 증가 (user 키만 — app 키는 reserveApp* 에서 이미 +1)
-      if (config.keyMode == 'user_provided') {
-        if (input.hasImage) {
-          await _aiConfigRepo.incrementImageCount(isUserKey: true);
-        } else {
-          await _aiConfigRepo.incrementTextCount(isUserKey: true);
-        }
+      // 사용량 증가 (user_provided 만 호출됨 — 위 분기에서 보장)
+      if (input.hasImage) {
+        await _aiConfigRepo.incrementUserImage();
+      } else {
+        await _aiConfigRepo.incrementUserText();
       }
 
       return (
@@ -169,16 +154,8 @@ class ParseOrchestrator {
     } catch (e) {
       if (cancelToken?.isCancelled == true ||
           (e is DioException && e.type == DioExceptionType.cancel)) {
-        // Codex F2 fix (2026-05-26): 사용자 취소 시 app 키 quota rollback.
-        // 취소는 실제 API 호출 비용이 발생하지 않은 경우 — reserve 된 카운트 환원.
-        // (일반 AI 실패는 호출 발생 후이므로 차감 유지.)
-        if (config.keyMode == 'app_default') {
-          if (input.hasImage) {
-            await _aiConfigRepo.decrementAppImage();
-          } else {
-            await _aiConfigRepo.decrementAppText();
-          }
-        }
+        // 2026-05-26: app_default 제거로 reserve→rollback 로직도 함께 제거.
+        // user_provided 키는 reserve 안 하므로 별도 cleanup 없음.
         rethrow;
       }
       // AI 실패 → fallback to local. 타입화된 에러로 분류하지만 throw 하지 않음.

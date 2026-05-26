@@ -348,7 +348,7 @@ class LocalRuleParser {
   // --- Liquor matching ---
 
   Future<_LiquorMatch?> _matchLiquor(String seg, List<String> warnings) async {
-    // 텍스트에서 숫자/단위/접속사 제거 → 술 이름 후보
+    // 텍스트에서 숫자/단위/접속사/도수 표기/부사 제거 → 술 이름 후보
     final cleaned = seg
         .replaceAll(
           RegExp(r'\d+(?:\.\d+)?\s*(잔|샷|병|캔|ml|미리|개|모금|컵|년산?)\s*'),
@@ -358,11 +358,25 @@ class LocalRuleParser {
           RegExp(r'(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|반)\s*(잔|샷|병|캔|개|컵)\s*'),
           '',
         )
+        // 명시 도수 표기 제거 — 2026-05-26 (Iter 8): "위스키 40%" 의 "40%" 가 술 이름
+        // 토큰으로 잘못 잡히지 않도록.
+        .replaceAll(RegExp(r'\d+(?:\.\d+)?\s*(?:%|도(?![수가년]))'), '')
+        .replaceAll(RegExp(r'도수\s*[:=]?\s*\d+(?:\.\d+)?'), '')
+        .replaceAll(
+            RegExp(r'\babv\s*[:=]?\s*\d+(?:\.\d+)?', caseSensitive: false), '')
+        // "각" / "모두" / "전부" 부사 제거 ("보드카 40% 각 한 잔" 등)
+        .replaceAll(RegExp(r'(?<![가-힣])(각|모두|전부)(?![가-힣])'), '')
         .replaceAll(RegExp(r'(마셨어|마심|마셨는데|마셨음|먹음|먹었어|마시고|더)'), '')
         .replaceAll(RegExp(r'(어제|오늘|그저께|지난주|나|에서|좀|조금|정도)'), '')
         .trim();
 
     if (cleaned.isEmpty) return null;
+
+    // 2026-05-26 (Iter 8): 카테고리 단어 단독은 master 매칭 skip.
+    // Highball aliases `["하이볼","highball","위스키소다"]` 의 "위스키소다" partial
+    // substring 매칭으로 "위스키" 입력이 Highball 잘못 매칭되던 버그 방지.
+    // 카테고리 단어는 _inferCategory 가 처리하고 술 이름은 null 로 둠 → 사용자 직접 입력 유도.
+    if (_drinkCategoryKeywords.contains(cleaned)) return null;
 
     // 토큰별로 매칭 시도
     final tokens = cleaned.split(RegExp(r'\s+'));
@@ -379,9 +393,10 @@ class LocalRuleParser {
       );
     }
 
-    // 2단계: 토큰별 exact alias 매칭
+    // 2단계: 토큰별 exact alias 매칭 (카테고리 단어 제외)
     for (final token in tokens) {
       if (token.length < 2) continue;
+      if (_drinkCategoryKeywords.contains(token)) continue;
       final match = await _liquorRepo.findByAlias(token);
       if (match != null) {
         return _LiquorMatch(
@@ -394,9 +409,10 @@ class LocalRuleParser {
       }
     }
 
-    // 3단계: 부분 매칭
+    // 3단계: 부분 매칭 (카테고리 단어 제외)
     for (final token in tokens) {
       if (token.length < 2) continue;
+      if (_drinkCategoryKeywords.contains(token)) continue;
       final match = await _liquorRepo.findByPartialMatch(token);
       if (match != null) {
         return _LiquorMatch(
