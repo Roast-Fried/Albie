@@ -98,6 +98,26 @@
 - UI-014: 재캡처 시 label 정상 floating 확인. cosmetic 미발생 — fix 불필요.
 - UI-NEW (onboarding 버튼 캡처 누락): 코드 검증 (`onboarding_screen.dart:42-80`) 결과 indicator dot + 다음/시작/건너뛰기 모두 정상 존재. capture viewport 영역 문제이지 실 UI 깨짐 아님 — 실 device 에서 정상 노출.
 
+## Sprint 4 진행 (2026-05-27)
+
+### 적용 fix
+- ✅ settings_capture_test rewrite: '설정' AppBar title 충돌 회피 → ListTile finder + 다크 dialog 토글 skip → 5 PNG 캡처 통과 (Iter 8 AI app_default 제거 시각 확인)
+- ✅ log_capture_test 단순화 + BottomNav '기록' label 충돌 회피 → Icons.list_alt_outlined finder + LogListScreen expect 등장 검증
+- ✅ takeShot 에 optional activeScreen 인자 + diagnostic logging — IndexedStack 환경에서 active screen subtree 한정 boundary 검색
+- ✅ MEDIUM 1.1 didUpdateWidget 확장: name/age controller + _lastMatchedName reset + _nameDebounce cancel (qty 는 Codex audit N-1 로 제외)
+- ✅ Codex audit N-1 (MEDIUM): qty didUpdateWidget sync 제거 — `_emit()` invalid 입력 fallback (1.0) 가 중간 입력 (".5", "1.") 을 "1" 로 덮어쓰는 회귀 회피
+- ✅ Codex audit N-2 (LOW): LogListScreen body RepaintBoundary wrap → integration_test 가 IndexedStack 환경에서 PNG 캡처 가능 + scroll repaint 격리 부수효과
+
+### 검증
+- flutter analyze 0 issues / unit test 109/109 pass
+- settings 5 PNG 정상 캡처 (settings_00~04)
+- log_01_list PNG 정상 캡처 (빈 상태 — "아직 기록이 없어요" CTA)
+
+### 미적용 보류
+- MEDIUM 2.1 (WidgetRef 안티패턴): ViewModel 메서드의 WidgetRef 인자 — saveToDb 도 같은 패턴이라 큰 리팩터링 필요. 별도 sprint.
+- MEDIUM 3.2 (index drift): entry stable id — DraftEntry 에 id 추가는 DB 스키마/Repository 까지 영향. 별도 sprint.
+- MEDIUM 4.3 (도수 validation errorText): 비교적 작은 작업이나 Sprint 4 scope 외. 별도 sprint.
+
 ## 진행 로그
 - 2026-05-26: home_capture_test 6 PNG + draft_review_capture_test 11 PNG 캡처 완료
 - 2026-05-26: UI-001/UI-002/UI-004/UI-005/UI-014/UI-016/UI-017/UI-018 발견
@@ -105,3 +125,4 @@
 - 2026-05-27: onboarding 3 PNG 캡처 (test 통과). settings 는 layout_06/07/08 (6 PNG) 으로 시각 검증 대체 (settings_capture_test hitTest 충돌로 skip)
 - 2026-05-27: Sprint 1 fix 7건 (UI-001/002/016/017 + UI-005/019/022 root cause + Codex HIGH 3건) 적용. commit `1faa4ba`.
 - 2026-05-27: Sprint 2/3 fix 3건 (UI-004/018/020) 적용 + UI-014/NEW 분석 후 skip.
+- 2026-05-27: Sprint 4 — capture infra fix + MEDIUM 1.1 + Codex audit N-1/N-2 (5번째 commit). 모든 화면 PNG 시각 검증 가능 상태.

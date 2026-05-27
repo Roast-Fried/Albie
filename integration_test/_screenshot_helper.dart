@@ -36,9 +36,14 @@ Future<void> setOnboardingCompleted(bool completed) async {
 /// 화면 캡처 — topmost RenderRepaintBoundary (navigator push 된 route 우선) 캡처.
 /// viewport 70% 면적 가드로 sub-boundary 잘못 잡힘 방지.
 ///
+/// 2026-05-27: IndexedStack 의 비활성 child 도 paint 완료 (cache) 상태로 남아
+/// reversed topmost 선택 시 첫 child (Home) 가 잡히는 회귀 — `activeScreen`
+/// 인자로 active 화면 widget 의 하위 boundary 만 검색하도록 한정.
+///
 /// timing assertion (`debugNeedsPaint`) 회피를 위해 호출 전 pumpAndSettle + 추가
 /// pump(500ms) 적용.
-Future<void> takeShot(WidgetTester tester, String name) async {
+Future<void> takeShot(WidgetTester tester, String name,
+    {Type? activeScreen}) async {
   // timing 안정화 — debugNeedsPaint assertion 회피 (전반 pump + frame stabilize).
   await tester.pumpAndSettle(const Duration(seconds: 3));
   await tester.pump(const Duration(milliseconds: 200));
@@ -47,7 +52,21 @@ Future<void> takeShot(WidgetTester tester, String name) async {
 
   if (Platform.isAndroid || Platform.isIOS) return;
   try {
-    final renderObject = tester.binding.rootElement!.renderObject!;
+    RenderObject renderObject = tester.binding.rootElement!.renderObject!;
+
+    // activeScreen 지정 시 해당 widget 하위에서만 boundary 검색 — IndexedStack
+    // 의 비활성 child boundary 회피.
+    if (activeScreen != null) {
+      final screenFinder = find.byWidgetPredicate(
+        (w) => w.runtimeType == activeScreen,
+      );
+      if (screenFinder.evaluate().isNotEmpty) {
+        final screenElement = screenFinder.evaluate().first;
+        final screenRender = screenElement.renderObject;
+        if (screenRender != null) renderObject = screenRender;
+      }
+    }
+
     final boundaries = <RenderRepaintBoundary>[];
     void findBoundary(RenderObject obj) {
       if (obj is RenderRepaintBoundary) {
@@ -59,8 +78,10 @@ Future<void> takeShot(WidgetTester tester, String name) async {
     findBoundary(renderObject);
     final viewLogical =
         tester.view.physicalSize / tester.view.devicePixelRatio;
-    final minW = viewLogical.width * 0.7;
-    final minH = viewLogical.height * 0.7;
+    // activeScreen 지정 시 — body 영역만 (AppBar/BottomNav 제외) 이라 50% 가드.
+    final guardRatio = activeScreen != null ? 0.5 : 0.7;
+    final minW = viewLogical.width * guardRatio;
+    final minH = viewLogical.height * guardRatio;
 
     // IndexedStack 의 비활성 child boundary 는 paint 안 됨 → debugNeedsPaint true
     // 영구. paint 완료 + size 가드 통과한 boundary 우선 선택.
@@ -112,6 +133,12 @@ Future<void> takeShot(WidgetTester tester, String name) async {
             .writeAsBytesSync(byteData.buffer.asUint8List());
         debugPrint('Screenshot: $name.png (${boundary.size})');
       }
+    } else {
+      // 진단 — boundary 0개 또는 size 가드 통과 못함.
+      final sizes =
+          boundaries.map((b) => '${b.size.width.toInt()}x${b.size.height.toInt()}').take(8).join(', ');
+      debugPrint('Screenshot skip ($name): no boundary passed guard. '
+          'total=${boundaries.length}, sizes=[$sizes], guard=${minW.toInt()}x${minH.toInt()}');
     }
   } catch (e) {
     debugPrint('Screenshot failed ($name): $e');

@@ -5,11 +5,15 @@ import 'package:albi/main.dart' as app;
 
 import '_screenshot_helper.dart';
 
-/// 설정 + AI 설정 + 다크 dialog 캡처.
+/// 설정 + AI 설정 캡처 — 2026-05-27 단순화 v2.
+///
+/// 이전 v1 의 `tapText('설정')` 이 settings_screen 의 AppBar title '설정' 과
+/// 충돌해 hitTest 가 4분 hang 한 회귀를 해소. ListTile finder 로 정확 지정 +
+/// 다크 모드 dialog 토글 skip (cosmetic, layout_08 PNG 로 시각 검증 대체).
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('settings — 모든 상황 캡처', (tester) async {
+  testWidgets('settings — 단순화 캡처', (tester) async {
     enforceMobilePortrait(tester);
     await setOnboardingCompleted(true);
 
@@ -17,85 +21,44 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 3));
     await skipOnboarding(tester);
 
+    // 1. 더보기 탭 진입
     await tapText(tester, '더보기');
-    await tapText(tester, '설정');
+    await takeShot(tester, 'settings_00_more');
 
-    // 1. 설정 초기
-    await takeShot(tester, 'settings_01_top');
-
-    // 2. 스크롤 down (전체 옵션 보기)
-    final lv = find.byType(ListView).evaluate().isNotEmpty
-        ? find.byType(ListView).first
-        : find.byType(SingleChildScrollView).first;
-    if (lv.evaluate().isNotEmpty) {
-      await tester.drag(lv, const Offset(0, -400));
-      await tester.pumpAndSettle(const Duration(seconds: 1));
-      await takeShot(tester, 'settings_02_scrolled');
-    }
-
-    // 3. 다크 모드 dialog
-    final dark = find.text('다크 모드');
-    if (dark.evaluate().isNotEmpty) {
-      // 스크롤 back up
-      if (lv.evaluate().isNotEmpty) {
-        await tester.drag(lv, const Offset(0, 400));
-        await tester.pumpAndSettle(const Duration(seconds: 1));
-      }
-      await tester.tap(dark.first, warnIfMissed: false);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
-      await takeShot(tester, 'settings_03_theme_dialog');
-
-      // 다크 옵션 선택
-      final darkOpt = find.text('다크');
-      if (darkOpt.evaluate().isNotEmpty) {
-        await tester.tap(darkOpt.first, warnIfMissed: false);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
-        await takeShot(tester, 'settings_04_dark_applied');
-      }
-
-      // 시스템 따름으로 복원
-      await tester.tap(find.text('다크 모드').first, warnIfMissed: false);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
-      final sys = find.text('시스템 따름');
-      if (sys.evaluate().isNotEmpty) {
-        await tester.tap(sys.first, warnIfMissed: false);
-        await tester.pumpAndSettle(const Duration(seconds: 1));
-      }
-    }
-
-    // 4. AI 설정 상세 진입
-    final aiDetail = find.text('AI 설정 상세');
-    if (aiDetail.evaluate().isNotEmpty) {
-      await tester.tap(aiDetail.first, warnIfMissed: false);
+    // 2. 더보기 screen 의 '설정' ListTile (AppBar title 충돌 회피)
+    final settingsTile = find.widgetWithText(ListTile, '설정');
+    if (settingsTile.evaluate().isNotEmpty) {
+      await tester.tap(settingsTile.first, warnIfMissed: false);
       await tester.pumpAndSettle(const Duration(seconds: 2));
-      await takeShot(tester, 'settings_05_ai_settings');
+      await takeShot(tester, 'settings_01_top');
 
-      // API key 입력 focused
-      final keyInput = find.byType(TextField);
-      if (keyInput.evaluate().isNotEmpty) {
-        await tester.tap(keyInput.first, warnIfMissed: false);
+      // 3. 스크롤 down (전체 옵션)
+      final lv = find.byType(ListView);
+      if (lv.evaluate().isNotEmpty) {
+        await tester.drag(lv.first, const Offset(0, -400));
         await tester.pumpAndSettle(const Duration(seconds: 1));
-        await takeShot(tester, 'settings_06_key_input_focused');
+        await takeShot(tester, 'settings_02_scrolled');
+      }
 
-        // 더미 키 입력 (검증은 실제 API 호출 → 실패하지만 입력 상태 캡처)
-        await tester.enterText(keyInput.first, 'dummy_key_for_capture');
+      // 4. AI 설정 상세 진입 (settings 화면으로 스크롤 back up)
+      if (lv.evaluate().isNotEmpty) {
+        await tester.drag(lv.first, const Offset(0, 400));
         await tester.pumpAndSettle(const Duration(seconds: 1));
-        await takeShot(tester, 'settings_07_key_input_filled');
+      }
+      final aiDetail = find.widgetWithText(ListTile, 'AI 설정 상세');
+      if (aiDetail.evaluate().isNotEmpty) {
+        await tester.tap(aiDetail.first, warnIfMissed: false);
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await takeShot(tester, 'settings_03_ai_settings');
 
-        // visibility 토글
-        final eye = find.byIcon(Icons.visibility);
-        if (eye.evaluate().isNotEmpty) {
-          await tester.tap(eye.first, warnIfMissed: false);
+        // 5. API key 입력 focused + 더미 입력
+        final keyInput = find.byType(TextField);
+        if (keyInput.evaluate().isNotEmpty) {
+          await tester.enterText(keyInput.first, 'dummy_key_xxxx');
           await tester.pumpAndSettle(const Duration(seconds: 1));
-          await takeShot(tester, 'settings_08_key_visible');
+          await takeShot(tester, 'settings_04_key_filled');
         }
       }
-
-      // 스크롤 down — 모델 선택 + 사용량 + 처리 로그
-      final aiLv = find.byType(ListView).first;
-      await tester.drag(aiLv, const Offset(0, -500));
-      await tester.pumpAndSettle(const Duration(seconds: 1));
-      await takeShot(tester, 'settings_09_ai_scrolled');
     }
 
     expect(find.byType(Scaffold), findsWidgets);

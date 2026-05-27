@@ -74,17 +74,23 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
           ),
         ],
       ),
-      body: logsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ErrorStateWidget(
-            message: '기록을 불러올 수 없습니다',
-            onRetry: () => ref.read(logListProvider.notifier).refresh()),
-        data: (logs) => logs.isEmpty
-            ? const _EmptyState()
-            : RefreshIndicator(
-                onRefresh: () => ref.read(logListProvider.notifier).refresh(),
-                child: _buildGroupedList(context, ref, logs),
-              ),
+      // 2026-05-27 Codex Sprint 4 audit N-2 (LOW): integration_test 의 takeShot 이
+      // IndexedStack 환경에서 active screen subtree 안에서 RepaintBoundary 를 찾지
+      // 못해 PNG 미캡처. body 를 RepaintBoundary 로 wrap 하여 캡처 가능 + scroll
+      // 시 repaint 영역 격리 효과.
+      body: RepaintBoundary(
+        child: logsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => ErrorStateWidget(
+              message: '기록을 불러올 수 없습니다',
+              onRetry: () => ref.read(logListProvider.notifier).refresh()),
+          data: (logs) => logs.isEmpty
+              ? const _EmptyState()
+              : RefreshIndicator(
+                  onRefresh: () => ref.read(logListProvider.notifier).refresh(),
+                  child: _buildGroupedList(context, ref, logs),
+                ),
+        ),
       ),
     );
   }

@@ -61,6 +61,11 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
     // 입력 시 _emit() 의 `_abvCtrl.text.isEmpty ? null : ...` 로 alcoholPercent
     // 가 null 로 덮어써지는 회귀. master 매칭으로 abv 가 갱신되면 controller
     // 동기화.
+    //
+    // Sprint 1 audit MEDIUM 1.1 후속: entry 삭제/추가로 같은 index 의 entry 가
+    // 다른 인스턴스로 교체되면 (Flutter element 재사용) name/age/qty controller
+    // 도 이전 entry 텍스트 보유. didUpdateWidget 에서 모든 controller + debounce
+    // 상태 동기화.
     final newAbv = widget.entry.alcoholPercent;
     if (newAbv != oldWidget.entry.alcoholPercent) {
       final newText = newAbv?.toString() ?? '';
@@ -68,6 +73,24 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
         _abvCtrl.text = newText;
       }
     }
+
+    if (widget.entry.liquorNameRaw != oldWidget.entry.liquorNameRaw &&
+        _nameCtrl.text != widget.entry.liquorNameRaw) {
+      _nameCtrl.text = widget.entry.liquorNameRaw;
+      _lastMatchedName = widget.entry.liquorNameRaw.trim();
+      _nameDebounce?.cancel();
+    }
+
+    final newAge = widget.entry.ageStatement ?? '';
+    if (widget.entry.ageStatement != oldWidget.entry.ageStatement &&
+        _ageCtrl.text != newAge) {
+      _ageCtrl.text = newAge;
+    }
+
+    // 2026-05-27 Codex Sprint 4 audit N-1 (MEDIUM): qty 는 master matching 으로
+    // 변하지 않고 사용자 입력만의 영역이라 didUpdateWidget 동기화 불필요. _emit()
+    // 의 invalid 입력 fallback (1.0) 이 state 갱신 → didUpdateWidget 이 중간 입력
+    // (".5", "1.") 을 "1" 로 덮어쓰는 회귀 회피.
   }
 
   @override
