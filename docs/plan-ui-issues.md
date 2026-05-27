@@ -117,6 +117,11 @@
 - MEDIUM 2.1 (WidgetRef 안티패턴): ViewModel 메서드의 WidgetRef 인자 — saveToDb 도 같은 패턴이라 큰 리팩터링 필요. 별도 sprint.
 - MEDIUM 3.2 (index drift): entry stable id — DraftEntry 에 id 추가는 DB 스키마/Repository 까지 영향. 별도 sprint.
 - MEDIUM 4.3 (도수 validation errorText): 비교적 작은 작업이나 Sprint 4 scope 외. 별도 sprint.
+- 5 commit audit Finding 1 (preserveCategory 의미 범위): 위스키 매칭 후 맥주 이름 변경 시 category/ABV 잔류 회귀. dirty flag (`categoryIsUserSelected` / `abvIsUserSelected`) 도입 필요. 시나리오 발생 빈도 낮음 — 별도 sprint.
+
+### Sprint 4.5 적용 (Codex 5 commit audit 후속)
+- ✅ Finding 4: DraftEntry.fromJson 의 liquorMasterId 복원 누락 fix — toJson/fromJson roundtrip 손실 회귀 해소.
+- ✅ Finding 2: archive ShaderMask fade stops 0.92 → 0.95 — 마지막 chip 의 selected fill/ripple 시각 충돌 완화.
 
 ## 진행 로그
 - 2026-05-26: home_capture_test 6 PNG + draft_review_capture_test 11 PNG 캡처 완료

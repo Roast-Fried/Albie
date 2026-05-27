@@ -155,6 +155,10 @@ class DraftEntry {
     return DraftEntry(
       id: json['id'] as int?,
       liquorName: normalizedName,
+      // 2026-05-27 Codex 5 commit audit Finding 4: liquorMasterId 복원 누락
+      // (toJson 은 emit, fromJson 은 무시) → roundtrip 손실 회귀. master 매칭
+      // 정보가 영구 사라져 archive/stats 카테고리 매핑이 'other' 로 떨어짐.
+      liquorMasterId: (json['liquorMasterId'] as num?)?.toInt(),
       liquorNameRaw: normalizedName ?? '',
       liquorCategory: json['liquorCategory'] as String? ?? 'other',
       ageStatement: json['ageStatement'] as String?,

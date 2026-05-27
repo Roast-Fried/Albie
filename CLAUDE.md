@@ -211,6 +211,15 @@ GitHub Actions: push/PR → analyze → test → (main만) APK 빌드
 - Phase C implementation (docs/plan-phase-c-domain-differentiation.md)
 - Phase D implementation (docs/plan-phase-d-visual-identity.md)
 
+**UI/UX 캡처 사이클 ✅ 완료** (2026-05-27, 5 commits: `a5bebdc` → `14cd2f4`)
+- integration_test 화면별 UI 캡처 인프라 (7 화면 + helper)
+- 26 PNG 시각 검증 (home/draft/archive/stats/onboarding/settings/log)
+- 12 UI 깨짐 해소 (UI-001 entry card 2행 / UI-002 숙성 label / UI-004 SegmentedButton / UI-005 글렌피딕 warning / UI-016 isEstimated / UI-017 master matching debounce / UI-018 home unfocus / UI-019 카테고리 매핑 / UI-020 archive chip fade / UI-022 stats 분류)
+- Codex pair audit 4회 (HIGH 3 + FAIL/WARN 2 + APPROVE N-1/N-2) 즉시 반영
+- Skip 2건: UI-014 (재검증 정상), UI-NEW (capture viewport, 실 UI 정상)
+- 잔여 MEDIUM 3건 (WidgetRef 안티패턴 / index drift / 도수 validation) 별도 sprint
+- docs/plan-ui-issues.md 에 전체 사이클 진행 로그
+
 ### LLM 자율 device test 환경 (2026-05-18)
 
 - `scripts/run-all-tests.sh` — 6 target wrapper (smoke/unit/golden/integration:windows/integration:android/all)

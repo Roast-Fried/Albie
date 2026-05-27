@@ -48,7 +48,11 @@ class ArchiveScreen extends ConsumerWidget {
                     Colors.black,
                     Colors.black.withValues(alpha: 0.0),
                   ],
-                  stops: const [0.0, 0.92, 1.0],
+                  // 2026-05-27 Codex 5 commit audit Finding 2: fade 영역 8% 가
+                  // 마지막 chip 의 selected fill / ripple 을 시각적으로 흐리는
+                  // 충돌. 5% 로 줄여 chip 의 selected indicator 보존 + scroll
+                  // 신호 유지.
+                  stops: const [0.0, 0.95, 1.0],
                 ).createShader(rect);
               },
               blendMode: BlendMode.dstIn,
