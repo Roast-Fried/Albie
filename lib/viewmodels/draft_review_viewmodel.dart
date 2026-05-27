@@ -29,6 +29,50 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
     }
   }
 
+  /// 2026-05-27 Sprint 1 UI-017: 직접 입력 모드에서 술 이름 변경 시 master 매칭 시도.
+  /// View 가 Repository 직접 접근하지 않도록 ViewModel 메서드로 노출.
+  ///
+  /// Codex audit Finding 5.1: master 매칭 시 category 무조건 덮어쓰기 위험.
+  /// 사용자가 드롭다운에서 명시 선택한 카테고리 (current.liquorCategory != 'other')
+  /// 는 보존하고, 'other' default 일 때만 자동 채움.
+  ///
+  /// Finding 3.3/6.4: DraftEntry.copyWith 의 liquorMasterId 가 sentinel 패턴으로
+  /// 수정되어 null clear 가능 (parse_result.dart).
+  Future<void> tryMatchByName(WidgetRef ref, int index, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.length < 2) return;
+    if (index < 0 || index >= state.entries.length) return;
+
+    final repo = ref.read(liquorMasterRepoProvider);
+    final match = await repo.findByPartialMatch(trimmed);
+
+    // race 보호 — async 사이에 entry 가 사라지거나 이름이 다시 바뀌었으면 무시.
+    if (index >= state.entries.length) return;
+    final current = state.entries[index];
+    if (current.liquorNameRaw.trim() != trimmed) return;
+
+    final entries = [...state.entries];
+    if (match != null) {
+      // 사용자가 명시 선택한 카테고리 ('other' 가 아님) 는 보존.
+      final preserveCategory =
+          current.liquorCategory != 'other' && current.liquorMasterId == null;
+      entries[index] = current.copyWith(
+        liquorMasterId: match.id,
+        liquorCategory: preserveCategory ? null : match.category,
+        // 사용자가 직접 입력한 도수가 없으면 master default 채움.
+        alcoholPercent: current.alcoholPercent ?? match.defaultAbv,
+      );
+    } else {
+      // 매칭 실패 — masterId 가 남아 있으면 제거 (이전 매칭 무효화).
+      if (current.liquorMasterId != null) {
+        entries[index] = current.copyWith(liquorMasterId: null);
+      } else {
+        return;
+      }
+    }
+    state = state.copyWith(entries: entries);
+  }
+
   void addEntry() {
     state = state.copyWith(
       entries: [
@@ -205,6 +249,7 @@ class DraftReviewState {
   }
 
   /// 직접 입력 모드 (빈 폼)
+  /// 2026-05-27 Sprint 1 UI-016: manual mode 는 사용자 명시 입력이므로 isEstimated=false.
   factory DraftReviewState.manual({
     String? rawInputText,
     String? rawImagePath,
@@ -215,7 +260,11 @@ class DraftReviewState {
       source: 'manual',
       confidence: 1.0,
       entries: [
-        DraftEntry(liquorNameRaw: '', quantityUnit: defaultQuantityUnit),
+        DraftEntry(
+          liquorNameRaw: '',
+          quantityUnit: defaultQuantityUnit,
+          isEstimated: false,
+        ),
       ],
       drankAt: drankAt ?? DateTime.now(),
       rawInputText: rawInputText,

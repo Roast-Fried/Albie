@@ -100,7 +100,9 @@ class DraftEntry {
   DraftEntry copyWith({
     int? id,
     Object? liquorName = _kUnset,
-    int? liquorMasterId,
+    // 2026-05-27 Codex audit Finding 3.3/6.4: liquorMasterId 도 sentinel 패턴으로
+    // null clear 가능하게. tryMatchByName 의 미매칭 무효화 로직이 의도대로 동작.
+    Object? liquorMasterId = _kUnset,
     String? liquorNameRaw,
     String? liquorCategory,
     Object? ageStatement = _kUnset,
@@ -114,7 +116,9 @@ class DraftEntry {
       liquorName: identical(liquorName, _kUnset)
           ? this.liquorName
           : liquorName as String?,
-      liquorMasterId: liquorMasterId ?? this.liquorMasterId,
+      liquorMasterId: identical(liquorMasterId, _kUnset)
+          ? this.liquorMasterId
+          : liquorMasterId as int?,
       liquorNameRaw: liquorNameRaw ?? this.liquorNameRaw,
       liquorCategory: liquorCategory ?? this.liquorCategory,
       ageStatement: identical(ageStatement, _kUnset)

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../integrations/parser/parse_result.dart';
@@ -31,6 +33,10 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _abvCtrl;
 
+  // 2026-05-27 Sprint 1 UI-017: 이름 변경 debounce — 매 키 입력마다 DB 조회 방지.
+  String _lastMatchedName = '';
+  Timer? _nameDebounce;
+
   @override
   void initState() {
     super.initState();
@@ -44,15 +50,39 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
     _abvCtrl = TextEditingController(
       text: widget.entry.alcoholPercent?.toString() ?? '',
     );
+    _lastMatchedName = widget.entry.liquorNameRaw.trim();
   }
 
   @override
   void dispose() {
+    _nameDebounce?.cancel();
     _nameCtrl.dispose();
     _ageCtrl.dispose();
     _qtyCtrl.dispose();
     _abvCtrl.dispose();
     super.dispose();
+  }
+
+  /// 2026-05-27 Sprint 1 UI-017: 이름 변경 시 master 매칭 시도 (400ms debounce).
+  /// Codex audit Finding 3.4: 이름이 length<2 가 되는 순간 _lastMatchedName 을
+  /// reset 해 사용자가 같은 이름을 다시 입력해도 매칭이 동작하도록 함.
+  void _scheduleNameMatch() {
+    _nameDebounce?.cancel();
+    final name = _nameCtrl.text.trim();
+    if (name.length < 2) {
+      _lastMatchedName = '';
+      return;
+    }
+    if (name == _lastMatchedName) return;
+    _nameDebounce = Timer(const Duration(milliseconds: 400), () async {
+      if (!mounted) return;
+      // Finding 1.3: timer 발화 시점에 사용자가 다시 다른 이름을 입력했을 수 있음.
+      if (_nameCtrl.text.trim() != name) return;
+      _lastMatchedName = name;
+      await ref
+          .read(draftReviewProvider.notifier)
+          .tryMatchByName(ref, widget.index, name);
+    });
   }
 
   void _emit() {
@@ -144,10 +174,13 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
                 ),
                 const SizedBox(width: 8),
                 SizedBox(
-                  width: 80,
+                  width: 100,
                   child: TextField(
                     controller: _ageCtrl,
-                    decoration: const InputDecoration(labelText: '연산'),
+                    decoration: const InputDecoration(
+                      labelText: '숙성',
+                      hintText: '12년',
+                    ),
                     onChanged: (_) => _emit(),
                   ),
                 ),
@@ -155,11 +188,12 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
             ),
             const SizedBox(height: 8),
 
-            // 수량 + 단위 + 도수
+            // 2026-05-27 Sprint 1 UI-001: 360px portrait 에서 5필드 cramped.
+            // 양 + 단위 + 도수% 를 2 행 분리 — 행 1: 양/단위, 행 2: 도수%.
             Row(
               children: [
                 SizedBox(
-                  width: 60,
+                  width: 80,
                   child: TextField(
                     controller: _qtyCtrl,
                     decoration: const InputDecoration(labelText: '양'),
@@ -189,17 +223,17 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 70,
-                  child: TextField(
-                    controller: _abvCtrl,
-                    decoration: const InputDecoration(labelText: '도수%'),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => _emit(),
-                  ),
-                ),
               ],
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _abvCtrl,
+              decoration: const InputDecoration(
+                labelText: '도수 (%)',
+                hintText: '예: 40',
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (_) => _emit(),
             ),
             if (widget.entry.isEstimated)
               Padding(
@@ -259,7 +293,10 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
             : null,
         helperMaxLines: 2,
       ),
-      onChanged: (_) => _emit(),
+      onChanged: (_) {
+        _emit();
+        _scheduleNameMatch();
+      },
     );
   }
 
