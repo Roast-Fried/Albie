@@ -1,0 +1,139 @@
+name: Release
+
+# tag push (v*) 시 자동으로 Android APK + iOS Runner.app.zip 빌드 → GitHub Release 에 업로드.
+#
+# iOS 는 unsigned (`--no-codesign`) — Apple Developer 계정 없이 빌드만. 일반 iPhone 직접
+# 설치 불가, Xcode/Sideloadly 같은 도구로 sideload 필요. 개발/QA 검증용.
+# signed (TestFlight 등) 배포가 필요하면 별도 workflow + GitHub Secret 의 인증서/프로필
+# 필요 — 본 workflow scope 외.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write  # Release 생성 + asset 업로드용
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    outputs:
+      apk_path: ${{ steps.locate.outputs.apk_path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: 'stable'
+          cache: true
+
+      - name: Create local.properties
+        run: |
+          mkdir -p android
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK (debug)
+        run: flutter build apk --debug
+
+      - id: locate
+        run: echo "apk_path=build/app/outputs/flutter-apk/app-debug.apk" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 1
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (no codesign, debug)
+        run: flutter build ios --no-codesign --debug
+
+      - name: Package Runner.app
+        run: |
+          cd build/ios/iphoneos
+          zip -r Runner.app.zip Runner.app
+          ls -lh Runner.app.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-runner
+          path: build/ios/iphoneos/Runner.app.zip
+          retention-days: 1
+
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: [build-android, build-ios]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: artifacts/android
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-runner
+          path: artifacts/ios
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          {
+            echo 'notes<<EOF'
+            echo "자동 빌드 — CI Release"
+            echo ""
+            echo "## 빌드 정보"
+            echo "- Tag: ${GITHUB_REF_NAME}"
+            echo "- Commit: $(git rev-parse --short HEAD)"
+            echo "- Flutter: 3.41.6 stable"
+            echo "- 빌드 환경: GitHub Actions (Android: ubuntu-latest, iOS: macos-latest unsigned)"
+            echo ""
+            echo "## 설치 방법"
+            echo "### Android"
+            echo "1. \`app-debug.apk\` 다운로드"
+            echo "2. 설정 → '알 수 없는 출처 설치' 허용"
+            echo "3. APK 실행 → 설치"
+            echo ""
+            echo "### iOS (unsigned)"
+            echo "Apple Developer 계정 없이 빌드된 \`Runner.app.zip\` 이라 일반 iPhone 직접 설치 불가."
+            echo "Xcode 또는 Sideloadly 같은 sideload 도구로 본인 device 에 install 가능."
+            echo "TestFlight 배포가 필요하면 별도 workflow + Apple Developer Program 가입 필요."
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: ${{ steps.notes.outputs.notes }}
+          files: |
+            artifacts/android/app-debug.apk
+            artifacts/ios/Runner.app.zip
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
