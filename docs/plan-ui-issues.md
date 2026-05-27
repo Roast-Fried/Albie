@@ -87,9 +87,21 @@
 - UI-020 archive chip overflow — P1 다음 sprint.
 - UI-NEW onboarding 버튼 캡처 누락 — P2 다음 sprint.
 
+## Sprint 2/3 진행 (2026-05-27)
+
+### 적용 fix
+- ✅ UI-020 (P1): archive 카테고리 chip ShaderMask + 우측 fade gradient 추가 + trailing padding 32 — 스크롤 가능 신호 명시.
+- ✅ UI-018 (P2): home input clear 시 `FocusScope.of(context).unfocus()` 호출 — placeholder 가림 방지.
+- ✅ UI-004 (P2): stats SegmentedButton `showSelectedIcon: false` — ✓ + label cramped 해소.
+
+### 분석 후 skip
+- UI-014: 재캡처 시 label 정상 floating 확인. cosmetic 미발생 — fix 불필요.
+- UI-NEW (onboarding 버튼 캡처 누락): 코드 검증 (`onboarding_screen.dart:42-80`) 결과 indicator dot + 다음/시작/건너뛰기 모두 정상 존재. capture viewport 영역 문제이지 실 UI 깨짐 아님 — 실 device 에서 정상 노출.
+
 ## 진행 로그
 - 2026-05-26: home_capture_test 6 PNG + draft_review_capture_test 11 PNG 캡처 완료
 - 2026-05-26: UI-001/UI-002/UI-004/UI-005/UI-014/UI-016/UI-017/UI-018 발견
 - 2026-05-26: archive (4) + stats (5) + log (1) capture 완료 — UI-019/020/022 추가 발견
 - 2026-05-27: onboarding 3 PNG 캡처 (test 통과). settings 는 layout_06/07/08 (6 PNG) 으로 시각 검증 대체 (settings_capture_test hitTest 충돌로 skip)
-- 2026-05-27: Sprint 1 fix 5건 (UI-001/002/016/017 + UI-005/019/022 root cause fix) 적용. analyze 0 issues.
+- 2026-05-27: Sprint 1 fix 7건 (UI-001/002/016/017 + UI-005/019/022 root cause + Codex HIGH 3건) 적용. commit `1faa4ba`.
+- 2026-05-27: Sprint 2/3 fix 3건 (UI-004/018/020) 적용 + UI-014/NEW 분석 후 skip.

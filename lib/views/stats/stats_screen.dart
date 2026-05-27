@@ -44,8 +44,10 @@ class StatsScreen extends ConsumerWidget {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // 기간 탭
+                  // 기간 탭 — 2026-05-27 Sprint 3 UI-004: 360px 에서 ✓ 아이콘 +
+                  // label 동시 표시 시 cramped. showSelectedIcon false 로 label 만.
                   SegmentedButton<StatsPeriod>(
+                    showSelectedIcon: false,
                     segments: StatsPeriod.values
                         .map(
                           (p) => ButtonSegment(value: p, label: Text(p.label)),

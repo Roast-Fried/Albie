@@ -33,24 +33,41 @@ class ArchiveScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('마셔본 술')),
       body: Column(
         children: [
-          // 카테고리 필터
+          // 카테고리 필터 — 가로 스크롤, 우측 fade gradient 로 스크롤 가능 신호.
+          // 2026-05-27 Sprint 2 UI-020: 360px 에서 chip 9개 가로 overflow 시
+          // 마지막 chip 이 그냥 잘려 사용자가 스크롤 가능을 인지 못함.
           SizedBox(
             height: 40,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _categories.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 6),
-              itemBuilder: (context, i) {
-                final (value, label) = _categories[i];
-                final isActive = selected == value;
-                return FilterChip(
-                  label: Text(label),
-                  selected: isActive,
-                  onSelected: (_) =>
-                      ref.read(archiveCategoryFilter.notifier).state = value,
-                );
+            child: ShaderMask(
+              shaderCallback: (rect) {
+                return LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Colors.black,
+                    Colors.black,
+                    Colors.black.withValues(alpha: 0.0),
+                  ],
+                  stops: const [0.0, 0.92, 1.0],
+                ).createShader(rect);
               },
+              blendMode: BlendMode.dstIn,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(left: 16, right: 32),
+                itemCount: _categories.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
+                itemBuilder: (context, i) {
+                  final (value, label) = _categories[i];
+                  final isActive = selected == value;
+                  return FilterChip(
+                    label: Text(label),
+                    selected: isActive,
+                    onSelected: (_) =>
+                        ref.read(archiveCategoryFilter.notifier).state = value,
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(height: 8),

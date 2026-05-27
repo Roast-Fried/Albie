@@ -83,8 +83,11 @@ class _InputSectionWidgetState extends State<InputSectionWidget> {
                 ? IconButton(
                     icon: const Icon(Icons.clear, size: 20),
                     onPressed: () {
+                      // 2026-05-27 Sprint 3 UI-018: clear 후 cursor focus 잔존으로
+                      // hintText 첫 글자 가림. focus 해제하여 placeholder 정상 노출.
                       _controller.clear();
                       widget.onChanged('');
+                      FocusScope.of(context).unfocus();
                     },
                   )
                 : null,
