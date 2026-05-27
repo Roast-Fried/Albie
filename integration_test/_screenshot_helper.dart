@@ -1,0 +1,181 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// integration_test 공통 helper — mobile portrait viewport + screenshot 캡처 +
+/// onboarding skip + dialog 안전 처리.
+///
+/// 모든 capture test 파일이 import 하여 재사용. parser_ui_test / layout_screenshot_test
+/// 의 함수 통합.
+///
+/// 2026-05-26 작성 — Codex 페어 enumeration sprint Phase 1.
+
+/// 모바일 세로 viewport 강제 (Pixel 5 비슷: logical 360x800 @ 3.0x = physical 1080x2400).
+/// testWidgets 시작에서 호출 + addTearDown 으로 reset.
+void enforceMobilePortrait(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1080, 2400);
+  tester.view.devicePixelRatio = 3.0;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+}
+
+/// SharedPreferences 의 onboarding completed flag 강제 — 매 test 의 onboarding
+/// 진입 일관성 보장. true = skip, false = 첫 진입.
+Future<void> setOnboardingCompleted(bool completed) async {
+  SharedPreferences.setMockInitialValues({
+    'onboarding_completed': completed,
+  });
+}
+
+/// 화면 캡처 — topmost RenderRepaintBoundary (navigator push 된 route 우선) 캡처.
+/// viewport 70% 면적 가드로 sub-boundary 잘못 잡힘 방지.
+///
+/// timing assertion (`debugNeedsPaint`) 회피를 위해 호출 전 pumpAndSettle + 추가
+/// pump(500ms) 적용.
+Future<void> takeShot(WidgetTester tester, String name) async {
+  // timing 안정화 — debugNeedsPaint assertion 회피 (전반 pump + frame stabilize).
+  await tester.pumpAndSettle(const Duration(seconds: 3));
+  await tester.pump(const Duration(milliseconds: 200));
+  await tester.pump(const Duration(milliseconds: 200));
+  await tester.pump(const Duration(milliseconds: 200));
+
+  if (Platform.isAndroid || Platform.isIOS) return;
+  try {
+    final renderObject = tester.binding.rootElement!.renderObject!;
+    final boundaries = <RenderRepaintBoundary>[];
+    void findBoundary(RenderObject obj) {
+      if (obj is RenderRepaintBoundary) {
+        boundaries.add(obj);
+      }
+      obj.visitChildren(findBoundary);
+    }
+
+    findBoundary(renderObject);
+    final viewLogical =
+        tester.view.physicalSize / tester.view.devicePixelRatio;
+    final minW = viewLogical.width * 0.7;
+    final minH = viewLogical.height * 0.7;
+
+    // IndexedStack 의 비활성 child boundary 는 paint 안 됨 → debugNeedsPaint true
+    // 영구. paint 완료 + size 가드 통과한 boundary 우선 선택.
+    RenderRepaintBoundary? boundary;
+
+    // 1차: paint 완료 + size 가드 통과 (reversed: topmost 부터)
+    for (final b in boundaries.reversed) {
+      if (b.attached &&
+          !b.debugNeedsPaint &&
+          b.size.width >= minW &&
+          b.size.height >= minH) {
+        boundary = b;
+        break;
+      }
+    }
+
+    // 2차: size 가드만 통과 (retry 로 paint 강제)
+    if (boundary == null) {
+      for (final b in boundaries.reversed) {
+        if (b.attached && b.size.width >= minW && b.size.height >= minH) {
+          // paint retry 최대 2초
+          bool ready = false;
+          for (int i = 0; i < 20; i++) {
+            if (!b.debugNeedsPaint) {
+              ready = true;
+              break;
+            }
+            await tester.pump(const Duration(milliseconds: 100));
+          }
+          if (ready) {
+            boundary = b;
+            break;
+          }
+        }
+      }
+    }
+
+    if (boundary != null) {
+      if (boundary.debugNeedsPaint) {
+        debugPrint('Screenshot skip ($name): debugNeedsPaint after 2s retry');
+        return;
+      }
+      final image = await boundary.toImage(pixelRatio: 1.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData != null) {
+        final dir = Directory('test_screenshots');
+        if (!dir.existsSync()) dir.createSync(recursive: true);
+        File('test_screenshots/$name.png')
+            .writeAsBytesSync(byteData.buffer.asUint8List());
+        debugPrint('Screenshot: $name.png (${boundary.size})');
+      }
+    }
+  } catch (e) {
+    debugPrint('Screenshot failed ($name): $e');
+  }
+}
+
+/// Onboarding skip — "건너뛰기" 버튼이 있으면 tap.
+Future<void> skipOnboarding(WidgetTester tester) async {
+  if (find.text('건너뛰기').evaluate().isNotEmpty) {
+    await tester.tap(find.text('건너뛰기'));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+  }
+}
+
+/// 안전 back — BackButton tap + dialog "나가기" 처리. pumpAndSettle timeout
+/// 5초 명시 (default 10분 무한 대기 방지).
+Future<void> safeBack(WidgetTester tester) async {
+  final back = find.byType(BackButton);
+  if (back.evaluate().isEmpty) return;
+  await tester.tap(back.first, warnIfMissed: false);
+  await tester.pumpAndSettle(const Duration(seconds: 5));
+
+  // PopScope dialog ("나가기") 처리
+  if (find.text('나가기').evaluate().isNotEmpty) {
+    await tester.tap(find.text('나가기'), warnIfMissed: false);
+    await tester.pumpAndSettle(const Duration(seconds: 5));
+  }
+}
+
+/// 텍스트 tap — find.text 의 마지막 hit (BottomNav 의 라벨 우선).
+Future<void> tapText(WidgetTester tester, String text) async {
+  final f = find.text(text);
+  if (f.evaluate().isEmpty) return;
+  await tester.tap(f.last, warnIfMissed: false);
+  await tester.pumpAndSettle(const Duration(seconds: 3));
+}
+
+/// TextField finder — labelText 매칭.
+Finder textFieldByLabel(String label) {
+  return find.byWidgetPredicate(
+    (w) => w is TextField && w.decoration?.labelText == label,
+  );
+}
+
+/// TextField finder — hintText 매칭.
+Finder textFieldByHint(String hint) {
+  return find.byWidgetPredicate(
+    (w) => w is TextField && w.decoration?.hintText == hint,
+  );
+}
+
+/// 키보드 dismiss — desktop 환경에서 SystemChannels.textInput hide.
+Future<void> hideKeyboard(WidgetTester tester) async {
+  await SystemChannels.textInput.invokeMethod('TextInput.hide');
+  await tester.pumpAndSettle(const Duration(seconds: 1));
+}
+
+/// label 텍스트 + TextField 입력 헬퍼.
+Future<void> enterByLabel(
+    WidgetTester tester, String label, String text) async {
+  final f = textFieldByLabel(label);
+  if (f.evaluate().isEmpty) return;
+  await tester.tap(f.first, warnIfMissed: false);
+  await tester.pumpAndSettle(const Duration(seconds: 1));
+  await tester.enterText(f.first, text);
+  await tester.pumpAndSettle(const Duration(seconds: 1));
+}
