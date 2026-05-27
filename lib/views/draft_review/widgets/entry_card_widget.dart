@@ -54,6 +54,23 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
   }
 
   @override
+  void didUpdateWidget(EntryCardWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 2026-05-27 Codex audit 5 (FAIL): tryMatchByName 이 master defaultAbv 를
+    // state 에 주입해도 _abvCtrl 가 initState 의 빈 텍스트로 남아, 다른 필드
+    // 입력 시 _emit() 의 `_abvCtrl.text.isEmpty ? null : ...` 로 alcoholPercent
+    // 가 null 로 덮어써지는 회귀. master 매칭으로 abv 가 갱신되면 controller
+    // 동기화.
+    final newAbv = widget.entry.alcoholPercent;
+    if (newAbv != oldWidget.entry.alcoholPercent) {
+      final newText = newAbv?.toString() ?? '';
+      if (_abvCtrl.text != newText) {
+        _abvCtrl.text = newText;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _nameDebounce?.cancel();
     _nameCtrl.dispose();

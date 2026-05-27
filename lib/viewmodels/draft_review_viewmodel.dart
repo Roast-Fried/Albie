@@ -53,9 +53,11 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
 
     final entries = [...state.entries];
     if (match != null) {
-      // 사용자가 명시 선택한 카테고리 ('other' 가 아님) 는 보존.
-      final preserveCategory =
-          current.liquorCategory != 'other' && current.liquorMasterId == null;
+      // 2026-05-27 Codex audit 6 (WARN): 사용자가 master matching 후 dropdown 으로
+      // 카테고리 명시 변경한 entry 의 이름을 다시 수정 시 새 match.category 가
+      // 사용자 선택을 덮는 회귀. masterId 조건 제거 — liquorCategory 가 'other' 가
+      // 아니면 (사용자가 명시했거나 이전 매칭으로 채워진 값) 항상 보존.
+      final preserveCategory = current.liquorCategory != 'other';
       entries[index] = current.copyWith(
         liquorMasterId: match.id,
         liquorCategory: preserveCategory ? null : match.category,
