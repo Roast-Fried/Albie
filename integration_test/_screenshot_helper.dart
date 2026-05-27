@@ -33,6 +33,15 @@ Future<void> setOnboardingCompleted(bool completed) async {
   });
 }
 
+/// onboarding + theme mode 동시 강제 — 위스키 컨셉 light/dark 시각 검증용.
+/// themeMode: 'light' / 'dark' / 'system'.
+Future<void> setOnboardingAndTheme(bool completed, String themeMode) async {
+  SharedPreferences.setMockInitialValues({
+    'onboarding_completed': completed,
+    'theme_mode': themeMode,
+  });
+}
+
 /// 화면 캡처 — topmost RenderRepaintBoundary (navigator push 된 route 우선) 캡처.
 /// viewport 70% 면적 가드로 sub-boundary 잘못 잡힘 방지.
 ///

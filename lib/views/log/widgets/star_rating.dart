@@ -21,7 +21,9 @@ class StarRating extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final active = activeColor ?? Colors.amber.shade600;
+    // 2026-05-27 Codex audit Finding 6.3: 위스키 brand primary 와 별개 amber 사용
+    // → theme 우회. light(Jim Beam amber) / dark(Arran cask gold) 와 일관.
+    final active = activeColor ?? Theme.of(context).colorScheme.primary;
     final inactive = inactiveColor ?? Theme.of(context).colorScheme.outlineVariant;
     final interactive = onChanged != null;
 
