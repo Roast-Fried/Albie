@@ -183,6 +183,10 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
                   ),
               ],
             ),
+            // 2026-05-27 UI-025: 헤더 "항목 1" 텍스트와 술 이름 TextField 의 floating
+            // label "술 이름" 이 겹쳐 보이는 회귀 — 헤더와 첫 입력 필드 사이 간격
+            // 확보. IconButton 가 없는 canDelete=false 시 특히 cramped.
+            const SizedBox(height: 12),
 
             // 술 이름 — 매칭 아이콘 + 영문 병기/경고 helperText
             _buildNameField(context),
