@@ -7,7 +7,6 @@ import 'package:albi/views/log/log_detail_screen.dart';
 import 'package:albi/views/archive/archive_screen.dart';
 import 'package:albi/views/archive/archive_detail_screen.dart';
 import 'package:albi/views/stats/stats_screen.dart';
-import 'package:albi/views/settings/settings_screen.dart';
 
 import '_screenshot_helper.dart';
 
@@ -63,10 +62,10 @@ void main() {
           activeScreen: LogListScreen);
 
       // 첫 entry tap → log_detail. log_list 의 entry tile 은 Card+InkWell
-      // (ListTile 아님) — 글렌피딕 텍스트로 직접 잡음.
-      final glenTile = find.text('글렌피딕');
-      if (glenTile.evaluate().isNotEmpty) {
-        await tester.tap(glenTile.first, warnIfMissed: false);
+      // (ListTile 아님). InkWell 의 첫 tap 으로 정확히 entry navigation.
+      final entries = find.byType(InkWell);
+      if (entries.evaluate().isNotEmpty) {
+        await tester.tap(entries.first, warnIfMissed: false);
         await tester.pumpAndSettle(const Duration(seconds: 3));
         await takeShot(tester, 'seeded_04_log_detail',
             activeScreen: LogDetailScreen);
@@ -125,11 +124,12 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 2));
       await takeShot(tester, 'seeded_08_archive', activeScreen: ArchiveScreen);
 
-      // 첫 entry tap → archive_detail
-      final firstArchiveTile = find.byType(ListTile).first;
-      if (firstArchiveTile.evaluate().isNotEmpty) {
-        await tester.tap(firstArchiveTile, warnIfMissed: false);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+      // 첫 entry tap → archive_detail. ListTile 의 trailing favorite icon
+      // 영역 회피 — 글렌피딕 text 직접 tap.
+      final glenInArchive = find.text('글렌피딕');
+      if (glenInArchive.evaluate().isNotEmpty) {
+        await tester.tap(glenInArchive.first, warnIfMissed: false);
+        await tester.pumpAndSettle(const Duration(seconds: 3));
         await takeShot(tester, 'seeded_09_archive_detail',
             activeScreen: ArchiveDetailScreen);
         await safeBack(tester);
@@ -165,13 +165,12 @@ void main() {
       await tester.tap(settingsTile.first, warnIfMissed: false);
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      // 다크 모드 dialog
+      // 다크 모드 dialog — modal route 는 root boundary 사용 (activeScreen 미지정).
       final dark = find.widgetWithText(ListTile, '다크 모드');
       if (dark.evaluate().isNotEmpty) {
         await tester.tap(dark.first, warnIfMissed: false);
         await tester.pumpAndSettle(const Duration(seconds: 1));
-        await takeShot(tester, 'seeded_12_dark_mode_dialog',
-            activeScreen: SettingsScreen);
+        await takeShot(tester, 'seeded_12_dark_mode_dialog');
 
         // 다이얼로그 dismiss (취소)
         final cancel = find.text('취소');
@@ -188,8 +187,8 @@ void main() {
       if (reset.evaluate().isNotEmpty) {
         await tester.tap(reset.first, warnIfMissed: false);
         await tester.pumpAndSettle(const Duration(seconds: 1));
-        await takeShot(tester, 'seeded_13_reset_confirm_dialog',
-            activeScreen: SettingsScreen);
+        // confirm dialog 도 modal route — root boundary.
+        await takeShot(tester, 'seeded_13_reset_confirm_dialog');
 
         // 취소 (실제 reset 방지)
         final cancel = find.text('취소');
