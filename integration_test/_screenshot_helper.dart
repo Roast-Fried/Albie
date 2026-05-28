@@ -42,6 +42,45 @@ Future<void> setOnboardingAndTheme(bool completed, String themeMode) async {
   });
 }
 
+/// FlutterSecureStorage MethodChannel mock — gemini_api_key 등 비밀 key 를
+/// integration_test 환경에서 in-memory 로 주입. transcript 노출 없이
+/// `String.fromEnvironment('GEMINI_API_KEY')` 같은 dart-define 받아 처리.
+final Map<String, String> _secureStorageMock = <String, String>{};
+
+void setupSecureStorageMock(Map<String, String> initial) {
+  _secureStorageMock
+    ..clear()
+    ..addAll(initial);
+  const channel =
+      MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(channel, (call) async {
+    final args = (call.arguments as Map?) ?? const {};
+    final key = args['key'] as String?;
+    switch (call.method) {
+      case 'read':
+        return key != null ? _secureStorageMock[key] : null;
+      case 'readAll':
+        return Map<String, String>.from(_secureStorageMock);
+      case 'write':
+        final value = args['value'] as String?;
+        if (key != null && value != null) {
+          _secureStorageMock[key] = value;
+        }
+        return null;
+      case 'delete':
+        if (key != null) _secureStorageMock.remove(key);
+        return null;
+      case 'deleteAll':
+        _secureStorageMock.clear();
+        return null;
+      case 'containsKey':
+        return key != null && _secureStorageMock.containsKey(key);
+    }
+    return null;
+  });
+}
+
 /// 화면 캡처 — topmost RenderRepaintBoundary (navigator push 된 route 우선) 캡처.
 /// viewport 70% 면적 가드로 sub-boundary 잘못 잡힘 방지.
 ///

@@ -101,7 +101,11 @@ class _DetailBody extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
+      // 2026-05-28 integration_test capture 가 IndexedStack 환경에서 active
+      // screen subtree 안 RepaintBoundary 를 찾아야 PNG 생성. ListView 자체는
+      // 자동 boundary 아니라 명시 wrap 필요. (log_list_screen 과 같은 패턴)
+      body: RepaintBoundary(
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // 날짜 + 장소
@@ -202,6 +206,7 @@ class _DetailBody extends ConsumerWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }

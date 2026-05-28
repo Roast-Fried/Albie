@@ -36,7 +36,9 @@ class ArchiveDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: detailAsync.when(
+      // 2026-05-28 integration_test capture 용 RepaintBoundary wrap.
+      body: RepaintBoundary(
+        child: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorStateWidget(
           message: '상세 정보를 불러올 수 없습니다',
@@ -126,6 +128,7 @@ class ArchiveDetailScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

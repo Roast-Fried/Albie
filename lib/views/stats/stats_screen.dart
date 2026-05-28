@@ -33,7 +33,9 @@ class StatsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('통계')),
-      body: statsAsync.when(
+      // 2026-05-28 integration_test capture 용 RepaintBoundary wrap.
+      body: RepaintBoundary(
+        child: statsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorStateWidget(
           message: '통계를 불러올 수 없습니다',
@@ -137,6 +139,7 @@ class StatsScreen extends ConsumerWidget {
                   ],
                 ],
               ),
+      ),
       ),
     );
   }
