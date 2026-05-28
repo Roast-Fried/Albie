@@ -131,3 +131,29 @@
 - 2026-05-27: Sprint 1 fix 7건 (UI-001/002/016/017 + UI-005/019/022 root cause + Codex HIGH 3건) 적용. commit `1faa4ba`.
 - 2026-05-27: Sprint 2/3 fix 3건 (UI-004/018/020) 적용 + UI-014/NEW 분석 후 skip.
 - 2026-05-27: Sprint 4 — capture infra fix + MEDIUM 1.1 + Codex audit N-1/N-2 (5번째 commit). 모든 화면 PNG 시각 검증 가능 상태.
+- 2026-05-27: Sprint 5 — 위스키 컨셉 + Pretendard 폰트 적용 (a89c2df). Light=짐빔 amber / Dark=아란 마크리무어 CS gold. 모든 화면 light/dark 20 PNG (theme_full_capture_test). UI-025 entry card 헤더 ↔ floating label 겹침 fix.
+- 2026-05-27: Sprint 6 — CI release workflow (release.yml) — tag push (v*) 시 Android APK + iOS unsigned 자동 빌드 + GitHub Release 업로드. v0.2.0 local + v0.2.1 CI 빌드 완료 (Android 167MB + iOS Runner.app.zip 43MB).
+- 2026-05-28: Sprint 7 — seeded data + dialog/sheet capture. AI key (--dart-define) + SharedPreferences mock + FlutterSecureStorage MethodChannel mock. 17 PNG (3 draft + log_list 데이터 / log_detail / tasting note sheet + 별점 / archive_detail / stats 차트 / 다크 dialog / reset confirm / log 검색 3장).
+- 2026-05-28: Sprint 8 — parser 정확도 (친구들이랑 분리 회귀) fix + Gemini prompt 규칙 10 + Node.js 24 강제. log_detail / archive_detail / stats screen body 에 RepaintBoundary wrap.
+
+## 미커버 시나리오 (skip 결정, 별도 sprint)
+
+### ErrorStateWidget 표시 시나리오
+**미캡처 이유**: ErrorStateWidget 은 log_list / archive / stats / log_detail / archive_detail 의 error path 에서 표시. 자연스럽게 보려면 provider override (ProviderScope.overrides) 로 mock error 강제 필요. integration_test 의 app.main() 진입점은 override 불가 — widget_test 영역.
+**대안**: 별도 widget_test 작성하여 ErrorStateWidget 단독 캡처 (golden test 또는 unit widget test). 본 capture cycle scope 외.
+**우선순위**: LOW — error state UI 코드 자체는 검증 (analyze + 109 test pass) + 인접 화면 (ErrorStateWidget message + onRetry button) 시각 미발생.
+
+### AI 로딩 중 / AI 실패 배너 시나리오
+**미캡처 이유**: AI 호출 ~5-15s 사이에 캡처해야 함 (timing race). takeShot 의 pumpAndSettle 는 응답 완료까지 기다림 → 로딩 PNG 못 잡음. AI 실패 배너는 network/quota error mock 필요.
+**대안**: AI 호출 중간에 명시 pump (settle 안 함) + boundary capture — Flutter test framework 의 한계로 안정적 캡처 어려움.
+**우선순위**: LOW — 로딩 UI 자체는 단순 CircularProgressIndicator + 텍스트. 실 device 검증으로 충분.
+
+### LogList long-press 삭제 시나리오
+**미캡처 이유**: long-press gesture 가 integration_test 에서 hitTest 충돌. 검색 step 은 capture 통과 (seeded_03a/b/c).
+**대안**: trailing 휴지통 button tap → 삭제 confirm dialog 직접 진입 (long-press 우회).
+**우선순위**: MEDIUM — 별도 sprint 작은 작업.
+
+### Stats 의 다양한 카테고리 / 1년+ 데이터 시나리오
+**미캡처 이유**: seed data 가 동일 day 다중 entry (와인/맥주/위스키) 만 — 월별 추이 / 다양한 카테고리 chart variation 안 보임.
+**대안**: integration_test 안에서 다양한 drankAt (예: 1년치 분포) entry 강제 INSERT.
+**우선순위**: LOW — 핵심 도넛 차트 + 표준잔 + 업적 시각 검증 완료.
