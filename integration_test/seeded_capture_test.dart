@@ -61,6 +61,35 @@ void main() {
       await takeShot(tester, 'seeded_03_log_list',
           activeScreen: LogListScreen);
 
+      // 검색 IconButton tap → 검색 TextField → 검색어 입력
+      final searchIcon = find.byIcon(Icons.search);
+      if (searchIcon.evaluate().isNotEmpty) {
+        await tester.tap(searchIcon.first, warnIfMissed: false);
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+        await takeShot(tester, 'seeded_03a_log_search_focused',
+            activeScreen: LogListScreen);
+
+        // 검색어 입력 (글렌피딕 — 매칭 결과)
+        final searchField = find.byType(TextField).first;
+        await tester.enterText(searchField, '글렌피딕');
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await takeShot(tester, 'seeded_03b_log_search_glenfiddich',
+            activeScreen: LogListScreen);
+
+        // 검색어 변경 (0건 결과)
+        await tester.enterText(searchField, '존재하지않는술');
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await takeShot(tester, 'seeded_03c_log_search_empty',
+            activeScreen: LogListScreen);
+
+        // 검색 닫기 (X icon)
+        final closeIcon = find.byIcon(Icons.close);
+        if (closeIcon.evaluate().isNotEmpty) {
+          await tester.tap(closeIcon.first, warnIfMissed: false);
+          await tester.pumpAndSettle(const Duration(seconds: 1));
+        }
+      }
+
       // 첫 entry tap → log_detail. log_list 의 entry tile 은 Card+InkWell
       // (ListTile 아님). InkWell 의 첫 tap 으로 정확히 entry navigation.
       final entries = find.byType(InkWell);
@@ -70,24 +99,8 @@ void main() {
         await takeShot(tester, 'seeded_04_log_detail',
             activeScreen: LogDetailScreen);
 
-        // 별점 tap (별 4번째) — Codex audit [3]: 실제 widget 은
-        // Icons.star_rounded / Icons.star_outline_rounded 사용.
-        final stars = find.byIcon(Icons.star_rounded);
-        final starsBorder = find.byIcon(Icons.star_outline_rounded);
-        if (stars.evaluate().isNotEmpty ||
-            starsBorder.evaluate().isNotEmpty) {
-          final allStars = starsBorder.evaluate().isNotEmpty
-              ? starsBorder
-              : stars;
-          if (allStars.evaluate().length >= 4) {
-            await tester.tap(allStars.at(3), warnIfMissed: false);
-            await tester.pumpAndSettle(const Duration(seconds: 1));
-            await takeShot(tester, 'seeded_05_log_detail_rating',
-                activeScreen: LogDetailScreen);
-          }
-        }
-
         // tasting note 작성 sheet — Codex audit [4]: 실제 CTA '테이스팅 노트 작성'.
+        // 별점 widget 은 sheet 안에 있으므로 sheet 진입 후 별점 tap.
         final noteEdit = find.text('테이스팅 노트 작성');
         final noteEdit2 = find.text('테이스팅 노트 작성/수정');
         final noteBtn = noteEdit.evaluate().isNotEmpty
@@ -97,6 +110,14 @@ void main() {
           await tester.tap(noteBtn.first, warnIfMissed: false);
           await tester.pumpAndSettle(const Duration(seconds: 2));
           await takeShot(tester, 'seeded_06_tasting_note_sheet');
+
+          // 별점 tap (sheet 안 — 4번째 별 tap) — Icons.star_outline_rounded.
+          final starsBorder = find.byIcon(Icons.star_outline_rounded);
+          if (starsBorder.evaluate().length >= 4) {
+            await tester.tap(starsBorder.at(3), warnIfMissed: false);
+            await tester.pumpAndSettle(const Duration(seconds: 1));
+            await takeShot(tester, 'seeded_05_rating_4stars');
+          }
 
           // 노트 입력
           final noteField = find.byType(TextField);

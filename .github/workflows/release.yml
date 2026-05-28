@@ -18,6 +18,12 @@ on:
 permissions:
   contents: write  # Release create/upload
 
+# Node.js 20 deprecation (2026-06-02 default 변경) — 모든 JS action 을 Node.js 24
+# 로 강제. checkout@v4 / setup-java@v4 / flutter-action@v2 / action-gh-release@v2
+# 가 release 측 Node.js 24 호환 미배포 상태라 본 환경변수로 강제.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build-android:
     runs-on: ubuntu-latest

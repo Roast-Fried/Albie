@@ -91,7 +91,8 @@ String buildSystemPrompt(
 6. $cutoffRule
 7. 건강, 의학, 체내 알코올 관련 내용은 무시한다.
 8. 확신도가 낮은 항목은 parseWarnings에 이유를 적는다.
-9. ageStatement는 "15년" 형태로 한글 단위를 포함한다.''';
+9. ageStatement는 "15년" 형태로 한글 단위를 포함한다.
+10. 사람/모임/장소/감정 단어 (친구들, 친구, 가족, 동료, 혼자, 같이, 함께, 회식, 모임, 집, 술집, 바, 클럽, 좋아서, 기분, 신나서 등) 는 술 이름으로 분류하지 않는다. 술 이름이 명시되지 않으면 liquorName=null + liquorCategory="other" 로 둔다.''';
 }
 
 String buildTastingNoteSystemPrompt() {

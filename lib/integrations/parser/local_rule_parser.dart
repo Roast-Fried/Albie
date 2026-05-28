@@ -91,8 +91,15 @@ class LocalRuleParser {
   /// "글렌피딕 한 잔이랑 맥주 두 캔" → ["글렌피딕 한 잔", "맥주 두 캔"]
   /// 접속사 없어도 카테고리 키워드 2회 + 수량 패턴 등장 시 분리
   List<String> _splitSegments(String text) {
+    // 2026-05-28: split 전에 사람/모임/감정 표현 제거 — "친구들이랑 맥주" 가
+    // "친구들" + "맥주" 두 entry 로 분리되는 회귀 (이랑 separator 의 부산물).
+    final preCleaned = text.replaceAll(
+      RegExp(r'(친구들이랑|친구들과|친구들|친구와|친구|가족이랑|가족과|가족|동료들이랑|동료들과|동료들|동료와|동료|혼자|같이|함께|회식|모임)'),
+      '',
+    );
+
     // 접속사/구분자로 분리
-    final parts = text
+    final parts = preCleaned
         .replaceAll(RegExp(r'이랑|하고|그리고|에다가?|,|，'), '||')
         .split('||')
         .map((s) => s.trim())
@@ -367,7 +374,10 @@ class LocalRuleParser {
         // "각" / "모두" / "전부" 부사 제거 ("보드카 40% 각 한 잔" 등)
         .replaceAll(RegExp(r'(?<![가-힣])(각|모두|전부)(?![가-힣])'), '')
         .replaceAll(RegExp(r'(마셨어|마심|마셨는데|마셨음|먹음|먹었어|마시고|더)'), '')
-        .replaceAll(RegExp(r'(어제|오늘|그저께|지난주|나|에서|좀|조금|정도)'), '')
+        // 2026-05-28: 사람/모임/감정 단어 (친구들, 혼자, 같이, 함께, 회식, 모임 등)
+        // 도 술 이름 후보에서 제거 — AI 파서가 "친구들이랑" 을 "친구들" 술 이름으로
+        // 잘못 분류한 회귀에 대응 (Gemini prompt 보강도 함께).
+        .replaceAll(RegExp(r'(어제|오늘|그저께|지난주|나|에서|좀|조금|정도|친구들이랑|친구들|친구|혼자|같이|함께|회식|모임|좋아서|기분|신나서)'), '')
         .trim();
 
     if (cleaned.isEmpty) return null;
