@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/providers.dart';
 import '../integrations/notification/notification_service.dart';
 
 /// Phase C2 알림 설정 — type 별 on/off toggle + 권한 상태.
@@ -92,9 +93,39 @@ class NotificationSettingsNotifier
     final cur = state.valueOrNull ?? const NotificationSettingsState();
     if (v && !cur.permissionGranted) {
       final granted = await NotificationService.instance.requestPermission();
-      await _save(cur.copyWith(masterEnabled: v, permissionGranted: granted));
+      final updated =
+          cur.copyWith(masterEnabled: v, permissionGranted: granted);
+      await _save(updated);
+      if (granted) await _reschedule(updated);
     } else {
-      await _save(cur.copyWith(masterEnabled: v));
+      final updated = cur.copyWith(masterEnabled: v);
+      await _save(updated);
+      // 2026-05-28 Codex audit 5: master 재ON 시 schedule 비어있는 회귀 — 가장
+      // 최근 entry 기반으로 type 별 reminder 재스케줄.
+      if (v) await _reschedule(updated);
+    }
+  }
+
+  /// 가장 최근 entry 의 drankAt 을 anchor 로 type 별 reminder 재스케줄.
+  /// 저장 이력 없으면 atRisk / lateNight skip, weekly 만 schedule.
+  Future<void> _reschedule(NotificationSettingsState s) async {
+    if (!s.anyTypeActive) return;
+    final svc = NotificationService.instance;
+
+    try {
+      final recent = await ref.read(recentLogsProvider.future);
+      final lastDrankAt = recent.isNotEmpty ? recent.first.drankAt : null;
+
+      if (s.atRiskReminder && lastDrankAt != null) {
+        await svc.scheduleAtRiskReminder(lastDrankAt: lastDrankAt);
+      }
+      if (s.weeklySummary) {
+        await svc.scheduleWeeklySummary(totalCount: recent.length);
+      }
+      // lateNight / health 는 trigger 조건 (시각 / 표준잔 임계) 의존 — 저장
+      // 시점에 평가하므로 master 재ON 만으로 schedule 안 함.
+    } catch (_) {
+      // 로그 로드 실패 시 schedule skip.
     }
   }
 

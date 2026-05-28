@@ -207,8 +207,21 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
         final logCount = ref.read(thisMonthLogCountProvider).valueOrNull ?? 0;
         await svc.scheduleWeeklySummary(totalCount: logCount);
       }
-      // 건강 신호는 stats provider 의 weeklyStandardDrinks 조회 필요 — stats
-      // invalidate 후 비동기 — 다음 build cycle 에서 별도 wire (생략).
+
+      // 2026-05-28 Codex audit 3 (FAIL): 건강 신호가 saveToDb hook 에서 호출 안 되어
+      // UI toggle 만 보이고 한 번도 schedule 안 되는 회귀. stats provider 의
+      // 최신 값을 invalidate 후 await 로 받아 health 도 schedule.
+      if (s.healthSignal) {
+        ref.invalidate(statsProvider);
+        try {
+          final stats = await ref.read(statsProvider.future);
+          await svc.scheduleHealthSignal(
+            weeklyStandardDrinks: stats.thisMonthStandardDrinks,
+          );
+        } catch (_) {
+          // stats 로드 실패 시 health schedule skip (기존 schedule 유지).
+        }
+      }
     } catch (_) {
       // schedule 실패는 저장 자체에 영향 없음.
     }
