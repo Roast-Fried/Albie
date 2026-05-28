@@ -151,11 +151,18 @@ GitHub Actions: push/PR → analyze → test → (main만) APK 빌드
 
 ---
 
-## 📌 향후 작업 지침 (2026-05-18 갱신)
+## 📌 향후 작업 지침 (2026-05-28 갱신)
+
+### 🔖 세션 시작 시 우선 읽을 checkpoint
+
+**다음 세션 진입 시 (특히 `/analyze` 직후) 최우선 읽기**:
+1. [docs/session-handoff-2026-05-28.md](docs/session-handoff-2026-05-28.md) — 현재 상태 + 🚨 v0.2.2 CI fail (Android core library desugaring 누락) + 다음 step 명시
+2. 본 § 활성 문서 계층 + § 추가 구현 진도
 
 ### 활성 문서 계층
 | 역할 | 파일 | 비고 |
 |------|------|------|
+| **🔴 다음 세션 handoff** | [docs/session-handoff-2026-05-28.md](docs/session-handoff-2026-05-28.md) | v0.2.2 CI fail fix + 미해결 항목 + 다음 step. 세션 시작 시 최우선 |
 | **최상위 기획** | [docs/기획서.md](docs/기획서.md) | 외부 docx v2.1 + 와이어프레임 + 현재 구현을 통합. 작업 시 항상 이 문서 § 4.1 화면 목록을 기준으로 삼을 것 |
 | **와이어프레임 Gap 플랜** | [docs/plan-wireframe-diff.md](docs/plan-wireframe-diff.md) | 39 건 Gap + Phase A/B/C 우선순위. 다음 기능 착수 전 반드시 확인 |
 | **UI/UX 6라운드 평가 (2026-05-18)** | [docs/analyze/2026-05-18-ui-ux-evaluation.md](docs/analyze/2026-05-18-ui-ux-evaluation.md) | 14 agent (Claude 9 + Codex 5) 양방향 cross-feedback. ~165 unique finding. CRITICAL/HIGH 백로그 |
