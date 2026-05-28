@@ -95,6 +95,30 @@
 
 **MEDIUM-HIGH** — retention 직결. 다만 OS 권한 거부 시 비활성.
 
+### 진행 결과 (2026-05-28, 5522d0d + 76bd54e)
+
+✅ **완료**:
+- 패키지 도입 (`flutter_local_notifications ^17.2.4` + `timezone ^0.9.4` + `permission_handler ^11.3.1`)
+- Android perm + iOS 런타임 권한 요청
+- NotificationService (4 시나리오: weekly summary / at-risk / late night follow-up / health signal)
+- NotificationSettingsViewmodel + Settings UI (master + 4 type toggle)
+- saveToDb hook 자동 재스케줄
+- master 재ON 시 lastDrankAt 기반 재스케줄 (audit Finding 5 fix)
+- healthSignal saveToDb hook 통합 (audit Finding 3 fix)
+- FCM 서버 push 안내 문서 (docs/notification-fcm-setup.md)
+
+🟡 **별도 sprint 보류** (Codex audit LOW):
+- Finding 1: 싱글톤 NotificationService.instance test 격리 — integration_test 실 시나리오 무해, unit test 만 영향
+- Finding 4: timezone Asia/Seoul 하드코드 — 학생 과제 범위 OK, 해외 사용자 device timezone 자동 감지로 별도
+- Finding 6: iOS isPermissionGranted 항상 true 반환 — SharedPreferences 캐싱 필요 (마지막 requestPermissions 결과 저장)
+- Finding 7: inexactAllowWhileIdle Doze delay — exactAllowWhileIdle 로 변경 권장 (USE_EXACT_ALARM Manifest 이미 등록)
+
+❌ **미구현 시나리오** (plan 의 1-2번):
+- Day 1 첫 기록 reward — 이미 Phase 0 의 Snackbar
+- Day 3 streak indicator — 홈 inline (알림 X)
+
+onboarding 권한 요청 step 도 별도 — Settings.setMaster 시점에 권한 요청하므로 onboarding 거치지 않아도 정상 동작.
+
 ---
 
 ## C3. Multi-user / Co-drinking session
