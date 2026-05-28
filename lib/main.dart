@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'core/database/database_init.dart';
+import 'integrations/notification/notification_service.dart';
 
 /// 전역 crash handler — Flutter framework / async / platform 에러를 모두 캡처.
 ///
@@ -46,6 +47,9 @@ void main() {
       }
 
       initDatabaseFactory();
+      // Phase C2 알림 service — timezone DB + Android channel 초기화. 권한 요청
+      // 은 onboarding 또는 Settings 의 명시 사용자 액션 시점에 별도.
+      unawaited(NotificationService.instance.init());
       runApp(const ProviderScope(child: AlbiApp()));
     },
     (Object error, StackTrace stack) {

@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 import '../domain/entities/drink_log.dart';
 import '../domain/entities/liquor_master.dart';
+import '../integrations/notification/notification_service.dart';
 import '../integrations/parser/parse_result.dart';
 import 'achievements_viewmodel.dart';
 import 'archive_viewmodel.dart';
 import 'log_list_viewmodel.dart';
+import 'notification_settings_viewmodel.dart';
 import 'stats_viewmodel.dart';
 
 /// 검토 화면 Entry 카드에서 매칭된 liquorMaster 표시용.
@@ -179,6 +181,37 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
     ref.invalidate(recentFrequentLiquorsProvider);
     // 아카이브 (마셔본 술 카탈로그) — 새 master/entry 가 추가되면 갱신 필요 (CDX-005)
     ref.invalidate(archiveListProvider);
+
+    // Phase C2 알림 — 저장 직후 reminder schedule 재설정 (사용자 설정 따라).
+    await _scheduleRemindersAfterSave(ref, log);
+  }
+
+  /// 저장 hook — 사용자 알림 설정에 따라 시나리오 별 reminder 재스케줄.
+  /// 권한/master off 또는 type off 면 schedule 안 함. 실패는 silent.
+  Future<void> _scheduleRemindersAfterSave(
+      WidgetRef ref, DrinkLog log) async {
+    try {
+      final settingsAsync = ref.read(notificationSettingsProvider);
+      final s = settingsAsync.valueOrNull;
+      if (s == null || !s.masterEnabled || !s.permissionGranted) return;
+
+      final svc = NotificationService.instance;
+
+      if (s.atRiskReminder) {
+        await svc.scheduleAtRiskReminder(lastDrankAt: log.drankAt);
+      }
+      if (s.lateNightFollowup) {
+        await svc.scheduleLateNightFollowup(drankAt: log.drankAt);
+      }
+      if (s.weeklySummary) {
+        final logCount = ref.read(thisMonthLogCountProvider).valueOrNull ?? 0;
+        await svc.scheduleWeeklySummary(totalCount: logCount);
+      }
+      // 건강 신호는 stats provider 의 weeklyStandardDrinks 조회 필요 — stats
+      // invalidate 후 비동기 — 다음 build cycle 에서 별도 wire (생략).
+    } catch (_) {
+      // schedule 실패는 저장 자체에 영향 없음.
+    }
   }
 }
 

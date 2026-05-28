@@ -6,6 +6,7 @@ import '../../viewmodels/settings_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../common/delete_confirm_dialog.dart';
 import 'ai_settings_screen.dart';
+import 'notification_settings_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -53,6 +54,18 @@ class SettingsScreen extends ConsumerWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) => const AiSettingsScreen(),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_outlined),
+                    title: const Text('알림'),
+                    subtitle: const Text('재방문 reminder + 주간 요약 + 건강 신호'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationSettingsScreen(),
                       ),
                     ),
                   ),
