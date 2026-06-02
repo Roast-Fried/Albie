@@ -121,13 +121,17 @@ class SupabaseSyncService {
   /// 마스터 id 는 canonicalName 으로 재매칭(없으면 null — FK 안전), 테이스팅
   /// 노트는 복원된 새 entryId 에 재연결한다.
   Future<void> applyRestore(List<LogBackup> backups) async {
-    final masters = await _liquorMasterRepo.getAll();
-    final idByCanonical = {
-      for (final m in masters)
-        if (m.id != null) m.canonicalName.toLowerCase(): m.id!,
-    };
-
+    _statusController.add(SyncStatus.syncing);
     try {
+      // 마스터 id 는 canonicalName 으로 로컬 재매칭(없으면 null — FK 안전).
+      final masters = await _liquorMasterRepo.getAll();
+      final idByCanonical = {
+        for (final m in masters)
+          if (m.id != null) m.canonicalName.toLowerCase(): m.id!,
+      };
+
+      final logs = <DrinkLog>[];
+      final notesPerLog = <List<TastingNote?>>[];
       for (final b in backups) {
         final entries = [
           for (final eb in b.entries)
@@ -144,55 +148,30 @@ class SupabaseSyncService {
               alcoholPercent: eb.entry.alcoholPercent,
             ),
         ];
-        final log = DrinkLog(
-          rawInputText: b.log.rawInputText,
-          rawImagePath: b.log.rawImagePath,
-          parseSource: b.log.parseSource,
-          place: b.log.place,
-          overallMemo: b.log.overallMemo,
-          drankAt: b.log.drankAt,
-          userConfirmedAt: b.log.userConfirmedAt,
-          createdAt: b.log.createdAt,
-          updatedAt: b.log.updatedAt,
-          entries: entries,
-          foodItems: b.log.foodItems,
+        logs.add(
+          DrinkLog(
+            rawInputText: b.log.rawInputText,
+            rawImagePath: b.log.rawImagePath,
+            parseSource: b.log.parseSource,
+            place: b.log.place,
+            overallMemo: b.log.overallMemo,
+            drankAt: b.log.drankAt,
+            userConfirmedAt: b.log.userConfirmedAt,
+            createdAt: b.log.createdAt,
+            updatedAt: b.log.updatedAt,
+            entries: entries,
+            foodItems: b.log.foodItems,
+          ),
         );
-        final newLogId = await _drinkLogRepo.save(log);
-
-        // 테이스팅 노트 재연결 — 저장된 새 entryId 순서로 매칭.
-        if (b.entries.any((e) => e.note != null)) {
-          final saved = await _drinkLogRepo.getById(newLogId);
-          final savedEntries = saved?.entries ?? const <DrinkEntry>[];
-          for (
-            var i = 0;
-            i < b.entries.length && i < savedEntries.length;
-            i++
-          ) {
-            final note = b.entries[i].note;
-            final savedId = savedEntries[i].id;
-            if (note != null && savedId != null) {
-              await _tastingNoteRepo.save(
-                TastingNote(
-                  entryId: savedId,
-                  nose: note.nose,
-                  palate: note.palate,
-                  finish: note.finish,
-                  rating: note.rating,
-                  note: note.note,
-                ),
-              );
-            }
-          }
-        }
+        notesPerLog.add([for (final eb in b.entries) eb.note]);
       }
+
+      // 원자적 교체 — 실패 시 트랜잭션 롤백으로 기존 로컬 데이터 보존.
+      await _drinkLogRepo.restoreReplaceAll(logs, notesPerLog);
+      _statusController.add(SyncStatus.done);
     } catch (e) {
-      // 중간 실패 시 "로컬 비움 + 일부만 복원" 상태일 수 있음을 알린다. 클라우드
-      // 백업은 건드리지 않으므로 재시도하면 다시 fetch→replace 로 복구된다.
       _statusController.add(SyncStatus.error);
-      throw DatabaseError(
-        '복원 중 일부만 적용됐을 수 있어요. 다시 시도하면 클라우드 백업에서 복구됩니다.',
-        cause: e,
-      );
+      rethrow;
     }
   }
 

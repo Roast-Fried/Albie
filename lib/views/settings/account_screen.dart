@@ -165,40 +165,40 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     final scheme = Theme.of(context).colorScheme;
     return switch (status) {
       SyncStatus.syncing => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              const SizedBox(
-                height: 16,
-                width: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 8),
-              Text('동기화 중...', style: TextStyle(color: scheme.primary)),
-            ],
-          ),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            const SizedBox(
+              height: 16,
+              width: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 8),
+            Text('동기화 중...', style: TextStyle(color: scheme.primary)),
+          ],
         ),
+      ),
       SyncStatus.error => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text('동기화 오류', style: TextStyle(color: scheme.error)),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text('동기화 오류', style: TextStyle(color: scheme.error)),
+      ),
       _ => const SizedBox.shrink(),
     };
   }
 
   // ── 액션 ──
   Future<void> _signIn() => _run(
-        () => ref
-            .read(accountProvider.notifier)
-            .signIn(_emailCtrl.text, _pwCtrl.text),
-      );
+    () => ref
+        .read(accountProvider.notifier)
+        .signIn(_emailCtrl.text, _pwCtrl.text),
+  );
 
   Future<void> _signUp() => _run(
-        () => ref
-            .read(accountProvider.notifier)
-            .signUp(_emailCtrl.text, _pwCtrl.text),
-        successMsg: '가입 완료! 이메일 확인이 필요할 수 있어요.',
-      );
+    () => ref
+        .read(accountProvider.notifier)
+        .signUp(_emailCtrl.text, _pwCtrl.text),
+    successMsg: '가입 완료! 이메일 확인이 필요할 수 있어요.',
+  );
 
   Future<void> _signOut() =>
       _run(() => ref.read(accountProvider.notifier).signOut());
@@ -228,11 +228,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       final ok = await showDeleteConfirmDialog(
         context,
         title: '클라우드에서 복원',
-        content: '클라우드 백업 ${logs.length}건으로 현재 기기 기록을 교체합니다.\n'
+        content:
+            '클라우드 백업 ${logs.length}건으로 현재 기기 기록을 교체합니다.\n'
             '현재 기록은 사라집니다. 계속하시겠습니까?',
       );
       if (ok != true) return;
-      await resetAllRecords(ref); // fetch 성공 후이므로 안전
+      // 원자적 교체 — applyRestore 내부 단일 트랜잭션에서 wipe+insert.
+      // 실패 시 롤백되어 기존 로컬 기록이 보존된다(부분 복원 없음).
       await sync.applyRestore(logs);
       _invalidateData();
       if (mounted) _snack('${logs.length}건의 기록을 복원했어요');
@@ -267,8 +269,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   }
 
   void _snack(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -300,15 +303,15 @@ class _UnconfiguredCard extends StatelessWidget {
                   '앱은 지금도 모든 기능이 정상 동작합니다. 클라우드 백업·복원을 쓰려면 '
                   'Supabase 프로젝트를 만들고 .env 에 URL·키를 채운 뒤 다시 빌드하세요.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   '설정 방법: docs/supabase-setup.md\n테이블 생성 SQL: docs/supabase-schema.sql',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
