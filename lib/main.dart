@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'core/database/database_init.dart';
@@ -14,8 +15,16 @@ import 'integrations/notification/notification_service.dart';
 /// 서비스 연동 지점). 앱 전체 종료 대신 위젯 단위 회복.
 void main() {
   runZonedGuarded(
-    () {
+    () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      // .env 로드 — credential(Supabase/Gemini) 주입. 파일이 없거나 비어 있어도
+      // 진행하며, 이 경우 관련 기능은 dormant 로 기존 로컬 동작을 유지한다.
+      try {
+        await dotenv.load(fileName: '.env');
+      } catch (_) {
+        // .env asset 부재/파싱 실패 — dormant 로 계속.
+      }
 
       // 1) Flutter framework 에러 (build/layout/paint)
       //    PII 보호: release 모드는 console 출력 0 — stack trace 가 사용자 입력 /

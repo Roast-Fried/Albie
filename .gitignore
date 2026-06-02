@@ -51,9 +51,11 @@ test/golden/failures/
 # Integration test screenshots (로컬 생성물)
 test_screenshots/
 
-# Environment
-.env
-.env.*
+# Environment — .env 와 .env.example 은 빈 placeholder 템플릿으로 커밋합니다
+# (flutter_dotenv asset 이라 파일이 없으면 빌드 실패 → fresh clone 보호).
+# 실제 비밀 값(특히 GEMINI_API_KEY)은 .env.local 에 두면 git 추적되지 않습니다.
+.env.local
+.env.*.local
 
 # Android release signing secrets
 android/key.properties

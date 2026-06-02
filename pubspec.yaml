@@ -25,6 +25,7 @@ dependencies:
   flutter_local_notifications: ^17.2.4
   timezone: ^0.9.4
   permission_handler: ^11.3.1
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +38,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/seed/
+    - .env
   fonts:
     - family: Pretendard
       fonts:
