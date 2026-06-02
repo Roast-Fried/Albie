@@ -11,8 +11,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 ///
 /// 보안 주의:
 /// - `SUPABASE_ANON_KEY` 는 클라이언트 공개 키(RLS 로 데이터 보호)라 커밋해도 안전.
-/// - `GEMINI_API_KEY` 는 비밀 키 — 커밋 금지. 인앱 입력(secure storage)을 우선
-///   사용하고, `.env` 의 GEMINI_API_KEY 는 비워 두길 권장(개발 편의용).
+/// - `GEMINI_API_KEY` 는 비밀 키라 `.env`(공개 asset)에서 읽지 않는다. 앱 내 보안
+///   저장소 입력을 기본으로 하고, 빌드타임 `--dart-define` 으로만 주입 가능.
 class AppConfig {
   AppConfig._();
 
@@ -33,7 +33,9 @@ class AppConfig {
   static String get supabaseAnonKey =>
       _read('SUPABASE_ANON_KEY', _defineSupabaseAnonKey);
 
-  static String get geminiApiKey => _read('GEMINI_API_KEY', _defineGeminiApiKey);
+  // Gemini 키는 비밀이므로 `.env`(공개 asset)에서 읽지 않는다. 빌드타임
+  // `--dart-define` 만 허용(일반 사용은 앱 내 보안 저장소 입력 권장).
+  static String get geminiApiKey => _defineGeminiApiKey.trim();
 
   /// Supabase credential 이 모두 채워졌는지 — 클라우드 기능 활성 게이트.
   static bool get hasSupabase =>

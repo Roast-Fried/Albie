@@ -102,8 +102,12 @@ class SupabaseSyncService {
         _statusController.add(SyncStatus.done);
         return null;
       }
-      final backups =
-          decodeBackup((row['payload'] as Map).cast<String, dynamic>());
+      final payload = row['payload'];
+      if (payload is! Map) {
+        // 손상 payload 는 네트워크 오류가 아니라 데이터 오류로 표면화.
+        throw const ValidationError('백업 데이터가 손상되었어요');
+      }
+      final backups = decodeBackup(payload.cast<String, dynamic>());
       _statusController.add(SyncStatus.done);
       return backups;
     } catch (e) {
@@ -123,58 +127,72 @@ class SupabaseSyncService {
         if (m.id != null) m.canonicalName.toLowerCase(): m.id!,
     };
 
-    for (final b in backups) {
-      final entries = [
-        for (final eb in b.entries)
-          DrinkEntry(
-            liquorMasterId: eb.masterCanonical != null
-                ? idByCanonical[eb.masterCanonical!.toLowerCase()]
-                : null,
-            liquorNameRaw: eb.entry.liquorNameRaw,
-            liquorCategory: eb.entry.liquorCategory,
-            ageStatement: eb.entry.ageStatement,
-            quantityValue: eb.entry.quantityValue,
-            quantityUnit: eb.entry.quantityUnit,
-            isEstimated: eb.entry.isEstimated,
-            alcoholPercent: eb.entry.alcoholPercent,
-          ),
-      ];
-      final log = DrinkLog(
-        rawInputText: b.log.rawInputText,
-        rawImagePath: b.log.rawImagePath,
-        parseSource: b.log.parseSource,
-        place: b.log.place,
-        overallMemo: b.log.overallMemo,
-        drankAt: b.log.drankAt,
-        userConfirmedAt: b.log.userConfirmedAt,
-        createdAt: b.log.createdAt,
-        updatedAt: b.log.updatedAt,
-        entries: entries,
-        foodItems: b.log.foodItems,
-      );
-      final newLogId = await _drinkLogRepo.save(log);
+    try {
+      for (final b in backups) {
+        final entries = [
+          for (final eb in b.entries)
+            DrinkEntry(
+              liquorMasterId: eb.masterCanonical != null
+                  ? idByCanonical[eb.masterCanonical!.toLowerCase()]
+                  : null,
+              liquorNameRaw: eb.entry.liquorNameRaw,
+              liquorCategory: eb.entry.liquorCategory,
+              ageStatement: eb.entry.ageStatement,
+              quantityValue: eb.entry.quantityValue,
+              quantityUnit: eb.entry.quantityUnit,
+              isEstimated: eb.entry.isEstimated,
+              alcoholPercent: eb.entry.alcoholPercent,
+            ),
+        ];
+        final log = DrinkLog(
+          rawInputText: b.log.rawInputText,
+          rawImagePath: b.log.rawImagePath,
+          parseSource: b.log.parseSource,
+          place: b.log.place,
+          overallMemo: b.log.overallMemo,
+          drankAt: b.log.drankAt,
+          userConfirmedAt: b.log.userConfirmedAt,
+          createdAt: b.log.createdAt,
+          updatedAt: b.log.updatedAt,
+          entries: entries,
+          foodItems: b.log.foodItems,
+        );
+        final newLogId = await _drinkLogRepo.save(log);
 
-      // 테이스팅 노트 재연결 — 저장된 새 entryId 순서로 매칭.
-      if (b.entries.any((e) => e.note != null)) {
-        final saved = await _drinkLogRepo.getById(newLogId);
-        final savedEntries = saved?.entries ?? const <DrinkEntry>[];
-        for (var i = 0; i < b.entries.length && i < savedEntries.length; i++) {
-          final note = b.entries[i].note;
-          final savedId = savedEntries[i].id;
-          if (note != null && savedId != null) {
-            await _tastingNoteRepo.save(
-              TastingNote(
-                entryId: savedId,
-                nose: note.nose,
-                palate: note.palate,
-                finish: note.finish,
-                rating: note.rating,
-                note: note.note,
-              ),
-            );
+        // 테이스팅 노트 재연결 — 저장된 새 entryId 순서로 매칭.
+        if (b.entries.any((e) => e.note != null)) {
+          final saved = await _drinkLogRepo.getById(newLogId);
+          final savedEntries = saved?.entries ?? const <DrinkEntry>[];
+          for (
+            var i = 0;
+            i < b.entries.length && i < savedEntries.length;
+            i++
+          ) {
+            final note = b.entries[i].note;
+            final savedId = savedEntries[i].id;
+            if (note != null && savedId != null) {
+              await _tastingNoteRepo.save(
+                TastingNote(
+                  entryId: savedId,
+                  nose: note.nose,
+                  palate: note.palate,
+                  finish: note.finish,
+                  rating: note.rating,
+                  note: note.note,
+                ),
+              );
+            }
           }
         }
       }
+    } catch (e) {
+      // 중간 실패 시 "로컬 비움 + 일부만 복원" 상태일 수 있음을 알린다. 클라우드
+      // 백업은 건드리지 않으므로 재시도하면 다시 fetch→replace 로 복구된다.
+      _statusController.add(SyncStatus.error);
+      throw DatabaseError(
+        '복원 중 일부만 적용됐을 수 있어요. 다시 시도하면 클라우드 백업에서 복구됩니다.',
+        cause: e,
+      );
     }
   }
 

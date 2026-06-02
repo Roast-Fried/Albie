@@ -40,7 +40,7 @@ Map<String, dynamic> encodeBackup(List<LogBackup> logs) {
 /// 잘못된/구버전 payload 는 [ValidationError] 로 명시 실패(로컬 변경 전에 검출).
 List<LogBackup> decodeBackup(Map<String, dynamic> data) {
   final version = data['version'];
-  if (version is! int || version > backupSchemaVersion) {
+  if (version is! int || version != backupSchemaVersion) {
     throw const ValidationError('백업 형식이 호환되지 않아요 (앱 업데이트 필요)');
   }
   final rawLogs = data['logs'];
@@ -58,38 +58,38 @@ List<LogBackup> decodeBackup(Map<String, dynamic> data) {
 }
 
 Map<String, dynamic> _encodeLog(LogBackup b) => {
-      'rawInputText': b.log.rawInputText,
-      'rawImagePath': b.log.rawImagePath,
-      'parseSource': b.log.parseSource,
-      'place': b.log.place,
-      'overallMemo': b.log.overallMemo,
-      'drankAt': b.log.drankAt.toIso8601String(),
-      'userConfirmedAt': b.log.userConfirmedAt?.toIso8601String(),
-      'createdAt': b.log.createdAt.toIso8601String(),
-      'updatedAt': b.log.updatedAt.toIso8601String(),
-      'foodItems': b.log.foodItems,
-      'entries': b.entries.map(_encodeEntry).toList(),
-    };
+  'rawInputText': b.log.rawInputText,
+  'rawImagePath': b.log.rawImagePath,
+  'parseSource': b.log.parseSource,
+  'place': b.log.place,
+  'overallMemo': b.log.overallMemo,
+  'drankAt': b.log.drankAt.toIso8601String(),
+  'userConfirmedAt': b.log.userConfirmedAt?.toIso8601String(),
+  'createdAt': b.log.createdAt.toIso8601String(),
+  'updatedAt': b.log.updatedAt.toIso8601String(),
+  'foodItems': b.log.foodItems,
+  'entries': b.entries.map(_encodeEntry).toList(),
+};
 
 Map<String, dynamic> _encodeEntry(EntryBackup e) => {
-      'liquorNameRaw': e.entry.liquorNameRaw,
-      'liquorCategory': e.entry.liquorCategory,
-      'masterCanonical': e.masterCanonical,
-      'ageStatement': e.entry.ageStatement,
-      'quantityValue': e.entry.quantityValue,
-      'quantityUnit': e.entry.quantityUnit,
-      'isEstimated': e.entry.isEstimated,
-      'alcoholPercent': e.entry.alcoholPercent,
-      'tastingNote': e.note == null
-          ? null
-          : {
-              'nose': e.note!.nose,
-              'palate': e.note!.palate,
-              'finish': e.note!.finish,
-              'rating': e.note!.rating,
-              'note': e.note!.note,
-            },
-    };
+  'liquorNameRaw': e.entry.liquorNameRaw,
+  'liquorCategory': e.entry.liquorCategory,
+  'masterCanonical': e.masterCanonical,
+  'ageStatement': e.entry.ageStatement,
+  'quantityValue': e.entry.quantityValue,
+  'quantityUnit': e.entry.quantityUnit,
+  'isEstimated': e.entry.isEstimated,
+  'alcoholPercent': e.entry.alcoholPercent,
+  'tastingNote': e.note == null
+      ? null
+      : {
+          'nose': e.note!.nose,
+          'palate': e.note!.palate,
+          'finish': e.note!.finish,
+          'rating': e.note!.rating,
+          'note': e.note!.note,
+        },
+};
 
 LogBackup _decodeLog(Map<String, dynamic> m) {
   final log = DrinkLog(
@@ -102,12 +102,15 @@ LogBackup _decodeLog(Map<String, dynamic> m) {
     userConfirmedAt: m['userConfirmedAt'] != null
         ? DateTime.parse(m['userConfirmedAt'] as String)
         : null,
-    createdAt:
-        m['createdAt'] != null ? DateTime.parse(m['createdAt'] as String) : null,
-    updatedAt:
-        m['updatedAt'] != null ? DateTime.parse(m['updatedAt'] as String) : null,
-    foodItems:
-        ((m['foodItems'] as List?) ?? const []).map((e) => e as String).toList(),
+    createdAt: m['createdAt'] != null
+        ? DateTime.parse(m['createdAt'] as String)
+        : null,
+    updatedAt: m['updatedAt'] != null
+        ? DateTime.parse(m['updatedAt'] as String)
+        : null,
+    foodItems: ((m['foodItems'] as List?) ?? const [])
+        .map((e) => e as String)
+        .toList(),
   );
   final entries = ((m['entries'] as List?) ?? const [])
       .map((e) => _decodeEntry((e as Map).cast<String, dynamic>()))

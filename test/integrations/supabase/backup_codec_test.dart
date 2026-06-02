@@ -96,6 +96,13 @@ void main() {
       );
     });
 
+    test('비정상/구버전(0) version → ValidationError (!= 강화)', () {
+      expect(
+        () => decodeBackup({'version': 0, 'logs': []}),
+        throwsA(isA<ValidationError>()),
+      );
+    });
+
     test('version 누락 → ValidationError', () {
       expect(
         () => decodeBackup({'logs': []}),
