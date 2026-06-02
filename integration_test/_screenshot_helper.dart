@@ -134,35 +134,50 @@ Future<void> takeShot(WidgetTester tester, String name,
     // IndexedStack 의 비활성 child boundary 는 paint 안 됨 → debugNeedsPaint true
     // 영구. paint 완료 + size 가드 통과한 boundary 우선 선택.
     RenderRepaintBoundary? boundary;
+    double bestArea = 0;
 
-    // 1차: paint 완료 + size 가드 통과 (reversed: topmost 부터)
-    for (final b in boundaries.reversed) {
+    // 1차: paint 완료 + size 가드 통과 중 **면적 최대** 경계 선택.
+    // 기존 'reversed(최심부) 우선' 은 Scaffold 의 body(ListView) 경계를 잡아 형제인
+    // AppBar 가 캡처에서 제외됐다(full_light_*_more/settings 타이틀 누락 원인).
+    // 면적 최대 = route/Scaffold 레벨 경계라 AppBar(+BottomNav)까지 포함하고,
+    // IndexedStack 비활성 탭의 작은 body 경계 대신 활성 화면의 최상위 경계를
+    // 잡으므로 'Home 경계 오선택' 회귀도 방지된다.
+    //
+    // `>=` (동률 시 마지막 우선) — pushed route(예: 설정/아카이브)와 뒤의
+    // AppShell 이 둘 다 풀스크린(동일 면적)일 때, DFS 가 나중에 방문하는
+    // 최상위 overlay(=실제로 보이는 push 화면)를 선택하기 위함. `>` 면 뒤의
+    // 화면(더보기)이 잡혀 push 화면이 캡처 안 됨.
+    for (final b in boundaries) {
       if (b.attached &&
           !b.debugNeedsPaint &&
           b.size.width >= minW &&
           b.size.height >= minH) {
-        boundary = b;
-        break;
+        final area = b.size.width * b.size.height;
+        if (area >= bestArea) {
+          bestArea = area;
+          boundary = b;
+        }
       }
     }
 
-    // 2차: size 가드만 통과 (retry 로 paint 강제)
+    // 2차: size 가드만 통과한 것 중 면적 최대 (retry 로 paint 강제)
     if (boundary == null) {
-      for (final b in boundaries.reversed) {
-        if (b.attached && b.size.width >= minW && b.size.height >= minH) {
-          // paint retry 최대 2초
-          bool ready = false;
-          for (int i = 0; i < 20; i++) {
-            if (!b.debugNeedsPaint) {
-              ready = true;
-              break;
-            }
-            await tester.pump(const Duration(milliseconds: 100));
-          }
-          if (ready) {
-            boundary = b;
+      for (final b in boundaries) {
+        if (!b.attached || b.size.width < minW || b.size.height < minH) continue;
+        final area = b.size.width * b.size.height;
+        if (area < bestArea) continue;
+        // paint retry 최대 2초
+        bool ready = false;
+        for (int i = 0; i < 20; i++) {
+          if (!b.debugNeedsPaint) {
+            ready = true;
             break;
           }
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        if (ready) {
+          bestArea = area;
+          boundary = b;
         }
       }
     }

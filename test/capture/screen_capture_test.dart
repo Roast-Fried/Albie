@@ -6,6 +6,7 @@ import 'package:albi/domain/entities/drink_log.dart';
 import 'package:albi/viewmodels/calendar_viewmodel.dart';
 import 'package:albi/views/calendar/calendar_screen.dart';
 import 'package:albi/views/settings/account_screen.dart';
+import 'package:albi/views/settings/more_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -125,5 +126,13 @@ void main() {
 
     expect(find.text('클라우드 백업이 설정되지 않았어요'), findsOneWidget);
     await _capture(key, 'ca_account_dormant');
+  });
+
+  testWidgets('더보기 화면 캡처 — AppBar 타이틀 렌더 검증', (tester) async {
+    final key = GlobalKey();
+    await _pumpScreen(tester, key, const MoreScreen(), const []);
+    // AppBar 타이틀이 실제로 렌더되는지 — 앱 버그 아님(캡처 아티팩트) 증명용.
+    expect(find.text('더보기'), findsOneWidget);
+    await _capture(key, 'ca_more_full');
   });
 }
