@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_routes.dart';
 import '../../core/providers.dart';
 import '../../core/utils/date_utils.dart' as dt_utils;
 import '../../core/utils/label_utils.dart';
@@ -11,7 +12,6 @@ import '../../domain/entities/drink_log.dart';
 import '../common/animations.dart';
 import '../common/delete_confirm_dialog.dart';
 import '../common/error_state_widget.dart';
-import 'log_detail_screen.dart';
 
 class LogListScreen extends ConsumerStatefulWidget {
   const LogListScreen({super.key});
@@ -163,7 +163,7 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
 
   void _openDetail(BuildContext context, DrinkLog log) {
     Navigator.of(context)
-        .push(fadeSlideRoute(LogDetailScreen(logId: log.id!)))
+        .pushNamed(Routes.logDetail, arguments: log.id!)
         .then((_) => ref.read(logListProvider.notifier).refresh());
   }
 

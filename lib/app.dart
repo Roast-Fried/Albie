@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers.dart';
 import 'viewmodels/theme_mode_viewmodel.dart';
@@ -31,6 +32,7 @@ class AlbiApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       home: const _AppEntry(),
+      onGenerateRoute: generateRoute,
     );
   }
 }

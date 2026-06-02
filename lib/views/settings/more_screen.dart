@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import '../archive/archive_screen.dart';
-import '../calendar/calendar_screen.dart';
-import '../common/animations.dart';
-import '../stats/stats_screen.dart';
-import 'settings_screen.dart';
+import '../../core/app_routes.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -18,30 +14,26 @@ class MoreScreen extends StatelessWidget {
             leading: const Icon(Icons.wine_bar),
             title: const Text('마셔본 술'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ArchiveScreen())),
+            onTap: () => Navigator.pushNamed(context, Routes.archive),
           ),
           ListTile(
             leading: const Icon(Icons.bar_chart),
             title: const Text('통계'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const StatsScreen())),
+            onTap: () => Navigator.pushNamed(context, Routes.stats),
           ),
           ListTile(
             leading: const Icon(Icons.calendar_month),
             title: const Text('음주 캘린더'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(
-                context, fadeSlideRoute(const CalendarScreen())),
+            onTap: () => Navigator.pushNamed(context, Routes.calendar),
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('설정'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            onTap: () => Navigator.pushNamed(context, Routes.settings),
           ),
         ],
       ),

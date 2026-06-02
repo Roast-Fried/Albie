@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../core/app_routes.dart';
 import '../../core/utils/date_utils.dart' as dt_utils;
 import '../../core/utils/label_utils.dart';
 import '../../domain/entities/drink_log.dart';
 import '../../viewmodels/calendar_viewmodel.dart';
 import '../common/animations.dart';
 import '../common/error_state_widget.dart';
-import '../log/log_detail_screen.dart';
 
 /// 월별 음주 캘린더 — 마신 날에 마커 표시, 날짜 선택 시 해당일 기록 목록.
 ///
@@ -171,8 +171,9 @@ class _DayLogTile extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.of(context).push(
-          fadeSlideRoute(LogDetailScreen(logId: log.id!)),
+        onTap: () => Navigator.of(context).pushNamed(
+          Routes.logDetail,
+          arguments: log.id!,
         ),
       ),
     );

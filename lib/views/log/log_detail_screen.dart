@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_routes.dart';
 import '../../core/utils/date_utils.dart' as dt_utils;
 import '../../core/utils/label_utils.dart';
 import '../../domain/entities/drink_log.dart';
@@ -13,7 +14,6 @@ import '../../viewmodels/log_detail_viewmodel.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
 import '../common/delete_confirm_dialog.dart';
 import '../common/error_state_widget.dart';
-import '../draft_review/draft_review_screen.dart';
 import 'widgets/tasting_note_section.dart';
 
 class LogDetailScreen extends ConsumerWidget {
@@ -239,18 +239,7 @@ class _DetailBody extends ConsumerWidget {
     );
 
     Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            builder: (_) => ProviderScope(
-              overrides: [
-                draftReviewProvider.overrideWith(
-                  (_) => DraftReviewViewModel(state),
-                ),
-              ],
-              child: const DraftReviewScreen(),
-            ),
-          ),
-        )
+        .pushNamed(Routes.draftReview, arguments: state)
         .then((_) {
           ref.invalidate(logDetailProvider(log.id!));
           // saveToDb이 logList, recentLogs, logCount를 이미 갱신함

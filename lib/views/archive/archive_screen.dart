@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_routes.dart';
 import '../../core/providers.dart';
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/archive_viewmodel.dart';
 import '../common/error_state_widget.dart';
 import '../log/widgets/star_rating.dart';
-import 'archive_detail_screen.dart';
 
 class ArchiveScreen extends ConsumerWidget {
   const ArchiveScreen({super.key});
@@ -225,11 +225,9 @@ class _ArchiveTile extends ConsumerWidget {
             );
             return;
           }
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) =>
-                  ArchiveDetailScreen(masterId: item.liquorMasterId!),
-            ),
+          Navigator.of(context).pushNamed(
+            Routes.archiveDetail,
+            arguments: item.liquorMasterId!,
           );
         },
       ),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_routes.dart';
 import '../../core/providers.dart';
 import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/home_viewmodel.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
 import '../common/error_state_widget.dart';
-import '../draft_review/draft_review_screen.dart';
-import '../settings/ai_settings_screen.dart';
 import 'widgets/recent_logs_widget.dart';
 import 'widgets/input_section_widget.dart';
 
@@ -37,10 +36,8 @@ class HomeScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             tooltip: 'AI 처리 로그',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AiSettingsScreen()),
-            ),
+            onPressed: () =>
+                Navigator.pushNamed(context, Routes.aiSettings),
           ),
         ],
       ),
@@ -207,18 +204,8 @@ class HomeScreen extends ConsumerWidget {
     WidgetRef ref,
     DraftReviewState initialState,
   ) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ProviderScope(
-          overrides: [
-            draftReviewProvider.overrideWith(
-              (_) => DraftReviewViewModel(initialState),
-            ),
-          ],
-          child: const DraftReviewScreen(),
-        ),
-      ),
-    );
+    Navigator.of(context)
+        .pushNamed(Routes.draftReview, arguments: initialState);
   }
 }
 
