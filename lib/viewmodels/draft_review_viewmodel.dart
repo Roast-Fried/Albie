@@ -6,6 +6,7 @@ import '../integrations/notification/notification_service.dart';
 import '../integrations/parser/parse_result.dart';
 import 'achievements_viewmodel.dart';
 import 'archive_viewmodel.dart';
+import 'calendar_viewmodel.dart';
 import 'log_list_viewmodel.dart';
 import 'notification_settings_viewmodel.dart';
 import 'stats_viewmodel.dart';
@@ -181,6 +182,8 @@ class DraftReviewViewModel extends StateNotifier<DraftReviewState> {
     ref.invalidate(recentFrequentLiquorsProvider);
     // 아카이브 (마셔본 술 카탈로그) — 새 master/entry 가 추가되면 갱신 필요 (CDX-005)
     ref.invalidate(archiveListProvider);
+    // 캘린더 마커/선택일 목록도 저장 직후 갱신 (Codex R1 MEDIUM)
+    ref.invalidate(calendarLogsByDayProvider);
 
     // Phase C2 알림 — 저장 직후 reminder schedule 재설정 (사용자 설정 따라).
     await _scheduleRemindersAfterSave(ref, log);

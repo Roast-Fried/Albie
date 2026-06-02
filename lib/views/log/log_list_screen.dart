@@ -44,6 +44,8 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
   @override
   Widget build(BuildContext context) {
     final logsAsync = ref.watch(logListProvider);
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -83,7 +85,8 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
         // 로딩/빈/데이터 상태 전환을 부드럽게 cross-fade (암시적 애니메이션).
         // 키를 상태 종류로만 구분해 data→data(refresh) 시 재애니메이션을 막는다.
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
+          duration:
+              reduceMotion ? Duration.zero : const Duration(milliseconds: 250),
           layoutBuilder: (currentChild, previousChildren) => Stack(
             alignment: Alignment.topCenter,
             children: [

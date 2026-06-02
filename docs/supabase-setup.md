@@ -28,15 +28,22 @@
 
 ## 4. `.env` 채우기
 
-프로젝트 루트의 `.env` 파일을 열어 값을 채웁니다(이 파일은 git 에 커밋되지 않습니다):
+프로젝트 루트의 `.env` 파일을 열어 값을 채웁니다:
 
 ```
 SUPABASE_URL=https://xxxxxxxx.supabase.co
 SUPABASE_ANON_KEY=eyJhbGci...
 ```
 
-> `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...` 로 빌드 시
-> 전달해도 됩니다(`.env` 보다 우선순위 낮음).
+> **보안 안내**: `.env` 는 git 에 추적되는 템플릿입니다. 하지만 여기 들어가는
+> `SUPABASE_ANON_KEY` 는 Supabase 가 클라이언트 공개용으로 설계한 키이고 RLS 가
+> 데이터를 보호하므로 커밋되어도 안전합니다. 비밀 키(Gemini 등)는 절대 `.env` 에
+> 넣지 마세요 — 앱 내 설정에서 입력합니다.
+>
+> 그래도 개인 값을 커밋하기 싫다면:
+> `git update-index --skip-worktree .env` (로컬 변경을 git 이 무시) 또는
+> `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...` 빌드 인자 사용
+> (`.env` 보다 우선순위 낮음 → `.env` 가 비어 있을 때 적용).
 
 ## 5. 다시 빌드 → 사용
 

@@ -214,20 +214,28 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   }
 
   Future<void> _restore() async {
-    final ok = await showDeleteConfirmDialog(
-      context,
-      title: '클라우드에서 복원',
-      content: '현재 기기의 기록을 클라우드 백업으로 교체합니다.\n'
-          '복원 전 기록은 사라집니다. 계속하시겠습니까?',
-    );
-    if (ok != true) return;
     final sync = ref.read(supabaseSyncServiceProvider);
     if (sync == null) return;
     await _run(() async {
-      await resetAllRecords(ref); // 로컬 비우기(교체 의미)
-      final n = await sync.restore();
+      // 1) 네트워크에서 먼저 가져온다 — 실패해도 로컬은 그대로(offline-first).
+      final logs = await sync.fetchBackup();
+      if (logs == null) {
+        if (mounted) _snack('클라우드에 백업이 없어요');
+        return;
+      }
+      // 2) fetch 성공 후에만 확인 → 로컬 교체.
+      if (!mounted) return;
+      final ok = await showDeleteConfirmDialog(
+        context,
+        title: '클라우드에서 복원',
+        content: '클라우드 백업 ${logs.length}건으로 현재 기기 기록을 교체합니다.\n'
+            '현재 기록은 사라집니다. 계속하시겠습니까?',
+      );
+      if (ok != true) return;
+      await resetAllRecords(ref); // fetch 성공 후이므로 안전
+      await sync.applyRestore(logs);
       _invalidateData();
-      if (mounted) _snack('$n건의 기록을 복원했어요');
+      if (mounted) _snack('${logs.length}건의 기록을 복원했어요');
     });
   }
 

@@ -3,6 +3,7 @@ import '../core/providers.dart';
 import '../domain/entities/drink_log.dart';
 import 'achievements_viewmodel.dart';
 import 'archive_viewmodel.dart';
+import 'calendar_viewmodel.dart';
 import 'stats_viewmodel.dart';
 
 final logListProvider =
@@ -46,6 +47,8 @@ class LogListViewModel extends AsyncNotifier<List<DrinkLog>> {
     ref.invalidate(statsProvider);
     // 아카이브 (마셔본 술 카탈로그) — 마지막 1건이 삭제되면 entry 사라지므로 갱신 필수 (CDX-005)
     ref.invalidate(archiveListProvider);
+    // 캘린더 마커/선택일 목록도 삭제 직후 갱신 (Codex R1 MEDIUM)
+    ref.invalidate(calendarLogsByDayProvider);
     await refresh();
   }
 }

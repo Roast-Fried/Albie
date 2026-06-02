@@ -10,6 +10,7 @@ import 'app.dart';
 import 'core/app_config.dart';
 import 'core/database/database_init.dart';
 import 'integrations/notification/notification_service.dart';
+import 'integrations/supabase/supabase_providers.dart';
 
 /// 전역 crash handler — Flutter framework / async / platform 에러를 모두 캡처.
 ///
@@ -40,6 +41,8 @@ void main() {
             url: AppConfig.supabaseUrl,
             anonKey: AppConfig.supabaseAnonKey,
           );
+          // 초기화 성공 시에만 활성 — 실패하면 dormant 로 남는다.
+          supabaseInitialized = true;
         } catch (e) {
           if (kDebugMode) debugPrint('Supabase init 실패: $e');
         }

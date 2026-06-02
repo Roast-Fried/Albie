@@ -49,7 +49,7 @@ class AccountNotifier extends AsyncNotifier<AccountInfo> {
     final auth = ref.read(supabaseAuthServiceProvider);
     if (auth == null) return;
     await auth.signIn(email, password);
-    ref.invalidateSelf();
+    // onAuthStateChange 리스너가 자동 invalidateSelf — 중복 호출 제거(Codex R1 LOW).
   }
 
   /// 회원가입 — 실패 시 AppError 를 던진다.
@@ -57,14 +57,14 @@ class AccountNotifier extends AsyncNotifier<AccountInfo> {
     final auth = ref.read(supabaseAuthServiceProvider);
     if (auth == null) return;
     await auth.signUp(email, password);
-    ref.invalidateSelf();
+    // 세션 생성 시 onAuthStateChange 리스너가 자동 invalidateSelf.
   }
 
   Future<void> signOut() async {
     final auth = ref.read(supabaseAuthServiceProvider);
     if (auth == null) return;
     await auth.signOut();
-    ref.invalidateSelf();
+    // onAuthStateChange 리스너가 자동 invalidateSelf.
   }
 
   /// 백업 성공 시각 기록.

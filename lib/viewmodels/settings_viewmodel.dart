@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 import 'archive_viewmodel.dart';
+import 'calendar_viewmodel.dart';
 import 'log_list_viewmodel.dart';
 import 'stats_viewmodel.dart';
 
@@ -49,4 +50,5 @@ Future<void> resetAllRecords(WidgetRef ref) async {
   ref.invalidate(archiveListProvider);
   ref.invalidate(settingsDataProvider);
   ref.invalidate(statsProvider);
+  ref.invalidate(calendarLogsByDayProvider);
 }
