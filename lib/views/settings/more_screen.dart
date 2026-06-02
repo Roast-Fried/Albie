@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../archive/archive_screen.dart';
+import '../calendar/calendar_screen.dart';
+import '../common/animations.dart';
 import '../stats/stats_screen.dart';
 import 'settings_screen.dart';
 
@@ -25,6 +27,13 @@ class MoreScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const StatsScreen())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_month),
+            title: const Text('음주 캘린더'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+                context, fadeSlideRoute(const CalendarScreen())),
           ),
           const Divider(),
           ListTile(

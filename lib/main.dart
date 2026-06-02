@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'app.dart';
 import 'core/database/database_init.dart';
 import 'integrations/notification/notification_service.dart';
@@ -25,6 +26,9 @@ void main() {
       } catch (_) {
         // .env asset 부재/파싱 실패 — dormant 로 계속.
       }
+
+      // 한국어 날짜 포맷(캘린더/날짜 표기) locale 데이터 초기화.
+      await initializeDateFormatting('ko_KR', null);
 
       // 1) Flutter framework 에러 (build/layout/paint)
       //    PII 보호: release 모드는 console 출력 0 — stack trace 가 사용자 입력 /
