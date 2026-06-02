@@ -226,3 +226,45 @@ Phase5  전체 리뷰(Codex 페어) → 수정 → 0건
 - 신규 테스트(app_config/calendar/account) 통과
 - `.env` 비움 상태 = 기존 동작 회귀 0 (dormant 검증)
 - Phase 5: Codex 페어 전체 리뷰 → 수정 → 재리뷰 0건
+
+## 5. 구현 완료 결과 (as-built)
+
+### Phase 4 — 5 step 전부 완료 (커밋)
+| Step | 커밋 | 핵심 |
+|------|------|------|
+| 1 .env 인프라 | `d92801b` | AppConfig(dotenv+define), dormant 게이트 |
+| 2 애니메이션 | `cc4e037` | AppearAnimation/fadeSlideRoute/AnimatedSwitcher |
+| 3 캘린더 | `989a7d9` | table_calendar 월별 음주 시각화 |
+| 4 Named Routes | `06debe3` | Routes+onGenerateRoute, 11 push 마이그레이션 |
+| 5 Supabase 백업/복원 | `58dc255` | opt-in dormant, 스냅샷 백업+이메일 인증 |
+
+### Phase 5 — Codex 페어 리뷰 루프 (수렴)
+- **R1** (`ef2332d`): 9 finding(CRITICAL 1/HIGH 2/MEDIUM 4/LOW 2) 수정
+- **R2** (`df85238`): R1 검증 11 통과 + 신규 3 finding(HIGH 1/MEDIUM 2) 수정
+- **R3** (`08c35fc`): R2 검증 2 통과 + 잔여 1(복원 원자성) → 단일 트랜잭션 replace
+- **R4**: 최종 수렴 확인 (0건 목표)
+- 추이: 9 → 3 → 1 → 0 (수렴)
+
+### Codex 리뷰로 확정된 주요 설계 (계획 대비 변경/강화)
+- **스냅샷 백업** 채택(per-row sync 아님) — DB 마이그레이션 회피, offline-first.
+- **복원 순서**: fetch → (확인) → wipe → apply — 네트워크 실패 시 로컬 무손상.
+- **테이스팅 노트 포함** — LogBackup, 복원 시 새 entryId 재연결(id ASC 순서매칭).
+- **FK 안전**: liquorMasterId 를 canonicalName 으로 재매칭(없으면 null).
+- **Gemini 보안**: `.env` 에서 읽지 않음 → `--dart-define`/인앱 보안저장소만.
+- **codec 방어**: version `!=` 검증 + payload 타입 체크 → ValidationError.
+- **캘린더 stale**: 저장/삭제/초기화 invalidate 셋에 calendarLogsByDayProvider.
+
+### 검증 상태 (정직 라벨)
+- ✅ `flutter analyze` 0 issues (전 step)
+- ✅ `flutter test --exclude-tags golden` 132 pass (app_config/calendar/route/codec/account
+  dormant/restoreReplaceAll FFI 신규 포함)
+- ✅ integration boot smoke (Windows) PASS — home→draft→save→loglist→more→archive E2E.
+  dormant(.env 미설정) 구동 + Named Routes 네비게이션 + 저장 플로우 런타임 정상
+- ⏭️ Supabase **라이브 네트워크 경로(auth/backup/restore)** = `backend_unavailable` SKIP
+  — 사용자가 `.env`(SUPABASE_URL/ANON_KEY) + `docs/supabase-schema.sql` 실행 후 검증 가능.
+  단, 복원의 로컬 DB 교체 로직(restoreReplaceAll)은 FFI 실 DB 단위 테스트로 검증됨.
+- 📝 golden 7건 실패 = 환경적 pixel-diff(미변경 draft_review 화면 포함), CI 제외 항목 — 회귀 아님
+
+### 사용자가 클라우드 기능 켜는 법 (".env 만 넣으면")
+`docs/supabase-setup.md` 참조: ① `.env` 에 SUPABASE_URL/ANON_KEY ② `docs/supabase-schema.sql`
+실행 ③ 재빌드 → 설정>클라우드 백업·동기화. 안 채우면 모든 로컬 기능 기존대로(dormant).
