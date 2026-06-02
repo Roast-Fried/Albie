@@ -16,10 +16,26 @@ import 'package:albi/main.dart' as app;
 ///
 /// 2026-05-26 작성 / 2026-05-26 v2 — viewport 강제 + boundary topmost + BackButton finder.
 
+/// pumpAndSettle 하되 debounce(master-matching) timer 로 settle 안 되면 고정 pump
+/// 폴백 — 텍스트 입력 후 pumpAndSettle 무한대기 hang 방지.
+Future<void> _settle(WidgetTester tester) async {
+  try {
+    await tester.pumpAndSettle(
+      const Duration(milliseconds: 100),
+      EnginePhase.sendSemanticsUpdate,
+      const Duration(seconds: 4),
+    );
+  } catch (_) {
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 150));
+    }
+  }
+}
+
 /// 화면 캡처 — topmost RenderRepaintBoundary (navigator 의 마지막 push 된 route)
 /// 를 캡처해 home 위 DraftReview 같이 stacked 화면도 정확히 캡처.
 Future<void> takeScreenshot(WidgetTester tester, String name) async {
-  await tester.pumpAndSettle();
+  await _settle(tester);
   if (Platform.isAndroid || Platform.isIOS) return;
   try {
     final renderObject = tester.binding.rootElement!.renderObject!;
@@ -73,7 +89,7 @@ Future<bool> waitFor(
     await tester.pump(const Duration(milliseconds: 200));
     if (finder.evaluate().isNotEmpty) return true;
   }
-  await tester.pumpAndSettle();
+  await _settle(tester);
   return false;
 }
 
@@ -101,7 +117,7 @@ String fieldValue(WidgetTester tester, String label, {int at = 0}) {
 Future<void> skipOnboardingIfNeeded(WidgetTester tester) async {
   if (find.text('건너뛰기').evaluate().isNotEmpty) {
     await tester.tap(find.text('건너뛰기'));
-    await tester.pumpAndSettle(const Duration(seconds: 2));
+    await _settle(tester);
   }
 }
 
@@ -111,7 +127,7 @@ Future<void> generateDraft(WidgetTester tester, String text) async {
   final homeTab = find.text('홈');
   if (homeTab.evaluate().isNotEmpty) {
     await tester.tap(homeTab.last);
-    await tester.pumpAndSettle();
+    await _settle(tester);
   }
 
   // home 입력 TextField 명시 찾기
@@ -119,15 +135,15 @@ Future<void> generateDraft(WidgetTester tester, String text) async {
   expect(input, findsOneWidget,
       reason: 'home input TextField (maxLines=2, hintText 있음) 1개');
   await tester.tap(input);
-  await tester.pumpAndSettle();
+  await _settle(tester);
   await tester.enterText(input, text);
-  await tester.pumpAndSettle();
+  await _settle(tester);
 
   final genBtn = find.text('AI로 생성');
   expect(genBtn, findsOneWidget, reason: 'AI로 생성 버튼');
   await tester.tap(genBtn);
   await tester.pump(const Duration(seconds: 1));
-  await tester.pumpAndSettle(const Duration(seconds: 3));
+  await _settle(tester);
 
   final reviewFound = await waitFor(tester, find.text('기록 검토'));
   expect(reviewFound, isTrue, reason: '입력 "$text" 후 DraftReview 진입 실패');
@@ -141,10 +157,10 @@ Future<void> leaveDraftReview(WidgetTester tester) async {
     return;
   }
   await tester.tap(back.first);
-  await tester.pumpAndSettle();
+  await _settle(tester);
   if (find.text('나가기').evaluate().isNotEmpty) {
     await tester.tap(find.text('나가기'));
-    await tester.pumpAndSettle();
+    await _settle(tester);
   }
 }
 
@@ -161,7 +177,7 @@ void main() {
     });
 
     app.main();
-    await tester.pumpAndSettle(const Duration(seconds: 3));
+    await _settle(tester);
     await skipOnboardingIfNeeded(tester);
 
     await takeScreenshot(tester, 'parser_ui_00_home_ready');

@@ -81,6 +81,26 @@ void setupSecureStorageMock(Map<String, String> initial) {
   });
 }
 
+/// pumpAndSettle 하되 debounce/perpetual timer 로 settle 안 되면(timeout) 고정 pump
+/// 로 폴백 — 텍스트 입력(master-matching debounce) 화면에서 pumpAndSettle 무한대기
+/// hang 방지. settle 빠른 화면은 즉시 반환(기존 동작 유지).
+Future<void> settleOrPump(
+  WidgetTester tester, {
+  Duration timeout = const Duration(seconds: 4),
+}) async {
+  try {
+    await tester.pumpAndSettle(
+      const Duration(milliseconds: 100),
+      EnginePhase.sendSemanticsUpdate,
+      timeout,
+    );
+  } catch (_) {
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 150));
+    }
+  }
+}
+
 /// 화면 캡처 — topmost RenderRepaintBoundary (navigator push 된 route 우선) 캡처.
 /// viewport 70% 면적 가드로 sub-boundary 잘못 잡힘 방지.
 ///
@@ -93,7 +113,8 @@ void setupSecureStorageMock(Map<String, String> initial) {
 Future<void> takeShot(WidgetTester tester, String name,
     {Type? activeScreen}) async {
   // timing 안정화 — debugNeedsPaint assertion 회피 (전반 pump + frame stabilize).
-  await tester.pumpAndSettle(const Duration(seconds: 3));
+  // settleOrPump: debounce timer 화면에서 pumpAndSettle 무한대기 방지.
+  await settleOrPump(tester);
   await tester.pump(const Duration(milliseconds: 200));
   await tester.pump(const Duration(milliseconds: 200));
   await tester.pump(const Duration(milliseconds: 200));

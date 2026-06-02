@@ -35,7 +35,7 @@ void main() {
     });
 
     app.main();
-    await tester.pumpAndSettle(const Duration(seconds: 4));
+    await settleOrPump(tester);
     await skipOnboarding(tester);
 
     // ===== 1) 글렌피딕 (local parser 매칭 — master 'whisky' + defaultAbv 40) =====
@@ -57,7 +57,7 @@ void main() {
     final logTab = find.byIcon(Icons.list_alt_outlined);
     if (logTab.evaluate().isNotEmpty) {
       await tester.tap(logTab, warnIfMissed: false);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await settleOrPump(tester);
       await takeShot(tester, 'seeded_03_log_list',
           activeScreen: LogListScreen);
 
@@ -65,20 +65,20 @@ void main() {
       final searchIcon = find.byIcon(Icons.search);
       if (searchIcon.evaluate().isNotEmpty) {
         await tester.tap(searchIcon.first, warnIfMissed: false);
-        await tester.pumpAndSettle(const Duration(seconds: 1));
+        await settleOrPump(tester);
         await takeShot(tester, 'seeded_03a_log_search_focused',
             activeScreen: LogListScreen);
 
         // 검색어 입력 (글렌피딕 — 매칭 결과)
         final searchField = find.byType(TextField).first;
         await tester.enterText(searchField, '글렌피딕');
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await settleOrPump(tester);
         await takeShot(tester, 'seeded_03b_log_search_glenfiddich',
             activeScreen: LogListScreen);
 
         // 검색어 변경 (0건 결과)
         await tester.enterText(searchField, '존재하지않는술');
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await settleOrPump(tester);
         await takeShot(tester, 'seeded_03c_log_search_empty',
             activeScreen: LogListScreen);
 
@@ -86,7 +86,7 @@ void main() {
         final closeIcon = find.byIcon(Icons.close);
         if (closeIcon.evaluate().isNotEmpty) {
           await tester.tap(closeIcon.first, warnIfMissed: false);
-          await tester.pumpAndSettle(const Duration(seconds: 1));
+          await settleOrPump(tester);
         }
       }
 
@@ -95,7 +95,7 @@ void main() {
       final entries = find.byType(InkWell);
       if (entries.evaluate().isNotEmpty) {
         await tester.tap(entries.first, warnIfMissed: false);
-        await tester.pumpAndSettle(const Duration(seconds: 3));
+        await settleOrPump(tester);
         await takeShot(tester, 'seeded_04_log_detail',
             activeScreen: LogDetailScreen);
 
@@ -108,14 +108,14 @@ void main() {
             : (noteEdit2.evaluate().isNotEmpty ? noteEdit2 : null);
         if (noteBtn != null) {
           await tester.tap(noteBtn.first, warnIfMissed: false);
-          await tester.pumpAndSettle(const Duration(seconds: 2));
+          await settleOrPump(tester);
           await takeShot(tester, 'seeded_06_tasting_note_sheet');
 
           // 별점 tap (sheet 안 — 4번째 별 tap) — Icons.star_outline_rounded.
           final starsBorder = find.byIcon(Icons.star_outline_rounded);
           if (starsBorder.evaluate().length >= 4) {
             await tester.tap(starsBorder.at(3), warnIfMissed: false);
-            await tester.pumpAndSettle(const Duration(seconds: 1));
+            await settleOrPump(tester);
             await takeShot(tester, 'seeded_05_rating_4stars');
           }
 
@@ -123,13 +123,13 @@ void main() {
           final noteField = find.byType(TextField);
           if (noteField.evaluate().isNotEmpty) {
             await tester.enterText(noteField.first, '깔끔하고 마시기 좋다');
-            await tester.pumpAndSettle(const Duration(seconds: 1));
+            await settleOrPump(tester);
             await takeShot(tester, 'seeded_07_tasting_note_filled');
           }
 
           // 닫기 (dismiss)
           await tester.tapAt(const Offset(180, 100));
-          await tester.pumpAndSettle(const Duration(seconds: 1));
+          await settleOrPump(tester);
         }
 
         await safeBack(tester);
@@ -138,11 +138,11 @@ void main() {
 
     // ===== Archive =====
     await tapText(tester, '더보기');
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await settleOrPump(tester);
     final archiveTile = find.widgetWithText(ListTile, '마셔본 술');
     if (archiveTile.evaluate().isNotEmpty) {
       await tester.tap(archiveTile.first, warnIfMissed: false);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await settleOrPump(tester);
       await takeShot(tester, 'seeded_08_archive', activeScreen: ArchiveScreen);
 
       // 첫 entry tap → archive_detail. ListTile 의 trailing favorite icon
@@ -150,7 +150,7 @@ void main() {
       final glenInArchive = find.text('글렌피딕');
       if (glenInArchive.evaluate().isNotEmpty) {
         await tester.tap(glenInArchive.first, warnIfMissed: false);
-        await tester.pumpAndSettle(const Duration(seconds: 3));
+        await settleOrPump(tester);
         await takeShot(tester, 'seeded_09_archive_detail',
             activeScreen: ArchiveDetailScreen);
         await safeBack(tester);
@@ -160,18 +160,18 @@ void main() {
 
     // ===== Stats (차트 있는) =====
     await tapText(tester, '더보기');
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await settleOrPump(tester);
     final statsTile = find.widgetWithText(ListTile, '통계');
     if (statsTile.evaluate().isNotEmpty) {
       await tester.tap(statsTile.first, warnIfMissed: false);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await settleOrPump(tester);
       await takeShot(tester, 'seeded_10_stats', activeScreen: StatsScreen);
 
       // 스크롤
       final lv = find.byType(ListView);
       if (lv.evaluate().isNotEmpty) {
         await tester.drag(lv.first, const Offset(0, -400));
-        await tester.pumpAndSettle(const Duration(seconds: 1));
+        await settleOrPump(tester);
         await takeShot(tester, 'seeded_11_stats_scrolled',
             activeScreen: StatsScreen);
       }
@@ -180,17 +180,17 @@ void main() {
 
     // ===== Settings (다크 dialog / 데이터 초기화 confirm) =====
     await tapText(tester, '더보기');
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await settleOrPump(tester);
     final settingsTile = find.widgetWithText(ListTile, '설정');
     if (settingsTile.evaluate().isNotEmpty) {
       await tester.tap(settingsTile.first, warnIfMissed: false);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await settleOrPump(tester);
 
       // 다크 모드 dialog — modal route 는 root boundary 사용 (activeScreen 미지정).
       final dark = find.widgetWithText(ListTile, '다크 모드');
       if (dark.evaluate().isNotEmpty) {
         await tester.tap(dark.first, warnIfMissed: false);
-        await tester.pumpAndSettle(const Duration(seconds: 1));
+        await settleOrPump(tester);
         await takeShot(tester, 'seeded_12_dark_mode_dialog');
 
         // 다이얼로그 dismiss (취소)
@@ -200,14 +200,14 @@ void main() {
         } else {
           await tester.tapAt(const Offset(20, 20));
         }
-        await tester.pumpAndSettle(const Duration(seconds: 1));
+        await settleOrPump(tester);
       }
 
       // 데이터 초기화 confirm dialog
       final reset = find.widgetWithText(ListTile, '데이터 초기화');
       if (reset.evaluate().isNotEmpty) {
         await tester.tap(reset.first, warnIfMissed: false);
-        await tester.pumpAndSettle(const Duration(seconds: 1));
+        await settleOrPump(tester);
         // confirm dialog 도 modal route — root boundary.
         await takeShot(tester, 'seeded_13_reset_confirm_dialog');
 
@@ -215,7 +215,7 @@ void main() {
         final cancel = find.text('취소');
         if (cancel.evaluate().isNotEmpty) {
           await tester.tap(cancel.first, warnIfMissed: false);
-          await tester.pumpAndSettle(const Duration(seconds: 1));
+          await settleOrPump(tester);
         }
       }
     }
@@ -234,7 +234,7 @@ Future<void> _enterLog(WidgetTester tester, String text) async {
   final homeTab = find.byIcon(Icons.home_outlined);
   if (homeTab.evaluate().isNotEmpty) {
     await tester.tap(homeTab, warnIfMissed: false);
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await settleOrPump(tester);
   }
 
   // input TextField — home_screen 의 input_section_widget 의 첫 TextField.
@@ -258,7 +258,7 @@ Future<void> _saveDraft(WidgetTester tester) async {
   final save = find.text('저장');
   if (save.evaluate().isNotEmpty) {
     await tester.tap(save.first, warnIfMissed: false);
-    await tester.pumpAndSettle(const Duration(seconds: 3));
+    await settleOrPump(tester);
   } else {
     await safeBack(tester);
   }

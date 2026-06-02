@@ -25,17 +25,17 @@ void main() {
         ? find.byType(TextField).first
         : find.byType(TextField).first;
     await tester.tap(input, warnIfMissed: false);
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await settleOrPump(tester);
     await takeShot(tester, 'home_02_input_focused');
 
     // 3. 짧은 입력
     await tester.enterText(input, '맥주');
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await settleOrPump(tester);
     await takeShot(tester, 'home_03_input_short');
 
     // 4. 긴 입력 — AI 생성 버튼 활성 + 직접 입력 버튼 활성
     await tester.enterText(input, '오늘 친구들이랑 위스키 두 잔 하이볼 세 잔 마셨어');
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await settleOrPump(tester);
     await takeShot(tester, 'home_04_input_long');
 
     // 5. clear 버튼 (suffixIcon X) 영역 확인 (X 버튼 표시 상태)
@@ -45,7 +45,7 @@ void main() {
     final clearIcon = find.byIcon(Icons.clear);
     if (clearIcon.evaluate().isNotEmpty) {
       await tester.tap(clearIcon.first, warnIfMissed: false);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await settleOrPump(tester);
       await takeShot(tester, 'home_06_after_clear');
     }
 
