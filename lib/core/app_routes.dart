@@ -9,6 +9,7 @@ import '../views/common/animations.dart';
 import '../views/common/route_error_screen.dart';
 import '../views/draft_review/draft_review_screen.dart';
 import '../views/log/log_detail_screen.dart';
+import '../views/settings/account_screen.dart';
 import '../views/settings/ai_settings_screen.dart';
 import '../views/settings/notification_settings_screen.dart';
 import '../views/settings/settings_screen.dart';
@@ -30,6 +31,7 @@ class Routes {
   static const settings = '/settings';
   static const aiSettings = '/settings/ai';
   static const notifications = '/settings/notifications';
+  static const account = '/account';
 }
 
 /// 중앙 라우팅 테이블 — `settings.arguments` 타입을 검증한 뒤 화면으로 연결하고,
@@ -92,6 +94,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         const NotificationSettingsScreen(),
         settings: settings,
       );
+
+    case Routes.account:
+      return fadeSlideRoute(const AccountScreen(), settings: settings);
 
     default:
       return _error(settings, '알 수 없는 경로입니다: ${settings.name}');

@@ -118,6 +118,13 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── 데이터 ──
           const _SectionHeader('데이터'),
+          ListTile(
+            leading: const Icon(Icons.cloud_outlined),
+            title: const Text('클라우드 백업·동기화'),
+            subtitle: const Text('이메일 로그인 후 기록 백업/복원'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, Routes.account),
+          ),
           dataAsync.when(
             loading: () => const ListTile(
               leading: Icon(Icons.inventory_2_outlined),

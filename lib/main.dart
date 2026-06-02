@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
+import 'core/app_config.dart';
 import 'core/database/database_init.dart';
 import 'integrations/notification/notification_service.dart';
 
@@ -29,6 +31,19 @@ void main() {
 
       // 한국어 날짜 포맷(캘린더/날짜 표기) locale 데이터 초기화.
       await initializeDateFormatting('ko_KR', null);
+
+      // Supabase — credential 이 채워졌을 때만 초기화. 미설정이면 dormant 로
+      // 클라우드 기능만 비활성, 나머지 로컬 동작은 그대로 유지된다.
+      if (AppConfig.hasSupabase) {
+        try {
+          await Supabase.initialize(
+            url: AppConfig.supabaseUrl,
+            anonKey: AppConfig.supabaseAnonKey,
+          );
+        } catch (e) {
+          if (kDebugMode) debugPrint('Supabase init 실패: $e');
+        }
+      }
 
       // 1) Flutter framework 에러 (build/layout/paint)
       //    PII 보호: release 모드는 console 출력 0 — stack trace 가 사용자 입력 /
