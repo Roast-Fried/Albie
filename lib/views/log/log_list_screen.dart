@@ -8,6 +8,7 @@ import '../../core/utils/date_utils.dart' as dt_utils;
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
 import '../../domain/entities/drink_log.dart';
+import '../common/animations.dart';
 import '../common/delete_confirm_dialog.dart';
 import '../common/error_state_widget.dart';
 import 'log_detail_screen.dart';
@@ -79,17 +80,34 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
       // 못해 PNG 미캡처. body 를 RepaintBoundary 로 wrap 하여 캡처 가능 + scroll
       // 시 repaint 영역 격리 효과.
       body: RepaintBoundary(
-        child: logsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ErrorStateWidget(
-              message: '기록을 불러올 수 없습니다',
-              onRetry: () => ref.read(logListProvider.notifier).refresh()),
-          data: (logs) => logs.isEmpty
-              ? const _EmptyState()
-              : RefreshIndicator(
-                  onRefresh: () => ref.read(logListProvider.notifier).refresh(),
-                  child: _buildGroupedList(context, ref, logs),
-                ),
+        // 로딩/빈/데이터 상태 전환을 부드럽게 cross-fade (암시적 애니메이션).
+        // 키를 상태 종류로만 구분해 data→data(refresh) 시 재애니메이션을 막는다.
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          layoutBuilder: (currentChild, previousChildren) => Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              ...previousChildren,
+              ?currentChild,
+            ],
+          ),
+          child: logsAsync.when(
+            loading: () => const Center(
+                key: ValueKey('loading'),
+                child: CircularProgressIndicator()),
+            error: (e, _) => ErrorStateWidget(
+                key: const ValueKey('error'),
+                message: '기록을 불러올 수 없습니다',
+                onRetry: () => ref.read(logListProvider.notifier).refresh()),
+            data: (logs) => logs.isEmpty
+                ? const _EmptyState(key: ValueKey('empty'))
+                : RefreshIndicator(
+                    key: const ValueKey('data'),
+                    onRefresh: () =>
+                        ref.read(logListProvider.notifier).refresh(),
+                    child: _buildGroupedList(context, ref, logs),
+                  ),
+          ),
         ),
       ),
     );
@@ -132,10 +150,12 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
           );
         }
         final log = it.log!;
-        return _LogTile(
-          log: log,
-          onTap: () => _openDetail(context, log),
-          onDelete: () => _confirmDelete(context, ref, log),
+        return AppearAnimation(
+          child: _LogTile(
+            log: log,
+            onTap: () => _openDetail(context, log),
+            onDelete: () => _confirmDelete(context, ref, log),
+          ),
         );
       },
     );
@@ -143,9 +163,7 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
 
   void _openDetail(BuildContext context, DrinkLog log) {
     Navigator.of(context)
-        .push(MaterialPageRoute(
-          builder: (_) => LogDetailScreen(logId: log.id!),
-        ))
+        .push(fadeSlideRoute(LogDetailScreen(logId: log.id!)))
         .then((_) => ref.read(logListProvider.notifier).refresh());
   }
 
@@ -248,7 +266,7 @@ class _ListItem {
 }
 
 class _EmptyState extends ConsumerWidget {
-  const _EmptyState();
+  const _EmptyState({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
