@@ -12,12 +12,14 @@ import '_screenshot_helper.dart';
 /// 화면에 일관 적용되는지 시각 검증. SharedPreferences mock 으로 themeMode
 /// 강제 + 화면 별 navigate + PNG 캡처.
 ///
-/// 캡처 셋 (light 12 + dark 12 = 24 PNG):
+/// 캡처 셋 (light/dark 각 11 화면):
 /// - 01_home, 02_home_input
 /// - 03_draft_empty, 04_draft_name (글렌피딕 입력 후 master matching ✓ 확인)
-/// - 05_more, 06_archive_list, 07_stats, 08_log_list
-/// - 09_settings_top, 10_settings_ai_guide
-/// - 11_onboarding_p1, 12_onboarding_p2
+/// - 05_more, 06_archive, 07_stats, 08_log
+/// - 09_settings, 10_ai_guide, 11_calendar (음주 캘린더, 강의 추가)
+///
+/// 클라우드 백업·동기화(account) / 알림(notification) 화면은 Windows 통합 캡처에서
+/// 진입 hang 이 있어 headless(test/capture/screen_capture_test.dart)로 캡처한다.
 
 Future<void> _runScenario(WidgetTester tester, String prefix) async {
   app.main();
@@ -88,6 +90,15 @@ Future<void> _runScenario(WidgetTester tester, String prefix) async {
     await tapText(tester, '더보기');
   }
 
+  // 11 음주 캘린더 (강의 추가) — 더보기에서 진입
+  final calendarTile = find.widgetWithText(ListTile, '음주 캘린더');
+  if (calendarTile.evaluate().isNotEmpty) {
+    await tester.tap(calendarTile.first, warnIfMissed: false);
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+    await takeShot(tester, '${prefix}_11_calendar');
+    await safeBack(tester);
+  }
+
   // 09 settings
   final settingsTile = find.widgetWithText(ListTile, '설정');
   if (settingsTile.evaluate().isNotEmpty) {
@@ -103,6 +114,9 @@ Future<void> _runScenario(WidgetTester tester, String prefix) async {
       await takeShot(tester, '${prefix}_10_ai_guide');
       await safeBack(tester);
     }
+    // NOTE: 클라우드 백업·동기화(account) / 알림(notification) 화면은 Windows
+    // 통합 캡처에서 진입 시 hang 이 재현됨(headless 에선 정상). 두 화면은
+    // test/capture/screen_capture_test.dart(headless)로 캡처한다.
     await safeBack(tester);
   }
 }
