@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../../integrations/supabase/supabase_providers.dart';
 import '../../integrations/supabase/supabase_sync_service.dart';
 import '../../viewmodels/account_viewmodel.dart';
+import '../../viewmodels/achievements_viewmodel.dart';
 import '../../viewmodels/archive_viewmodel.dart';
 import '../../viewmodels/calendar_viewmodel.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
@@ -247,10 +248,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     ref.invalidate(recentLogsProvider);
     ref.invalidate(logCountProvider);
     ref.invalidate(thisMonthLogCountProvider);
+    ref.invalidate(recentFrequentLiquorsProvider);
     ref.invalidate(logListProvider);
     ref.invalidate(archiveListProvider);
     ref.invalidate(settingsDataProvider);
     ref.invalidate(statsProvider);
+    ref.invalidate(achievementsProvider);
     ref.invalidate(calendarLogsByDayProvider);
   }
 
