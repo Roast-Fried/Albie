@@ -261,9 +261,13 @@ class _HistoryTile extends StatelessWidget {
                     ),
                     if (item.place != null) ...[
                       const SizedBox(width: 8),
-                      Text(
-                        '📍 ${item.place}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                      Flexible(
+                        child: Text(
+                          '📍 ${item.place}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ),
                     ],
                   ],

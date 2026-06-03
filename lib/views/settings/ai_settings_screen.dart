@@ -88,11 +88,13 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                         icon: Icon(_keyVisible
                             ? Icons.visibility_off
                             : Icons.visibility),
+                        tooltip: _keyVisible ? '키 숨기기' : '키 표시',
                         onPressed: () =>
                             setState(() => _keyVisible = !_keyVisible),
                       ),
                       IconButton(
                         icon: const Icon(Icons.check),
+                        tooltip: '키 저장 및 검증',
                         onPressed: () => _saveKey(),
                       ),
                     ],
@@ -231,10 +233,12 @@ class _RecentJobsList extends ConsumerWidget {
       ),
       data: (jobs) {
         if (jobs.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(12),
+          return Padding(
+            padding: const EdgeInsets.all(12),
             child: Text('기록된 파싱 작업이 없습니다',
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
           );
         }
         return Column(
@@ -261,9 +265,13 @@ class _JobTile extends StatelessWidget {
     final time = DateFormat('HH:mm').format(job.createdAt);
     final dur = job.durationMs != null ? '${job.durationMs}ms' : '-';
     final isSuccess = job.status == 'success';
-    final statusIcon = isSuccess
-        ? Icon(Icons.check_circle, size: 16, color: Colors.green.shade600)
-        : Icon(Icons.cancel, size: 16, color: Colors.red.shade600);
+    // a11y: 색상만으로 성공/실패 구분 → 스크린리더용 텍스트 라벨 추가.
+    final statusIcon = Semantics(
+      label: isSuccess ? '성공' : '실패',
+      child: isSuccess
+          ? Icon(Icons.check_circle, size: 16, color: Colors.green.shade600)
+          : Icon(Icons.cancel, size: 16, color: Colors.red.shade600),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),

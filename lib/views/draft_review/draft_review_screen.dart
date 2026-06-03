@@ -308,7 +308,10 @@ class _DateRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateStr = DateFormat('M월 d일 (E) a h:mm', 'ko').format(drankAt);
 
-    return InkWell(
+    return Semantics(
+      button: true,
+      label: '음주 일시 변경. 현재 $dateStr',
+      child: InkWell(
       onTap: () async {
         final date = await showDatePicker(
           context: context,
@@ -336,7 +339,8 @@ class _DateRow extends StatelessWidget {
       },
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        // a11y: 48dp 최소 터치 타겟 확보 (vertical 14 + 콘텐츠 ≈ 50).
+        padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
           children: [
             Icon(
@@ -350,6 +354,7 @@ class _DateRow extends StatelessWidget {
             Text('변경', style: Theme.of(context).textTheme.labelSmall),
           ],
         ),
+      ),
       ),
     );
   }

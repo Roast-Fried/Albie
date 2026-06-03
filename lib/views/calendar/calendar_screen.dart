@@ -97,6 +97,32 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           shape: BoxShape.circle,
         ),
       ),
+      // a11y: 기본 마커 점은 스크린리더가 못 읽음 → 동일 비주얼 + 기록 건수 라벨.
+      calendarBuilders: CalendarBuilders<DrinkLog>(
+        markerBuilder: (context, day, events) {
+          if (events.isEmpty) return const SizedBox.shrink();
+          final count = events.length;
+          final dots = count > 3 ? 3 : count;
+          return Semantics(
+            label: '기록 $count건',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < dots; i++)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: scheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

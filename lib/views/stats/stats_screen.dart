@@ -227,6 +227,11 @@ class _CategoryPieChart extends StatelessWidget {
     final sorted = data.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final total = sorted.fold<int>(0, (s, e) => s + e.value);
+    // a11y: 시각 차트를 스크린리더용 텍스트 요약으로 대체 제공.
+    final chartSummary = sorted
+        .map((e) =>
+            '${categoryLabel(e.key)} ${(e.value / total * 100).round()}퍼센트')
+        .join(', ');
 
     return SizedBox(
       height: 220,
@@ -234,7 +239,10 @@ class _CategoryPieChart extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: PieChart(
+            child: Semantics(
+              label: '주종별 분포 차트. $chartSummary',
+              child: ExcludeSemantics(
+                child: PieChart(
               PieChartData(
                 sectionsSpace: 2,
                 centerSpaceRadius: 40,
@@ -255,6 +263,8 @@ class _CategoryPieChart extends StatelessWidget {
                       ),
                     ),
                 ],
+              ),
+                ),
               ),
             ),
           ),

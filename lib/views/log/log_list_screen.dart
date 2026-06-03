@@ -64,6 +64,7 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
         actions: [
           IconButton(
             icon: Icon(_searching ? Icons.close : Icons.search),
+            tooltip: _searching ? '검색 닫기' : '기록 검색',
             onPressed: () {
               setState(() {
                 _searching = !_searching;
@@ -225,13 +226,23 @@ class _LogTile extends StatelessWidget {
                       Row(
                         children: [
                           if (log.foodItems.isNotEmpty)
-                            Text('🍽 ${log.foodItems.join(", ")}',
-                                style: Theme.of(context).textTheme.bodySmall),
+                            Flexible(
+                              child: Text('🍽 ${log.foodItems.join(", ")}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style:
+                                      Theme.of(context).textTheme.bodySmall),
+                            ),
                           if (log.foodItems.isNotEmpty && log.place != null)
                             const SizedBox(width: 8),
                           if (log.place != null)
-                            Text('📍 ${log.place}',
-                                style: Theme.of(context).textTheme.bodySmall),
+                            Flexible(
+                              child: Text('📍 ${log.place}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style:
+                                      Theme.of(context).textTheme.bodySmall),
+                            ),
                         ],
                       ),
                     ],

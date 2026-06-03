@@ -93,10 +93,12 @@ class _DetailBody extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
+            tooltip: '기록 수정',
             onPressed: () => _edit(context, ref),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
+            tooltip: '기록 삭제',
             onPressed: () => _delete(context, ref),
           ),
         ],

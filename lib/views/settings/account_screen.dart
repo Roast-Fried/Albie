@@ -95,10 +95,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         FilledButton(
           onPressed: _busy ? null : _signIn,
           child: _busy
-              ? const SizedBox(
+              ? SizedBox(
                   height: 18,
                   width: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: Semantics(
+                    label: '로그인 처리 중',
+                    child: const CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 )
               : const Text('로그인'),
         ),

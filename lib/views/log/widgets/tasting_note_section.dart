@@ -68,16 +68,20 @@ class TastingNoteSection extends ConsumerWidget {
                           style: Theme.of(context).textTheme.labelSmall),
                       const SizedBox(width: 6),
                     ],
-                    InkWell(
-                      onTap: () => TastingNoteEditSheet.show(
+                    IconButton(
+                      onPressed: () => TastingNoteEditSheet.show(
                         context,
                         entryId: entryId,
                         initial: note,
                       ),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(Icons.edit_outlined, size: 16),
-                      ),
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      iconSize: 18,
+                      tooltip: '테이스팅 노트 수정',
+                      // a11y: 48dp 최소 터치 타겟 (시각 아이콘은 18 유지).
+                      constraints:
+                          const BoxConstraints(minWidth: 48, minHeight: 48),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
                     ),
                   ],
                 ),

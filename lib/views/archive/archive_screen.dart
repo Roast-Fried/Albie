@@ -37,7 +37,8 @@ class ArchiveScreen extends ConsumerWidget {
           // 2026-05-27 Sprint 2 UI-020: 360px 에서 chip 9개 가로 overflow 시
           // 마지막 chip 이 그냥 잘려 사용자가 스크롤 가능을 인지 못함.
           SizedBox(
-            height: 40,
+            // a11y: 48dp 최소 터치 타겟 확보 (FilterChip 가로 스트립).
+            height: 48,
             child: ShaderMask(
               shaderCallback: (rect) {
                 return LinearGradient(
@@ -207,9 +208,12 @@ class _ArchiveTile extends ConsumerWidget {
             ? IconButton(
                 icon: Icon(
                   item.isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: item.isFavorite ? Colors.red : null,
+                  color: item.isFavorite
+                      ? Theme.of(context).colorScheme.error
+                      : null,
                   size: 20,
                 ),
+                tooltip: item.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가',
                 onPressed: () => ref
                     .read(archiveListProvider.notifier)
                     .toggleFavorite(item.liquorMasterId!, item.isFavorite),

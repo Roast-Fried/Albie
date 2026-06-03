@@ -39,7 +39,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ],
               ),
             ),
-            Row(
+            Semantics(
+              label: '온보딩 ${_currentPage + 1} / $_pageCount 페이지',
+              child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                   _pageCount,
@@ -54,6 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               : Theme.of(context).colorScheme.outlineVariant,
                         ),
                       )),
+              ),
             ),
             const SizedBox(height: 20),
             Padding(

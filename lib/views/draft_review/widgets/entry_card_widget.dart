@@ -172,6 +172,26 @@ class _EntryCardWidgetState extends ConsumerState<EntryCardWidget> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                // a11y: 저신뢰 표시를 테두리 색상 단독이 아닌 텍스트+아이콘 병행.
+                if (widget.lowConfidence) ...[
+                  const SizedBox(width: 6),
+                  Semantics(
+                    label: '자동 인식 신뢰도 낮음, 확인 필요',
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.error_outline,
+                            size: 14, color: scheme.tertiary),
+                        const SizedBox(width: 2),
+                        Text('확인 필요',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(color: scheme.tertiary)),
+                      ],
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 if (widget.canDelete)
                   // tap target 48dp 보장 (음주 후 사용 시나리오 — Round 6 P1 fix)
