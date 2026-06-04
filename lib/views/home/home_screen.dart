@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_routes.dart';
 import '../../core/providers.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/home_viewmodel.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
@@ -32,7 +33,8 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('알비', style: TextStyle(fontWeight: FontWeight.bold)),
+        // 폰트 굵기는 appBarTheme.titleTextStyle(titleLarge w700)에서 적용.
+        title: const Text('알비'),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -109,17 +111,18 @@ class HomeScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.titleSmall
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.sm),
                         SizedBox(
-                          height: 36,
+                          // 48dp tap target (motor disability / 음주 후) — 부모 높이가
+                          // chip 을 36 으로 누르던 회귀 수정.
+                          height: 48,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: names.length,
                             separatorBuilder: (_, _) =>
-                                const SizedBox(width: 6),
-                            // Round 6 X3 — Chip shrinkWrap 32dp tap target FAIL
-                            // → 기본 padded 로 48dp 확보 (motor disability / 음주 후)
-                            itemBuilder: (_, i) => Chip(label: Text(names[i])),
+                                const SizedBox(width: AppSpacing.xs),
+                            itemBuilder: (_, i) => Center(
+                                child: Chip(label: Text(names[i]))),
                           ),
                         ),
                         const SizedBox(height: 16),

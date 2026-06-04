@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../integrations/drift_demo/condition_database.dart';
 import '../../viewmodels/condition_log_viewmodel.dart';
+import '../common/brand_illustration.dart';
 import '../common/delete_confirm_dialog.dart';
+import '../common/empty_state_widget.dart';
 
 /// 컨디션 로그 화면 — Drift 격리 데모.
 ///
@@ -49,7 +53,7 @@ class _ConditionLogScreenState extends ConsumerState<ConditionLogScreen> {
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('condition_add'),
         onPressed: () => _openEditor(context),
-        icon: const Icon(Icons.add),
+        icon: const Icon(AppIcons.add),
         label: const Text('기록'),
       ),
       body: Column(
@@ -69,9 +73,12 @@ class _ConditionLogScreenState extends ConsumerState<ConditionLogScreen> {
                 }
                 final logs = snapshot.data ?? const [];
                 if (logs.isEmpty) {
-                  return const Center(
-                    child: Text('아직 컨디션 기록이 없어요.\n+ 버튼으로 추가하세요.',
-                        textAlign: TextAlign.center),
+                  return EmptyStateWidget(
+                    illustration: AlbiIllustration.emptyGlass,
+                    title: '아직 컨디션 기록이 없어요',
+                    message: '음주 다음날 숙취·수면을 남겨보세요',
+                    actionLabel: '기록 추가',
+                    onAction: () => _openEditor(context),
                   );
                 }
                 return ListView.builder(
@@ -106,10 +113,10 @@ class _AvgSeverityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: FutureBuilder<double>(
             future: future,
             builder: (context, snapshot) {
@@ -122,7 +129,7 @@ class _AvgSeverityCard extends StatelessWidget {
               final avg = snapshot.data ?? 0;
               return Row(
                 children: [
-                  Icon(Icons.monitor_heart_outlined,
+                  Icon(AppIcons.condition,
                       color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
                   Text('평균 숙취도  ${avg.toStringAsFixed(1)} / 5',
@@ -156,7 +163,7 @@ class _ConditionTile extends ConsumerWidget {
       title: Text('${df.format(log.loggedOn)}  숙취 ${log.severity}/5'),
       subtitle: sub.isEmpty ? null : Text(sub),
       trailing: IconButton(
-        icon: const Icon(Icons.delete_outline),
+        icon: const Icon(AppIcons.delete),
         tooltip: '삭제',
         onPressed: () async {
           final ok = await showDeleteConfirmDialog(
@@ -207,20 +214,20 @@ class _ConditionEditorState extends ConsumerState<_ConditionEditor> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+      padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg + bottomInset),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('오늘의 컨디션', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           const Text('숙취 정도'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               for (var i = 1; i <= 5; i++)
                 Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: AppSpacing.sm),
                   child: ChoiceChip(
                     label: Text('$i'),
                     selected: _severity == i,
@@ -229,7 +236,7 @@ class _ConditionEditorState extends ConsumerState<_ConditionEditor> {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _sleepController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -237,12 +244,12 @@ class _ConditionEditorState extends ConsumerState<_ConditionEditor> {
               labelText: '수면 시간 (선택, 예: 6.5)',
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _memoController,
             decoration: const InputDecoration(labelText: '메모 (선택)'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           SizedBox(
             width: double.infinity,
             child: FilledButton(

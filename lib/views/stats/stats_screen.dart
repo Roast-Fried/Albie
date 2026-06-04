@@ -5,6 +5,8 @@ import '../../core/utils/label_utils.dart';
 import '../../core/utils/standard_drink_utils.dart';
 import '../../viewmodels/achievements_viewmodel.dart';
 import '../../viewmodels/stats_viewmodel.dart';
+import '../common/brand_illustration.dart';
+import '../common/empty_state_widget.dart';
 import '../common/error_state_widget.dart';
 
 class StatsScreen extends ConsumerWidget {
@@ -42,7 +44,7 @@ class StatsScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(statsProvider),
         ),
         data: (stats) => stats.totalCount == 0
-            ? _StatsEmptyState(scheme: Theme.of(context).colorScheme)
+            ? const _StatsEmptyState()
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
@@ -493,51 +495,16 @@ class _StandardDrinkCard extends StatelessWidget {
   }
 }
 
-/// 통계 빈 상태 — icon + title + subtitle (Material 3 empty state 패턴)
+/// 통계 빈 상태 — 브랜드 일러스트 빈상태 패턴.
 class _StatsEmptyState extends StatelessWidget {
-  const _StatsEmptyState({required this.scheme});
-
-  final ColorScheme scheme;
+  const _StatsEmptyState();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: scheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.bar_chart_rounded,
-                size: 40,
-                color: scheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '통계를 만들 데이터가 없어요',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '음주 기록을 추가하면 여기에 분포와 추이가 표시돼요',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return const EmptyStateWidget(
+      illustration: AlbiIllustration.emptyStats,
+      title: '통계를 만들 데이터가 없어요',
+      message: '음주 기록을 추가하면 여기에 분포와 추이가 표시돼요',
     );
   }
 }

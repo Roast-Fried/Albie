@@ -61,6 +61,14 @@ class AppPalette {
   static const Color sourceAiAppKey = Color(0xFF006855); // 5.4:1
   static const Color sourceLocalParser = Color(0xFFB25900); // 4.5:1
   static const Color sourceManual = Color(0xFF5F5F5F); // 6.4:1
+
+  /// 표면 위 강조 텍스트(소형) 색 — WCAG AA.
+  ///
+  /// light primary(amber #B8731A)는 크림/화이트 배경 소형 텍스트에서 3.6~3.8:1 로
+  /// AA(4.5) 미달 → light 는 oakBrown(#5C3A1E, ~9.5:1) 사용. dark primary
+  /// (#E0A857)는 peat 배경에서 ~8:1 통과하므로 그대로.
+  static Color accentText(Brightness b) =>
+      b == Brightness.light ? oakBrown : arranCaskGold;
 }
 
 /// Pretendard 기반 TextTheme — 위계(display/headline/title/body/label).

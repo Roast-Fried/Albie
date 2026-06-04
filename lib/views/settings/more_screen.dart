@@ -53,7 +53,8 @@ class MoreScreen extends StatelessWidget {
             AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xs),
         child: Text(text,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+                  // amber primary 는 light 소형 텍스트 AA 미달 → accentText.
+                  color: AppPalette.accentText(Theme.of(context).brightness),
                 )),
       );
 

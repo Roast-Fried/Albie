@@ -29,14 +29,14 @@
 ## T5. 강의 정합 — 본 사이클 (2026-06-04 SDD)
 - ✅ **WS-A Drift 격리 데모** (컨디션 로그): 테이블/DAO/build_runner/watch/StreamBuilder/FutureBuilder + DAO 테스트 6 + 격리 검증 + `docs/drift-vs-sqflite.md`
 - ✅ **WS-B Spec-Kit 산출물**: spec/plan/tasks/test.md
-- ⬜ **WS-C 학습성찰** + 강의개념↔코드 매핑 + 필기 요약
-- ⬜ **WS-E0** integration_test selector Key 안정화
-- ⬜ **WS-E1** 디자인 토큰 (app_tokens + 테마 확장)
-- ⬜ **WS-E2** 런처 아이콘 + 스플래시
-- ⬜ **WS-E3** 인앱 아이콘셋 + 빈상태 일러스트
-- ⬜ **WS-E4** 14화면 비주얼 리디자인 (동작 보존)
-- ⬜ **WS-E5** 다방면 디자인 재검토 (5축)
+- ✅ **WS-C 학습성찰** + 강의개념↔코드 매핑 + 필기 요약
+- ✅ **WS-E1** 디자인 토큰 (app_tokens + 테마 확장)
+- ✅ **WS-E2** 런처 아이콘 + 스플래시 + 알림 아이콘
+- ✅ **WS-E3** 아이콘 토큰(AppIcons) + CustomPainter 브랜드 일러스트
+- 🔄 **WS-E4** 화면 리디자인 (1차: 빈상태/더보기/온보딩 완료, 나머지 진행)
+- 🔄 **WS-E5** 다방면 디자인 재검토 (캡처 + Codex 5축 진행)
 - ⬜ **WS-E6** 골든 갱신 + 최종 검증
+- (E0 selector: 라벨·IconData 보존 + AppIcons 동일 매핑으로 충족 — 테스트 대량 재작성 회피)
 
 ## T6. 품질
 - ✅ unit/widget 테스트 138 + golden 4 + integration capture

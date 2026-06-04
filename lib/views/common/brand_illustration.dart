@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_tokens.dart';
-
 /// 브랜드 빈 상태 일러스트 — CustomPainter 기반 (외부 asset/의존성 없음).
 ///
 /// 위스키 컨셉의 간결한 라인 일러스트. 다크모드 대응(테마 색 사용),
@@ -21,15 +19,18 @@ class BrandIllustration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _IllustrationPainter(
-          variant: variant,
-          stroke: scheme.primary,
-          fill: scheme.primary.withValues(alpha: 0.12),
-          muted: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+    // 장식 요소 — 옆 텍스트가 의미를 전달하므로 스크린리더에서 제외.
+    return ExcludeSemantics(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _IllustrationPainter(
+            variant: variant,
+            stroke: scheme.primary,
+            fill: scheme.primary.withValues(alpha: 0.12),
+            muted: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+          ),
         ),
       ),
     );
@@ -110,7 +111,8 @@ class _IllustrationPainter extends CustomPainter {
         ..lineTo(cx + botHalf, botY)
         ..lineTo(cx - botHalf, botY)
         ..close();
-      canvas.drawPath(liquid, Paint()..color = AppPalette.jimBeamAmber.withValues(alpha: 0.55));
+      // 액체 = 테마 primary (light amber / dark cask gold) — 다크 패리티 확보.
+      canvas.drawPath(liquid, Paint()..color = stroke.withValues(alpha: 0.55));
     }
     canvas.drawPath(body, solid);
     canvas.drawPath(body, line);

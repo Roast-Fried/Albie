@@ -77,6 +77,8 @@ class AppTheme {
   }) {
     final textTheme = AppTypography.textTheme(brightness)
         .apply(fontFamily: _fontFamily);
+    // 표면 위 소형 강조 텍스트 — light amber 는 AA 미달이라 oakBrown 사용.
+    final accentText = AppPalette.accentText(brightness);
 
     return ThemeData(
       useMaterial3: true,
@@ -188,9 +190,10 @@ class AppTheme {
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
         backgroundColor: navBg,
+        // 아이콘은 amber(대형 — 3:1 통과), 선택 라벨(소형)은 accentText(AA 통과).
         selectedItemColor: scheme.primary,
         unselectedItemColor: scheme.onSurfaceVariant,
-        selectedLabelStyle: textTheme.labelSmall,
+        selectedLabelStyle: textTheme.labelSmall?.copyWith(color: accentText),
         unselectedLabelStyle: textTheme.labelSmall,
       ),
     );
