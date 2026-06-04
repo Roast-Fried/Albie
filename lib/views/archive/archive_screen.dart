@@ -106,7 +106,7 @@ class ArchiveScreen extends ConsumerWidget {
                                 .labelLarge
                                 ?.copyWith(
                                     color:
-                                        Theme.of(context).colorScheme.outline)),
+                                        Theme.of(context).colorScheme.onSurfaceVariant)),
                       ),
                     ),
                     Expanded(
@@ -173,7 +173,7 @@ class _ArchiveTile extends ConsumerWidget {
           children: [
             Text(line1,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline)),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 2),
             Row(
               children: [

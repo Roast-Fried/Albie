@@ -324,7 +324,7 @@ class _CategoryPieChart extends StatelessWidget {
                           '${sorted[i].value}',
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
-                                color: Theme.of(context).colorScheme.outline,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                         ),
                       ],

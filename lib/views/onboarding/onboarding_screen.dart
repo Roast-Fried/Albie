@@ -126,7 +126,7 @@ class _Page1Welcome extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Icon(Icons.arrow_downward_rounded,
-              color: Theme.of(context).colorScheme.outline, size: 20),
+              color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
           const SizedBox(height: 6),
           _ExampleBox(
             emoji: '🥃',
@@ -357,7 +357,7 @@ class _BenefitTile extends StatelessWidget {
           const SizedBox(height: 2),
           Text(sub,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline)),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );

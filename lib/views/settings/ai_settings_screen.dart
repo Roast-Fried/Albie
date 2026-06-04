@@ -69,7 +69,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                       Text(
                         '* 키를 등록하기 전에는 자연어 입력이 로컬 파서로만 처리됩니다.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.outline,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                     ],
@@ -106,7 +106,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
               Text(
                 '⚠️ 무료 Gemini API 사용 시 입력 내용이 Google 제품 개선에 사용될 수 있습니다.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const Divider(),
             ] else ...[
@@ -294,7 +294,7 @@ class _JobTile extends StatelessWidget {
           ),
           Text(dur,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontFeatures: const [FontFeature.tabularFigures()])),
           const SizedBox(width: 6),
           statusIcon,

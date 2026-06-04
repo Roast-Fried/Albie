@@ -307,7 +307,7 @@ class _EntryCard extends ConsumerWidget {
                     child: Text(
                       '($titleEn)',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -318,7 +318,7 @@ class _EntryCard extends ConsumerWidget {
             Text(
               subtitleParts.join(' · '),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 6),
