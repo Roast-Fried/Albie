@@ -28,6 +28,10 @@ dependencies:
   flutter_dotenv: ^5.1.0
   table_calendar: ^3.1.2
   supabase_flutter: ^2.5.0
+  # Drift 격리 데모 모듈 (컨디션 로그) — 기존 sqflite 메인 DB와 분리된 reactive ORM 시연
+  drift: ^2.20.0
+  drift_flutter: ^0.2.0
+  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_test:
@@ -35,6 +39,9 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # Drift 코드 생성 (.g.dart 는 git 커밋 — CI 는 build_runner 미실행)
+  drift_dev: ^2.20.0
+  build_runner: ^2.4.0
 
 flutter:
   uses-material-design: true
