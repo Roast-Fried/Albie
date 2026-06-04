@@ -41,6 +41,13 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- Impeller(Vulkan) 비활성화 → Skia 렌더러 사용.
+             SM F711N(Android 15) 등에서 Impeller 가 텍스트/위젯을 렌더 안 하는
+             현상 회피 (골든=Skia 는 정상, device=Impeller 만 누락). -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
         <!-- flutter_local_notifications: 부팅 후 schedule 복원 receiver. -->
         <receiver
             android:exported="false"
