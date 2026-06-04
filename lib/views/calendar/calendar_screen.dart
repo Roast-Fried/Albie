@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -163,7 +164,7 @@ class _DaySection extends StatelessWidget {
         Text(
           '$label · ${logs.length}건',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: scheme.primary,
+                color: AppPalette.accentText(Theme.of(context).brightness),
                 fontWeight: FontWeight.w600,
               ),
         ),

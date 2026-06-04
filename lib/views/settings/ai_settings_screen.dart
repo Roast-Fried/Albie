@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/parse_job.dart';
@@ -68,7 +69,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                       Text(
                         '* 키를 등록하기 전에는 자연어 입력이 로컬 파서로만 처리됩니다.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.outline,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                     ],
@@ -105,7 +106,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
               Text(
                 '⚠️ 무료 Gemini API 사용 시 입력 내용이 Google 제품 개선에 사용될 수 있습니다.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const Divider(),
             ] else ...[
@@ -205,7 +206,7 @@ class _SectionHeader extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .labelLarge
-              ?.copyWith(color: Theme.of(context).colorScheme.primary)),
+              ?.copyWith(color: AppPalette.accentText(Theme.of(context).brightness))),
     );
   }
 }
@@ -281,7 +282,7 @@ class _JobTile extends StatelessWidget {
             width: 44,
             child: Text(time,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppPalette.accentText(Theme.of(context).brightness),
                     fontFeatures: const [FontFeature.tabularFigures()])),
           ),
           Expanded(
@@ -293,7 +294,7 @@ class _JobTile extends StatelessWidget {
           ),
           Text(dur,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontFeatures: const [FontFeature.tabularFigures()])),
           const SizedBox(width: 6),
           statusIcon,

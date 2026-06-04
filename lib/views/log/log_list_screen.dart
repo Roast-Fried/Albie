@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/app_routes.dart';
@@ -9,6 +10,8 @@ import '../../core/utils/date_utils.dart' as dt_utils;
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/log_list_viewmodel.dart';
 import '../../domain/entities/drink_log.dart';
+import '../common/brand_illustration.dart';
+import '../common/empty_state_widget.dart';
 import '../common/animations.dart';
 import '../common/delete_confirm_dialog.dart';
 import '../common/error_state_widget.dart';
@@ -149,7 +152,7 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
             padding: EdgeInsets.only(top: i == 0 ? 0 : 8, bottom: 4),
             child: Text(it.header!,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppPalette.accentText(Theme.of(context).brightness),
                     fontWeight: FontWeight.w600)),
           );
         }
@@ -217,7 +220,7 @@ class _LogTile extends StatelessWidget {
                   children: [
                     Text(dateStr,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary)),
+                            color: AppPalette.accentText(Theme.of(context).brightness))),
                     const SizedBox(height: 4),
                     Text(summary.isEmpty ? '(항목 없음)' : summary,
                         style: Theme.of(context).textTheme.bodyMedium),
@@ -284,27 +287,12 @@ class _EmptyState extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.notes_outlined,
-              size: 48, color: Theme.of(context).colorScheme.outline),
-          const SizedBox(height: 12),
-          const Text('아직 기록이 없어요'),
-          const SizedBox(height: 4),
-          Text('오늘 뭐 마셨어요? 한 줄로 알려주세요!',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline)),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            icon: const Icon(Icons.add),
-            label: const Text('첫 기록 남기기'),
-            onPressed: () =>
-                ref.read(appTabIndexProvider.notifier).state = 0,
-          ),
-        ],
-      ),
+    return EmptyStateWidget(
+      illustration: AlbiIllustration.emptyGlass,
+      title: '아직 기록이 없어요',
+      message: '오늘 뭐 마셨어요? 한 줄로 알려주세요!',
+      actionLabel: '첫 기록 남기기',
+      onAction: () => ref.read(appTabIndexProvider.notifier).state = 0,
     );
   }
 }

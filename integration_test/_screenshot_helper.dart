@@ -1,10 +1,24 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// 스크린샷 저장 base 디렉터리.
+/// - desktop(Windows/Linux/macOS): 프로젝트 cwd `test_screenshots` (직접 접근).
+/// - 실기 device(Android/iOS): 앱 외부 파일 디렉터리 (adb pull 로 host 회수 가능).
+Future<String> screenshotBaseDir() async {
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    final d =
+        await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    return '${d.path}/test_screenshots';
+  }
+  return 'test_screenshots';
+}
 
 /// integration_test 공통 helper — mobile portrait viewport + screenshot 캡처 +
 /// onboarding skip + dialog 안전 처리.
@@ -211,11 +225,12 @@ Future<void> takeShot(WidgetTester tester, String name,
       final image = await boundary.toImage(pixelRatio: 1.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData != null) {
-        final dir = Directory('test_screenshots');
+        final base = await screenshotBaseDir();
+        final dir = Directory(base);
         if (!dir.existsSync()) dir.createSync(recursive: true);
-        File('test_screenshots/$name.png')
+        File('$base/$name.png')
             .writeAsBytesSync(byteData.buffer.asUint8List());
-        debugPrint('Screenshot: $name.png (${boundary.size})');
+        debugPrint('Screenshot: $name.png (${boundary.size}) -> $base');
       }
     } else {
       // 진단 — boundary 0개 또는 size 가드 통과 못함.

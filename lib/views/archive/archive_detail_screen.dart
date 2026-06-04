@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/utils/label_utils.dart';
@@ -56,7 +57,7 @@ class ArchiveDetailScreen extends ConsumerWidget {
             Text(
               _subtitle(d),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
 
@@ -136,8 +137,9 @@ class ArchiveDetailScreen extends ConsumerWidget {
   String _subtitle(ArchiveDetailData d) {
     final parts = <String>[
       if (d.master.canonicalName != d.master.nameKo) d.master.canonicalName,
-      if (d.master.subcategory != null) d.master.subcategory!,
-      categoryLabel(d.master.category),
+      // subcategory raw(single_malt) 노출 방지 — archive_screen/log_detail 과 동일
+      // subcategoryLabel 로 통일 (whisky+single_malt → "싱글몰트 위스키").
+      subcategoryLabel(d.master.category, d.master.subcategory),
       if (d.master.country != null) d.master.country!,
       if (d.master.defaultAbv != null) '${d.master.defaultAbv}%',
     ];
@@ -216,7 +218,7 @@ class _Metric extends StatelessWidget {
               Text(
                 sublabel!,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
           ],
@@ -249,7 +251,7 @@ class _HistoryTile extends StatelessWidget {
                 Text(
                   dateStr,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppPalette.accentText(Theme.of(context).brightness),
                   ),
                 ),
                 const SizedBox(height: 2),

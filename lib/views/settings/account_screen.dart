@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -178,7 +179,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             const SizedBox(width: 8),
-            Text('동기화 중...', style: TextStyle(color: scheme.primary)),
+            Text('동기화 중...', style: TextStyle(color: AppPalette.accentText(Theme.of(context).brightness))),
           ],
         ),
       ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../common/brand_illustration.dart';
+
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
 
@@ -106,8 +108,8 @@ class _Page1Welcome extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wine_bar,
-              size: 72, color: Theme.of(context).colorScheme.primary),
+          const BrandIllustration(
+              variant: AlbiIllustration.welcome, size: 120),
           const SizedBox(height: 24),
           Text('알비에 오신 걸 환영합니다',
               style: Theme.of(context).textTheme.headlineSmall,
@@ -124,7 +126,7 @@ class _Page1Welcome extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Icon(Icons.arrow_downward_rounded,
-              color: Theme.of(context).colorScheme.outline, size: 20),
+              color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
           const SizedBox(height: 6),
           _ExampleBox(
             emoji: '🥃',
@@ -314,7 +316,7 @@ class _ParserCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(sub,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline)),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const SizedBox(height: 8),
           Text(detail,
               style: Theme.of(context).textTheme.labelSmall),
@@ -355,7 +357,7 @@ class _BenefitTile extends StatelessWidget {
           const SizedBox(height: 2),
           Text(sub,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline)),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );

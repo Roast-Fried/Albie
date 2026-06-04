@@ -1,10 +1,13 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/label_utils.dart';
 import '../../core/utils/standard_drink_utils.dart';
 import '../../viewmodels/achievements_viewmodel.dart';
 import '../../viewmodels/stats_viewmodel.dart';
+import '../common/brand_illustration.dart';
+import '../common/empty_state_widget.dart';
 import '../common/error_state_widget.dart';
 
 class StatsScreen extends ConsumerWidget {
@@ -42,7 +45,7 @@ class StatsScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(statsProvider),
         ),
         data: (stats) => stats.totalCount == 0
-            ? _StatsEmptyState(scheme: Theme.of(context).colorScheme)
+            ? const _StatsEmptyState()
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
@@ -166,23 +169,46 @@ class _AchievementSection extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final item in items)
-              Tooltip(
-                message: item.description,
-                child: Chip(
-                  avatar: Icon(
-                    item.unlocked ? Icons.emoji_events : Icons.lock_outline,
-                    size: 16,
-                  ),
-                  label: Text(item.title),
-                  backgroundColor: item.unlocked
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : null,
-                ),
-              ),
+            for (final item in items) _AchievementChip(item: item),
           ],
         ),
       ],
+    );
+  }
+}
+
+/// 업적 칩 — 획득/잠금 상태별 색 명시.
+///
+/// 잠긴 칩이 크림 배경에 바랜 앰버로 거의 안 보이던 현상 수정.
+/// 획득 = primaryContainer 위 onPrimaryContainer / 잠금 = surface 위
+/// onSurfaceVariant(M3 AA 보장 muted 토큰) — 옅되 읽힘.
+class _AchievementChip extends StatelessWidget {
+  final Achievement item;
+
+  const _AchievementChip({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final fg = item.unlocked ? scheme.onPrimaryContainer : scheme.onSurfaceVariant;
+    return Tooltip(
+      message: item.description,
+      child: Chip(
+        avatar: Icon(
+          item.unlocked ? Icons.emoji_events : Icons.lock_outline,
+          size: 16,
+          color: fg,
+        ),
+        label: Text(item.title),
+        labelStyle: Theme.of(context)
+            .textTheme
+            .labelMedium
+            ?.copyWith(color: fg, fontWeight: FontWeight.w600),
+        backgroundColor: item.unlocked ? scheme.primaryContainer : null,
+        side: item.unlocked
+            ? BorderSide.none
+            : BorderSide(color: scheme.outlineVariant),
+      ),
     );
   }
 }
@@ -298,7 +324,7 @@ class _CategoryPieChart extends StatelessWidget {
                           '${sorted[i].value}',
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
-                                color: Theme.of(context).colorScheme.outline,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                         ),
                       ],
@@ -336,7 +362,7 @@ class _RankTile extends StatelessWidget {
               '$rank',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: rank <= 3 ? Theme.of(context).colorScheme.primary : null,
+                color: rank <= 3 ? AppPalette.accentText(Theme.of(context).brightness) : null,
               ),
             ),
           ),
@@ -493,51 +519,16 @@ class _StandardDrinkCard extends StatelessWidget {
   }
 }
 
-/// 통계 빈 상태 — icon + title + subtitle (Material 3 empty state 패턴)
+/// 통계 빈 상태 — 브랜드 일러스트 빈상태 패턴.
 class _StatsEmptyState extends StatelessWidget {
-  const _StatsEmptyState({required this.scheme});
-
-  final ColorScheme scheme;
+  const _StatsEmptyState();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: scheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.bar_chart_rounded,
-                size: 40,
-                color: scheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '통계를 만들 데이터가 없어요',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '음주 기록을 추가하면 여기에 분포와 추이가 표시돼요',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return const EmptyStateWidget(
+      illustration: AlbiIllustration.emptyStats,
+      title: '통계를 만들 데이터가 없어요',
+      message: '음주 기록을 추가하면 여기에 분포와 추이가 표시돼요',
     );
   }
 }

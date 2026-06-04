@@ -1,0 +1,10 @@
+<!-- 알림 status bar 아이콘 — monochrome 텀블러 실루엣 (white, Android 가 자동 마스킹). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7,4 L17,4 L15.4,20 L8.6,20 Z" />
+</vector>

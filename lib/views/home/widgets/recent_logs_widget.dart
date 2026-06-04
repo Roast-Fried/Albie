@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_tokens.dart';
 import 'package:intl/intl.dart';
 import '../../../core/utils/label_utils.dart';
 import '../../../domain/entities/drink_log.dart';
@@ -75,7 +76,7 @@ class _LogCard extends StatelessWidget {
             children: [
               Text(dateStr,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary)),
+                      color: AppPalette.accentText(Theme.of(context).brightness))),
               const SizedBox(height: 4),
               Expanded(
                 child: Text(summary,

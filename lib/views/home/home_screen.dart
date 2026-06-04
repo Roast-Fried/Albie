@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_routes.dart';
 import '../../core/providers.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/home_viewmodel.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
+import '../common/brand_illustration.dart';
 import '../common/error_state_widget.dart';
 import 'widgets/recent_logs_widget.dart';
 import 'widgets/input_section_widget.dart';
@@ -31,7 +33,8 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('알비', style: TextStyle(fontWeight: FontWeight.bold)),
+        // 폰트 굵기는 appBarTheme.titleTextStyle(titleLarge w700)에서 적용.
+        title: const Text('알비'),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -108,17 +111,18 @@ class HomeScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.titleSmall
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.sm),
                         SizedBox(
-                          height: 36,
+                          // 48dp tap target (motor disability / 음주 후) — 부모 높이가
+                          // chip 을 36 으로 누르던 회귀 수정.
+                          height: 48,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: names.length,
                             separatorBuilder: (_, _) =>
-                                const SizedBox(width: 6),
-                            // Round 6 X3 — Chip shrinkWrap 32dp tap target FAIL
-                            // → 기본 padded 로 48dp 확보 (motor disability / 음주 후)
-                            itemBuilder: (_, i) => Chip(label: Text(names[i])),
+                                const SizedBox(width: AppSpacing.xs),
+                            itemBuilder: (_, i) => Center(
+                                child: Chip(label: Text(names[i]))),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -222,20 +226,9 @@ class _EmptyHint extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
         child: Column(
           children: [
-            // 원형 backdrop + icon — Material 3 empty state 패턴
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: scheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.wine_bar_outlined,
-                size: 40,
-                color: scheme.onPrimaryContainer,
-              ),
-            ),
+            // 브랜드 일러스트 (CustomPainter — 위스키 글래스)
+            const BrandIllustration(
+                variant: AlbiIllustration.emptyGlass, size: 96),
             const SizedBox(height: 16),
             Text(
               '아직 기록이 없어요',

@@ -1,36 +1,28 @@
 import 'package:flutter/material.dart';
 
+import 'app_tokens.dart';
+
 /// 알비 테마 — 위스키 컨셉.
 ///
 /// **Light**: 짐빔 (Jim Beam) — 버번 위스키의 황금 앰버 + 따뜻한 크림 배경.
 /// **Dark**: 아란 마크리무어 캐스크 스트렝스 (Arran Machrie Moor CS) — 피트 + 셰리
 /// 캐스크의 진한 황금 + 피트 블랙 배경.
 ///
-/// 폰트: Pretendard (한국어/라틴 모두 자연스러운 가독성).
+/// 폰트: Pretendard. 간격/반경/타이포는 [AppTokens] SoT 경유.
 class AppTheme {
   AppTheme._();
 
   // --- Jim Beam (Light) ---
-  /// 짐빔 버번의 액체 색 — deep amber gold. primary seed.
-  static const Color kJimBeamAmber = Color(0xFFB8731A);
-
-  /// 짐빔 라벨 오크 — secondary/accent.
-  static const Color kOakBrown = Color(0xFF5C3A1E);
-
-  /// 따뜻한 크림 배경.
-  static const Color kCreamSurface = Color(0xFFFBF6EE);
+  static const Color kJimBeamAmber = AppPalette.jimBeamAmber;
+  static const Color kOakBrown = AppPalette.oakBrown;
+  static const Color kCreamSurface = AppPalette.creamSurface;
 
   // --- Arran Machrie Moor CS (Dark) ---
-  /// 캐스크 스트렝스의 진한 황금 — primary seed (dark).
-  static const Color kArranCaskGold = Color(0xFFE0A857);
+  static const Color kArranCaskGold = AppPalette.arranCaskGold;
+  static const Color kPeatBlack = AppPalette.peatBlack;
+  static const Color kPeatSmoke = AppPalette.peatSmoke;
 
-  /// 피트 블랙 — scaffold.
-  static const Color kPeatBlack = Color(0xFF15110D);
-
-  /// 피트 스모크 — surface.
-  static const Color kPeatSmoke = Color(0xFF1F1812);
-
-  static const _fontFamily = 'Pretendard';
+  static const _fontFamily = AppTypography.fontFamily;
 
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
@@ -40,45 +32,17 @@ class AppTheme {
       primary: kJimBeamAmber,
       secondary: kOakBrown,
       surface: kCreamSurface,
+      error: AppPalette.error,
     );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      fontFamily: _fontFamily,
-      scaffoldBackgroundColor: kCreamSurface,
-      appBarTheme: const AppBarTheme(
-        centerTitle: false,
-        elevation: 0,
-        scrolledUnderElevation: 0.5,
-        backgroundColor: kCreamSurface,
-      ),
-      // 2026-05-27 Codex audit Finding 4: cream 배경 (#FBF6EE) 와 white card 의
-      // 대비 1.08:1 — 카드 경계 색만으로 거의 구분 불가. outlineVariant border
-      // 추가로 카드 경계 시각 분리.
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: scheme.outlineVariant, width: 0.5),
-        ),
-        color: Colors.white,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: kJimBeamAmber,
-      ),
+    return _base(
+      scheme: scheme,
+      brightness: Brightness.light,
+      scaffold: kCreamSurface,
+      cardColor: Colors.white,
+      // cream(#FBF6EE) 배경과 white card 대비 1.08:1 → outlineVariant 보더로 경계 분리.
+      cardBorder: BorderSide(color: scheme.outlineVariant, width: 0.5),
+      fieldFill: Colors.white,
+      navBg: Colors.white,
     );
   }
 
@@ -90,42 +54,155 @@ class AppTheme {
       primary: kArranCaskGold,
       surface: kPeatSmoke,
     );
+    return _base(
+      scheme: scheme,
+      brightness: Brightness.dark,
+      scaffold: kPeatBlack,
+      cardColor: kPeatSmoke,
+      cardBorder: BorderSide.none,
+      fieldFill: kPeatSmoke,
+      navBg: kPeatSmoke,
+    );
+  }
+
+  /// Light/Dark 공통 컴포넌트 테마 — 토큰 기반 통일.
+  static ThemeData _base({
+    required ColorScheme scheme,
+    required Brightness brightness,
+    required Color scaffold,
+    required Color cardColor,
+    required BorderSide cardBorder,
+    required Color fieldFill,
+    required Color navBg,
+  }) {
+    final textTheme = AppTypography.textTheme(brightness)
+        .apply(fontFamily: _fontFamily);
+    // 표면 위 소형 강조 텍스트 — light amber 는 AA 미달이라 oakBrown 사용.
+    final accentText = AppPalette.accentText(brightness);
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       fontFamily: _fontFamily,
-      scaffoldBackgroundColor: kPeatBlack,
-      appBarTheme: const AppBarTheme(
+      textTheme: textTheme,
+      scaffoldBackgroundColor: scaffold,
+      appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0.5,
-        backgroundColor: kPeatBlack,
+        backgroundColor: scaffold,
+        titleTextStyle: textTheme.titleLarge?.copyWith(color: scheme.onSurface),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: kPeatSmoke,
+        margin: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.cardR,
+          side: cardBorder,
+        ),
+        color: cardColor,
+        clipBehavior: Clip.antiAlias,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: kPeatSmoke,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+        fillColor: fieldFill,
+        border: const OutlineInputBorder(
+          borderRadius: AppRadius.fieldR,
           borderSide: BorderSide.none,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.fieldR,
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.fieldR,
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(0, 48),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.fieldR),
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(0, 48),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.fieldR),
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 48),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.fieldR),
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(textStyle: textTheme.labelLarge),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        side: BorderSide(color: scheme.outlineVariant),
+        // 미선택 칩 라벨 대비 보장 (옅게 보이던 필터/카테고리 칩 가독성).
+        labelStyle:
+            textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+        secondaryLabelStyle:
+            textTheme.labelMedium?.copyWith(color: scheme.onSecondaryContainer),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.cardR),
+      ),
+      listTileTheme: const ListTileThemeData(
+        contentPadding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+      ),
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant,
+        thickness: 0.5,
+        space: 1,
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.cardR),
+        titleTextStyle: textTheme.titleLarge?.copyWith(color: scheme.onSurface),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.sheetR),
+        showDragHandle: true,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.fieldR),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: kPeatSmoke,
-        selectedItemColor: kArranCaskGold,
+        backgroundColor: navBg,
+        // 아이콘은 amber(대형 — 3:1 통과), 선택 라벨(소형)은 accentText(AA 통과).
+        selectedItemColor: scheme.primary,
+        unselectedItemColor: scheme.onSurfaceVariant,
+        selectedLabelStyle: textTheme.labelSmall?.copyWith(color: accentText),
+        unselectedLabelStyle: textTheme.labelSmall,
       ),
     );
   }
 
   /// 기존 코드 호환 — `AppTheme.kAlbiAmber` 참조처 유지.
-  /// Jim Beam 의 amber 가 그 자리에 대응.
   static const Color kAlbiAmber = kJimBeamAmber;
 }
