@@ -152,7 +152,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
         side: BorderSide(color: scheme.outlineVariant),
-        labelStyle: textTheme.labelMedium,
+        // 미선택 칩 라벨 대비 보장 (옅게 보이던 필터/카테고리 칩 가독성).
+        labelStyle:
+            textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+        secondaryLabelStyle:
+            textTheme.labelMedium?.copyWith(color: scheme.onSecondaryContainer),
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       ),
