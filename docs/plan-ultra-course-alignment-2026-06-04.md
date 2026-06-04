@@ -174,4 +174,14 @@
   - A1 path_provider 추가 / A2 getApplicationSupportDirectory 경로 격리 / A4 `.g.dart` 커밋 명시(CI build_runner 부재) / A5-A6 ViewModel 경유 MVVM 엄수 + 평균 자동갱신 / A7 watch emit + 격리 검증
   - E0 selector 안정화 단계 신설(E4 전 BLOCKING) / E2 리소스 diff+알림아이콘 검토+SVG 1차경로 / E4 동작보존 BLOCKING + 하드코딩 검사명령 / E5 경로 `scripts/run-all-tests.sh`+리뷰 산출물 / E6 `flutter test --update-goldens test/golden`
   - C2 Dart/Widget 기본문법 행 추가 / C3 필기요약 신설 / OT.txt 출처 보관
-- 다음 = Codex R2 확인 리뷰 (잔여 finding 0 검증) → 구현 착수.
+- 2026-06-04: Codex R2 확인 리뷰 → **CONVERGED (finding 0)** → 구현 착수.
+- 2026-06-04 구현 완료 (브랜치 `feat/course-alignment-redesign`, 9 커밋):
+  - WS-A Drift 격리 데모 `668c496` (DAO 테스트 8 + Codex 감사 fixes 반영)
+  - WS-B/C SDD 산출물 + 학습성찰/매핑/필기 `a885d9e`
+  - WS-E1 디자인 토큰 `f49e6b0` / WS-E2 아이콘·스플래시·알림 `e52b8ae` / WS-E3 AppIcons·브랜드 일러스트 `4af3d2a`
+  - WS-E4 화면 리디자인 `72aee7f` (빈상태 일러스트/더보기/온보딩 + 전역 테마)
+  - WS-E5 다방면 재검토: Codex 5축 REWORK→수정 `f223062` (AA 대비/터치48/다크패리티/토큰화) + 리뷰 문서
+  - WS-E6 골든 재생성 + 리뷰 문서 `cfa9df3`
+  - 검증: `flutter analyze` 0 · `flutter test` **149 통과**(골든 포함) · DAO 8 · 회귀 0.
+- 잔여(LOW): home/archive/stats 보조 spacing magic 점진 토큰화 / 상태색 dark 전용 토큰 분기 (영향 낮음).
+- 미검증: device 실기 e2e (Windows desktop capture 중 settings/stats/theme_full 캡처 "Unable to start app" 간헐 실패 — 코드 아닌 desktop 다중 런치 환경 이슈, unit/widget/golden 으로 대체 검증).
