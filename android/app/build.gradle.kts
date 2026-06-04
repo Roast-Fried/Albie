@@ -29,6 +29,9 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications 17.x 가 java.time API 사용 → core library
+        // desugaring 필수 (CI build-android fail: "requires core library desugaring").
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -74,4 +77,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // isCoreLibraryDesugaringEnabled 와 짝 — desugared java.time 백포트 제공.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
