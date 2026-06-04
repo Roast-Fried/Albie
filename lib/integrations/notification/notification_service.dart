@@ -32,7 +32,9 @@ class NotificationService {
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Asia/Seoul'));
 
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // monochrome 알림 아이콘 — status bar 에서 컬러 런처 아이콘은 흰 blob 이 되므로
+    // 전용 실루엣 drawable 사용.
+    const androidInit = AndroidInitializationSettings('@drawable/ic_notification');
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
