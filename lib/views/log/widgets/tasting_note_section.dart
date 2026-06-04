@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
 import 'star_rating.dart';
@@ -126,7 +127,7 @@ class _Row extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .labelMedium
-                    ?.copyWith(color: Theme.of(context).colorScheme.primary)),
+                    ?.copyWith(color: AppPalette.accentText(Theme.of(context).brightness))),
           ),
           Expanded(
             child: Text(value,

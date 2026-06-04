@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/utils/label_utils.dart';
@@ -249,7 +250,7 @@ class _HistoryTile extends StatelessWidget {
                 Text(
                   dateStr,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppPalette.accentText(Theme.of(context).brightness),
                   ),
                 ),
                 const SizedBox(height: 2),

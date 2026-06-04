@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/ai_settings_viewmodel.dart';
@@ -268,7 +269,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
+          color: AppPalette.accentText(Theme.of(context).brightness),
         ),
       ),
     );

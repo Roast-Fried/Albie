@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/parse_job.dart';
@@ -205,7 +206,7 @@ class _SectionHeader extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .labelLarge
-              ?.copyWith(color: Theme.of(context).colorScheme.primary)),
+              ?.copyWith(color: AppPalette.accentText(Theme.of(context).brightness))),
     );
   }
 }
@@ -281,7 +282,7 @@ class _JobTile extends StatelessWidget {
             width: 44,
             child: Text(time,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppPalette.accentText(Theme.of(context).brightness),
                     fontFeatures: const [FontFeature.tabularFigures()])),
           ),
           Expanded(

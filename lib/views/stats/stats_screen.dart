@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/label_utils.dart';
 import '../../core/utils/standard_drink_utils.dart';
@@ -168,23 +169,46 @@ class _AchievementSection extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final item in items)
-              Tooltip(
-                message: item.description,
-                child: Chip(
-                  avatar: Icon(
-                    item.unlocked ? Icons.emoji_events : Icons.lock_outline,
-                    size: 16,
-                  ),
-                  label: Text(item.title),
-                  backgroundColor: item.unlocked
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : null,
-                ),
-              ),
+            for (final item in items) _AchievementChip(item: item),
           ],
         ),
       ],
+    );
+  }
+}
+
+/// 업적 칩 — 획득/잠금 상태별 색 명시.
+///
+/// 잠긴 칩이 크림 배경에 바랜 앰버로 거의 안 보이던 현상 수정.
+/// 획득 = primaryContainer 위 onPrimaryContainer / 잠금 = surface 위
+/// onSurfaceVariant(M3 AA 보장 muted 토큰) — 옅되 읽힘.
+class _AchievementChip extends StatelessWidget {
+  final Achievement item;
+
+  const _AchievementChip({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final fg = item.unlocked ? scheme.onPrimaryContainer : scheme.onSurfaceVariant;
+    return Tooltip(
+      message: item.description,
+      child: Chip(
+        avatar: Icon(
+          item.unlocked ? Icons.emoji_events : Icons.lock_outline,
+          size: 16,
+          color: fg,
+        ),
+        label: Text(item.title),
+        labelStyle: Theme.of(context)
+            .textTheme
+            .labelMedium
+            ?.copyWith(color: fg, fontWeight: FontWeight.w600),
+        backgroundColor: item.unlocked ? scheme.primaryContainer : null,
+        side: item.unlocked
+            ? BorderSide.none
+            : BorderSide(color: scheme.outlineVariant),
+      ),
     );
   }
 }
@@ -338,7 +362,7 @@ class _RankTile extends StatelessWidget {
               '$rank',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: rank <= 3 ? Theme.of(context).colorScheme.primary : null,
+                color: rank <= 3 ? AppPalette.accentText(Theme.of(context).brightness) : null,
               ),
             ),
           ),

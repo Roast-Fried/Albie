@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/app_routes.dart';
@@ -151,7 +152,7 @@ class _LogListScreenState extends ConsumerState<LogListScreen> {
             padding: EdgeInsets.only(top: i == 0 ? 0 : 8, bottom: 4),
             child: Text(it.header!,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppPalette.accentText(Theme.of(context).brightness),
                     fontWeight: FontWeight.w600)),
           );
         }
@@ -219,7 +220,7 @@ class _LogTile extends StatelessWidget {
                   children: [
                     Text(dateStr,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary)),
+                            color: AppPalette.accentText(Theme.of(context).brightness))),
                     const SizedBox(height: 4),
                     Text(summary.isEmpty ? '(항목 없음)' : summary,
                         style: Theme.of(context).textTheme.bodyMedium),

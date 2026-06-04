@@ -316,7 +316,7 @@ class _ParserCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(sub,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline)),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const SizedBox(height: 8),
           Text(detail,
               style: Theme.of(context).textTheme.labelSmall),
