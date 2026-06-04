@@ -5,6 +5,7 @@ import '../../core/providers.dart';
 import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/home_viewmodel.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
+import '../common/brand_illustration.dart';
 import '../common/error_state_widget.dart';
 import 'widgets/recent_logs_widget.dart';
 import 'widgets/input_section_widget.dart';
@@ -222,20 +223,9 @@ class _EmptyHint extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
         child: Column(
           children: [
-            // 원형 backdrop + icon — Material 3 empty state 패턴
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: scheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.wine_bar_outlined,
-                size: 40,
-                color: scheme.onPrimaryContainer,
-              ),
-            ),
+            // 브랜드 일러스트 (CustomPainter — 위스키 글래스)
+            const BrandIllustration(
+                variant: AlbiIllustration.emptyGlass, size: 96),
             const SizedBox(height: 16),
             Text(
               '아직 기록이 없어요',

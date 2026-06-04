@@ -5,6 +5,8 @@ import '../../core/app_routes.dart';
 import '../../core/providers.dart';
 import '../../core/utils/label_utils.dart';
 import '../../viewmodels/archive_viewmodel.dart';
+import '../common/brand_illustration.dart';
+import '../common/empty_state_widget.dart';
 import '../common/error_state_widget.dart';
 import '../log/widgets/star_rating.dart';
 
@@ -133,29 +135,14 @@ class _EmptyArchive extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.wine_bar_outlined,
-              size: 48, color: Theme.of(context).colorScheme.outline),
-          const SizedBox(height: 12),
-          Text(selectedCategory == null
-              ? '아직 기록이 없어요'
-              : '해당 카테고리에 기록이 없어요'),
-          const SizedBox(height: 4),
-          Text('오늘 뭐 마셨어요? 한 줄로 알려주세요!',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline)),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            icon: const Icon(Icons.add),
-            label: const Text('첫 기록 남기기'),
-            onPressed: () =>
-                ref.read(appTabIndexProvider.notifier).state = 0,
-          ),
-        ],
-      ),
+    return EmptyStateWidget(
+      illustration: AlbiIllustration.emptyArchive,
+      title: selectedCategory == null
+          ? '아직 기록이 없어요'
+          : '해당 카테고리에 기록이 없어요',
+      message: '오늘 뭐 마셨어요? 한 줄로 알려주세요!',
+      actionLabel: '첫 기록 남기기',
+      onAction: () => ref.read(appTabIndexProvider.notifier).state = 0,
     );
   }
 }

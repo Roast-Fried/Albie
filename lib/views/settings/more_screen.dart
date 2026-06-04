@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../core/app_routes.dart';
+import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_tokens.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -9,34 +12,66 @@ class MoreScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('더보기')),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         children: [
-          ListTile(
-            leading: const Icon(Icons.wine_bar),
-            title: const Text('마셔본 술'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, Routes.archive),
-          ),
-          ListTile(
-            leading: const Icon(Icons.bar_chart),
-            title: const Text('통계'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, Routes.stats),
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_month),
-            title: const Text('음주 캘린더'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, Routes.calendar),
-          ),
+          _sectionLabel(context, '둘러보기'),
+          _tile(context,
+              key: 'more_archive',
+              icon: AppIcons.drinkFilled,
+              title: '마셔본 술',
+              route: Routes.archive),
+          _tile(context,
+              key: 'more_stats',
+              icon: AppIcons.stats,
+              title: '통계',
+              route: Routes.stats),
+          _tile(context,
+              key: 'more_calendar',
+              icon: AppIcons.calendar,
+              title: '음주 캘린더',
+              route: Routes.calendar),
+          _tile(context,
+              key: 'more_condition',
+              icon: AppIcons.condition,
+              title: '컨디션 로그',
+              subtitle: '음주 다음날 숙취·수면 기록',
+              route: Routes.conditionLog),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('설정'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, Routes.settings),
-          ),
+          _sectionLabel(context, '설정'),
+          _tile(context,
+              key: 'more_settings',
+              icon: AppIcons.settings,
+              title: '설정',
+              route: Routes.settings),
         ],
       ),
+    );
+  }
+
+  Widget _sectionLabel(BuildContext context, String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xs),
+        child: Text(text,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                )),
+      );
+
+  Widget _tile(
+    BuildContext context, {
+    required String key,
+    required IconData icon,
+    required String title,
+    required String route,
+    String? subtitle,
+  }) {
+    return ListTile(
+      key: Key(key),
+      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+      title: Text(title),
+      subtitle: subtitle == null ? null : Text(subtitle),
+      trailing: const Icon(AppIcons.chevron),
+      onTap: () => Navigator.pushNamed(context, route),
     );
   }
 }

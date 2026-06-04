@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../common/brand_illustration.dart';
+
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
 
@@ -106,8 +108,8 @@ class _Page1Welcome extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wine_bar,
-              size: 72, color: Theme.of(context).colorScheme.primary),
+          const BrandIllustration(
+              variant: AlbiIllustration.welcome, size: 120),
           const SizedBox(height: 24),
           Text('알비에 오신 걸 환영합니다',
               style: Theme.of(context).textTheme.headlineSmall,
