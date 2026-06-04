@@ -39,11 +39,16 @@ void main() {
       await takeShot(tester, 'stats_03_all');
     }
 
-    // 4. 스크롤 down (차트 + top liquors 영역)
-    final lv = find.byType(ListView).evaluate().isNotEmpty
-        ? find.byType(ListView).first
-        : find.byType(SingleChildScrollView).first;
-    if (lv.evaluate().isNotEmpty) {
+    // 4. 스크롤 down (차트 + top liquors 영역).
+    // 데이터 없는 빈 통계는 스크롤뷰가 없으므로(EmptyStateWidget = Center>Column)
+    // .first 직접 호출 시 "Bad state: No element" — 존재 확인 후에만 진행.
+    Finder? lv;
+    if (find.byType(ListView).evaluate().isNotEmpty) {
+      lv = find.byType(ListView).first;
+    } else if (find.byType(SingleChildScrollView).evaluate().isNotEmpty) {
+      lv = find.byType(SingleChildScrollView).first;
+    }
+    if (lv != null) {
       await tester.drag(lv, const Offset(0, -500));
       await tester.pumpAndSettle(const Duration(seconds: 1));
       await takeShot(tester, 'stats_04_scrolled_mid');
