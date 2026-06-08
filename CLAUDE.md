@@ -163,7 +163,7 @@ GitHub Actions: push/PR → analyze → test → (main만) APK 빌드
 | 역할 | 파일 | 비고 |
 |------|------|------|
 | **🔴 다음 세션 handoff** | [docs/session-handoff-2026-05-28.md](docs/session-handoff-2026-05-28.md) | v0.2.2 CI fail fix + 미해결 항목 + 다음 step. 세션 시작 시 최우선 |
-| **최상위 기획** | [docs/기획서.md](docs/기획서.md) | 외부 docx v2.1 + 와이어프레임 + 현재 구현을 통합. 작업 시 항상 이 문서 § 4.1 화면 목록을 기준으로 삼을 것 |
+| **최상위 기획** | [docs/기획서.md](docs/기획서.md) | 자기완결형 통합 기획서(요약+상세 통합, 외부 의존 없음). 작업 시 항상 이 문서 § 6.1 화면 목록을 기준으로 삼을 것 |
 | **와이어프레임 Gap 플랜** | [docs/plan-wireframe-diff.md](docs/plan-wireframe-diff.md) | 39 건 Gap + Phase A/B/C 우선순위. 다음 기능 착수 전 반드시 확인 |
 | **UI/UX 6라운드 평가 (2026-05-18)** | [docs/analyze/2026-05-18-ui-ux-evaluation.md](docs/analyze/2026-05-18-ui-ux-evaluation.md) | 14 agent (Claude 9 + Codex 5) 양방향 cross-feedback. ~165 unique finding. CRITICAL/HIGH 백로그 |
 | **Phase C plan (도메인 차별화)** | [docs/plan-phase-c-domain-differentiation.md](docs/plan-phase-c-domain-differentiation.md) | C1-C5 (표준잔/알림/occasion/i18n/라벨갤러리) — 사용자 결정 영역 |
