@@ -19,6 +19,7 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
       body: ListView(
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
         children: [
           // ── AI 연결 ──
           const _SectionHeader('AI 연결'),

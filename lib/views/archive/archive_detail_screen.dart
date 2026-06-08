@@ -46,7 +46,8 @@ class ArchiveDetailScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(archiveDetailProvider(masterId)),
         ),
         data: (d) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+              16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
           children: [
             // 헤더
             Text(

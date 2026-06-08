@@ -47,7 +47,8 @@ class StatsScreen extends ConsumerWidget {
         data: (stats) => stats.totalCount == 0
             ? const _StatsEmptyState()
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(
+                    16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
                 children: [
                   // 기간 탭 — 2026-05-27 Sprint 3 UI-004: 360px 에서 ✓ 아이콘 +
                   // label 동시 표시 시 cramped. showSelectedIcon false 로 label 만.

@@ -82,6 +82,8 @@ class _ConditionLogScreenState extends ConsumerState<ConditionLogScreen> {
                   );
                 }
                 return ListView.builder(
+                  padding: EdgeInsets.only(
+                      bottom: MediaQuery.paddingOf(context).bottom),
                   itemCount: logs.length,
                   itemBuilder: (context, i) =>
                       _ConditionTile(log: logs[i], onDeleted: _refreshAvg),
@@ -212,9 +214,13 @@ class _ConditionEditorState extends ConsumerState<_ConditionEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final mq = MediaQuery.of(context);
+    final bottomInset = mq.viewInsets.bottom;
+    // 하단 시스템 내비게이션 바에 저장 버튼이 가려지지 않도록 inset 보정.
+    // (키보드 표시 시 padding.bottom 은 0 으로 수렴 → bottomInset 과 이중계산 없음)
+    final safeBottom = mq.padding.bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg + bottomInset),
+      padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg + bottomInset + safeBottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
