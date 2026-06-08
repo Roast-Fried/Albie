@@ -32,7 +32,8 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('오류: $e')),
         data: (state) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+              16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
           children: [
             // AI 사용 토글
             SwitchListTile(
@@ -67,7 +68,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                       const Text('4. ✓ 버튼으로 저장 + 자동 검증'),
                       const SizedBox(height: 8),
                       Text(
-                        '* 키를 등록하기 전에는 자연어 입력이 로컬 파서로만 처리됩니다.',
+                        "* 키를 등록하기 전에는 'AI로 생성'이 연결 안내를 표시하며, '직접 입력'으로 기록할 수 있어요.",
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),

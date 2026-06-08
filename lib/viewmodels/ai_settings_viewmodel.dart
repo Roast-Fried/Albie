@@ -88,8 +88,11 @@ class AiSettingsViewModel extends AsyncNotifier<AiSettingsState> {
 
     final repo = ref.read(aiConfigRepoProvider);
     final config = (await future).config;
+    // 키 등록 = AI 사용 의사 표시 → isEnabled 자동 활성화.
+    // (홈 "AI로 생성" 게이트가 isEnabled && hasUserKey 를 함께 본다)
     await repo.update(config.copyWith(
       keyMode: 'user_provided',
+      isEnabled: true,
       lastValidatedAt: DateTime.now(),
       lastErrorMessage: null,
     ));

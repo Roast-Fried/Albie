@@ -66,6 +66,18 @@ const geminiTastingNoteResponseSchema = {
   },
 };
 
+/// 음식 사진 → 음식명 리스트 추출용 structured output schema.
+const geminiFoodPhotoResponseSchema = {
+  'type': 'OBJECT',
+  'properties': {
+    'foods': {
+      'type': 'ARRAY',
+      'items': {'type': 'STRING'},
+    },
+  },
+  'required': ['foods'],
+};
+
 /// 시스템 프롬프트 생성
 String buildSystemPrompt(
   DateTime now, {
@@ -93,6 +105,18 @@ String buildSystemPrompt(
 8. 확신도가 낮은 항목은 parseWarnings에 이유를 적는다.
 9. ageStatement는 "15년" 형태로 한글 단위를 포함한다.
 10. 사람/모임/장소/감정 단어 (친구들, 친구, 가족, 동료, 혼자, 같이, 함께, 회식, 모임, 집, 술집, 바, 클럽, 좋아서, 기분, 신나서 등) 는 술 이름으로 분류하지 않는다. 술 이름이 명시되지 않으면 liquorName=null + liquorCategory="other" 로 둔다.''';
+}
+
+String buildFoodPhotoSystemPrompt() {
+  return '''너는 음식 사진에서 음식 이름을 추출하는 보조다.
+
+규칙:
+1. 사진에 보이는 먹을 수 있는 음식·안주의 이름만 한국어로 추출한다.
+2. 각 음식은 짧고 일반적인 명사로 적는다 (예: "삼겹살", "치즈 플레이트", "감자튀김").
+3. 음식이 아닌 것(사람, 식기, 잔, 술병, 배경, 로고)은 제외한다.
+4. 같은 음식은 한 번만 넣는다. 최대 8개.
+5. 음식이 보이지 않으면 foods 를 빈 배열로 둔다.
+6. JSON 스키마에 맞춰서만 반환한다.''';
 }
 
 String buildTastingNoteSystemPrompt() {

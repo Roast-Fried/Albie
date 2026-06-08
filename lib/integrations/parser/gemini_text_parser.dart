@@ -1,18 +1,13 @@
 import 'dart:convert';
-import 'dart:math' as math;
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
-import 'package:cross_file/cross_file.dart';
 import 'package:dio/dio.dart';
 
 import '../gemini/gemini_client.dart';
 import '../gemini/gemini_schemas.dart';
+import 'ai_image_prep.dart';
 import 'parse_result.dart';
 
 class GeminiTextParser {
-  static const _maxImageSide = 1600;
-
   final GeminiClient _client;
   final String defaultQuantityUnit;
   final bool sixHourCutoffEnabled;
@@ -30,7 +25,8 @@ class GeminiTextParser {
     required String source, // ai_user_key | ai_app_key
     CancelToken? cancelToken,
   }) async {
-    final image = await _prepareImage(input.imagePath, cancelToken: cancelToken);
+    final image = await prepareImageForAi(input.imagePath,
+        cancelToken: cancelToken, maxSide: 1600);
     final response = await _client.generateContent(
       model: model,
       apiKey: apiKey,
@@ -114,71 +110,6 @@ class GeminiTextParser {
     );
   }
 
-  Future<_PreparedImage?> _prepareImage(
-    String? path, {
-    CancelToken? cancelToken,
-  }) async {
-    if (path == null || path.isEmpty) return null;
-
-    _throwIfCancelled(cancelToken);
-    final originalBytes = await XFile(path).readAsBytes();
-    _throwIfCancelled(cancelToken);
-    final buffer = await ui.ImmutableBuffer.fromUint8List(originalBytes);
-    ui.ImageDescriptor? descriptor;
-    ui.Codec? codec;
-    ui.Image? decoded;
-
-    try {
-      _throwIfCancelled(cancelToken);
-      descriptor = await ui.ImageDescriptor.encoded(buffer);
-      final longestSide = math.max(descriptor.width, descriptor.height);
-      final scale = longestSide > _maxImageSide
-          ? _maxImageSide / longestSide
-          : 1.0;
-      final targetWidth = math.max(1, (descriptor.width * scale).round());
-      final targetHeight = math.max(1, (descriptor.height * scale).round());
-
-      _throwIfCancelled(cancelToken);
-      codec = await descriptor.instantiateCodec(
-        targetWidth: targetWidth,
-        targetHeight: targetHeight,
-      );
-      final frame = await codec.getNextFrame();
-      decoded = frame.image;
-      _throwIfCancelled(cancelToken);
-      final data = await decoded.toByteData(format: ui.ImageByteFormat.png);
-      if (data == null) {
-        throw Exception('이미지를 AI 전송용으로 변환하지 못했습니다');
-      }
-
-      final bytes = Uint8List.fromList(data.buffer.asUint8List());
-      return _PreparedImage(bytes: bytes, mimeType: 'image/png');
-    } finally {
-      decoded?.dispose();
-      codec?.dispose();
-      descriptor?.dispose();
-      buffer.dispose();
-    }
-  }
-
-  /// CancelToken 이 취소 상태면 즉시 throw — decode/resize 루프 사이에서 호출.
-  /// Dio 의 cancelError 를 그대로 던져 상위 retry/rethrow 로직과 호환.
-  void _throwIfCancelled(CancelToken? token) {
-    if (token == null || !token.isCancelled) return;
-    final err = token.cancelError;
-    if (err != null) throw err;
-    throw DioException.requestCancelled(
-      requestOptions: RequestOptions(path: ''),
-      reason: 'image preparation cancelled',
-    );
-  }
-}
-
-class _PreparedImage {
-  final Uint8List bytes;
-  final String mimeType;
-
-  const _PreparedImage({required this.bytes, required this.mimeType});
 }
 
 /// AI 가 liquorName 을 비워서 보낸 entry 가 있으면 경고 텍스트를 생성한다.

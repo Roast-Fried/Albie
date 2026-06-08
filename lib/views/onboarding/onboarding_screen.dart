@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../viewmodels/notification_settings_viewmodel.dart';
 import '../common/brand_illustration.dart';
+import '../home/widgets/ai_key_guide_sheet.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -16,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _currentPage = 0;
 
-  static const _pageCount = 3;
+  static const _pageCount = 5;
 
   @override
   void dispose() {
@@ -37,6 +40,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: const [
                   _Page1Welcome(),
                   _Page2Parser(),
+                  _PageAiKey(),
+                  _PageNotification(),
                   _Page3Benefits(),
                 ],
               ),
@@ -191,7 +196,117 @@ class _Page2Parser extends StatelessWidget {
   }
 }
 
-/// 페이지 3 — 시작하기 + 3 benefit 그리드.
+/// 페이지 3 — AI 키 연결(선택). 브라우저로 무료 발급 → 같은 가이드 시트 재사용.
+class _PageAiKey extends StatelessWidget {
+  const _PageAiKey();
+
+  Future<void> _connect(BuildContext context) async {
+    final action = await AiKeyGuideSheet.show(
+      context,
+      hasKey: false,
+      showManualOption: false,
+    );
+    if (action == AiKeyGuideAction.registered && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('AI 키가 연결됐어요 🎉')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.vpn_key_outlined,
+              size: 64, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 20),
+          Text('AI 키 연결 (선택)',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center),
+          const SizedBox(height: 10),
+          Text('Gemini API 키를 연결하면 자연어를 더 정확히 분석해요.\n브라우저에서 무료로 발급받을 수 있어요.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _connect(context),
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: const Text('지금 연결하기'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text('나중에 설정에서도 연결할 수 있어요',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}
+
+/// 페이지 4 — 알림 설정 안내(선택). 첫 실행 시 OS 권한 요청까지 유도.
+class _PageNotification extends ConsumerWidget {
+  const _PageNotification();
+
+  Future<void> _enable(BuildContext context, WidgetRef ref) async {
+    await ref.read(notificationSettingsProvider.notifier).setMaster(true);
+    if (!context.mounted) return;
+    final granted = ref
+            .read(notificationSettingsProvider)
+            .valueOrNull
+            ?.permissionGranted ??
+        false;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(granted ? '알림을 켰어요 🔔' : '알림 권한이 꺼져 있어요 (설정에서 허용 가능)'),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.notifications_active_outlined,
+              size: 64, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 20),
+          Text('알림 받기 (선택)',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center),
+          const SizedBox(height: 10),
+          Text('재방문 리마인더 · 주간 요약 · 건강 신호를\n알림으로 받아볼 수 있어요.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _enable(context, ref),
+              icon: const Icon(Icons.notifications_active, size: 18),
+              label: const Text('알림 켜기'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text('나중에 설정 → 알림에서 바꿀 수 있어요',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}
+
+/// 페이지 5 — 시작하기 + 3 benefit 그리드.
 class _Page3Benefits extends StatelessWidget {
   const _Page3Benefits();
 

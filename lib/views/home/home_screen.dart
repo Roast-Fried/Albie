@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_routes.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_tokens.dart';
+import '../../viewmodels/ai_settings_viewmodel.dart';
 import '../../viewmodels/app_settings_viewmodel.dart';
 import '../../viewmodels/home_viewmodel.dart';
 import '../../viewmodels/draft_review_viewmodel.dart';
 import '../common/brand_illustration.dart';
 import '../common/error_state_widget.dart';
+import 'widgets/ai_key_guide_sheet.dart';
+import 'widgets/ai_loading_card.dart';
 import 'widgets/recent_logs_widget.dart';
 import 'widgets/input_section_widget.dart';
 
@@ -30,6 +33,13 @@ class HomeScreen extends ConsumerWidget {
     final recentLogs = ref.watch(recentLogsProvider);
     final thisMonthCount = ref.watch(thisMonthLogCountProvider);
     final recentLiquors = ref.watch(recentFrequentLiquorsProvider);
+
+    // AI 키 게이트: 키 등록 + AI 사용 활성 시에만 "AI로 생성" 이 AI 를 호출한다.
+    // 미충족 시 로컬 자동분석 없이 연결 가이드 바텀시트만 표시.
+    final aiState = ref.watch(aiConfigProvider).valueOrNull;
+    final aiReady =
+        aiState != null && aiState.hasUserKey && aiState.config.isEnabled;
+    final aiHasKey = aiState?.hasUserKey ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -83,11 +93,21 @@ class HomeScreen extends ConsumerWidget {
                   ref.read(homeViewModelProvider.notifier).pickImage(),
               onRemoveImage: () =>
                   ref.read(homeViewModelProvider.notifier).removeImage(),
-              onGenerateDraft: () => _onGenerateDraft(context, ref),
+              onGenerateDraft: () => _onGenerateDraft(
+                context,
+                ref,
+                aiReady: aiReady,
+                aiHasKey: aiHasKey,
+              ),
               onCancelGenerate: () =>
                   ref.read(homeViewModelProvider.notifier).cancelGenerate(),
               onManualInput: () => _onManualInput(context, ref),
             ),
+
+            if (homeState.isLoading) ...[
+              const SizedBox(height: 12),
+              AiLoadingCard(hasImage: homeState.imagePath != null),
+            ],
 
             if (homeState.error != null) ...[
               const SizedBox(height: 8),
@@ -165,7 +185,26 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _onGenerateDraft(BuildContext context, WidgetRef ref) async {
+  Future<void> _onGenerateDraft(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool aiReady,
+    required bool aiHasKey,
+  }) async {
+    // 키 미등록(또는 AI 미사용) → 로컬 자동분석 없이 연결 가이드만 표시.
+    if (!aiReady) {
+      final action = await AiKeyGuideSheet.show(context, hasKey: aiHasKey);
+      if (!context.mounted) return;
+      if (action == AiKeyGuideAction.manualInput) {
+        _onManualInput(context, ref);
+        return;
+      }
+      if (action != AiKeyGuideAction.registered) {
+        return; // 닫힘/취소
+      }
+      // 키 연결됨 → AI 준비 완료, 이어서 생성 진행.
+    }
+
     final vm = ref.read(homeViewModelProvider.notifier);
     final homeState = ref.read(homeViewModelProvider);
     final inputText = homeState.inputText;
