@@ -159,7 +159,8 @@ class _DaySection extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: EdgeInsets.fromLTRB(
+          16, 12, 16, 16 + MediaQuery.paddingOf(context).bottom),
       children: [
         Text(
           '$label · ${logs.length}건',

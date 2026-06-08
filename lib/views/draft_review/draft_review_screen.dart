@@ -84,7 +84,8 @@ class _DraftReviewScreenState extends ConsumerState<DraftReviewScreen> {
           ],
         ),
         body: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+              16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
           children: [
             // AI 실패 → 로컬 fallback 시 경고 배너 (Theme token 적용)
             if (state.showAiFailBanner) ...[

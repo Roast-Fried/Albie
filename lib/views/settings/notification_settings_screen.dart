@@ -21,6 +21,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
           final disabled = !s.masterEnabled || !s.permissionGranted;
 
           return ListView(
+            padding:
+                EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
             children: [
               SwitchListTile(
                 title: const Text('알림 사용'),

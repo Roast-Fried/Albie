@@ -50,6 +50,10 @@ test/golden/failures/
 
 # Integration test screenshots (로컬 생성물)
 test_screenshots/
+test_screenshots.zip
+
+# 로컬 빌드 산출물 zip (재생성 가능 — repo 용량 회피)
+dist/
 
 # Environment — .env 와 .env.example 은 빈 placeholder 템플릿으로 커밋합니다
 # (flutter_dotenv asset 이라 파일이 없으면 빌드 실패 → fresh clone 보호).

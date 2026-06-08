@@ -64,7 +64,12 @@ class _TastingNoteEditSheetState extends ConsumerState<TastingNoteEditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final mq = MediaQuery.of(context);
+    final bottomInset = mq.viewInsets.bottom;
+    // useSafeArea:true 는 SafeArea(bottom:false) 라 하단 시스템 내비게이션 바 inset 을
+    // 적용하지 않는다 → 직접 더해 저장/취소 버튼이 내비바에 가려지지 않게 한다.
+    // (키보드 표시 시 padding.bottom 은 0 으로 수렴해 bottomInset 과 이중계산 없음)
+    final safeBottom = mq.padding.bottom;
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       // 8-grid alignment: 24 horizontal + 16 vertical
@@ -72,7 +77,7 @@ class _TastingNoteEditSheetState extends ConsumerState<TastingNoteEditSheet> {
         left: 24,
         right: 24,
         top: 12,
-        bottom: 16 + bottomInset,
+        bottom: 16 + bottomInset + safeBottom,
       ),
       child: SingleChildScrollView(
         child: Column(

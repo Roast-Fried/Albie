@@ -1,7 +1,7 @@
 name: albi
 description: "알비 - 자연어 음주 기록 앱"
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.4.0+4
 
 environment:
   sdk: ^3.11.4
@@ -28,6 +28,8 @@ dependencies:
   flutter_dotenv: ^5.1.0
   table_calendar: ^3.1.2
   supabase_flutter: ^2.5.0
+  # 외부 브라우저로 Gemini API 키 발급 페이지 열기 (AI 키 연결 UX)
+  url_launcher: ^6.3.0
   # Drift 격리 데모 모듈 (컨디션 로그) — 기존 sqflite 메인 DB와 분리된 reactive ORM 시연
   drift: ^2.20.0
   drift_flutter: ^0.2.0

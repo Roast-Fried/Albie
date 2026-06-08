@@ -111,7 +111,8 @@ class ArchiveScreen extends ConsumerWidget {
                     ),
                     Expanded(
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.fromLTRB(
+                            16, 0, 16, MediaQuery.paddingOf(context).bottom),
                         itemCount: items.length,
                         itemBuilder: (context, i) =>
                             _ArchiveTile(item: items[i]),

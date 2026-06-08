@@ -63,7 +63,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   // ── 로그인/가입 폼 ──
   Widget _buildLoginForm() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+          16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
       children: [
         Text(
           '이메일로 로그인하면 기록을 클라우드에 백업하고 다른 기기에서 복원할 수 있어요.',
@@ -123,7 +124,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         : '없음';
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+          16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
       children: [
         ListTile(
           leading: const Icon(Icons.account_circle_outlined),
@@ -290,7 +292,8 @@ class _UnconfiguredCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+          16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
       children: [
         Card(
           color: scheme.surfaceContainerLow,

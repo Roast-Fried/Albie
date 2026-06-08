@@ -108,7 +108,8 @@ class _DetailBody extends ConsumerWidget {
       // 자동 boundary 아니라 명시 wrap 필요. (log_list_screen 과 같은 패턴)
       body: RepaintBoundary(
         child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+            16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
         children: [
           // 날짜 + 장소
           Text(dateStr, style: Theme.of(context).textTheme.titleMedium),

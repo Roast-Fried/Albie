@@ -1,0 +1,403 @@
+[codex-plugin-cc v2.0.0] BREAKING changes from v1.x:
+  1. Sandbox default is now inherited from ~/.codex/config.toml
+     - Before: review/task hard-coded sandbox="read-only" / "workspace-write"
+     - Now:    omitted unless --sandbox is passed; user codex config takes effect
+     Restore legacy: CODEX_PLUGIN_SANDBOX_DEFAULT=read-only (or workspace-write)
+  2. Plugin codex sessions land in $HOME/.codex/claude-code/ instead of
+     ~/.codex/ so they no longer pollute the Codex Desktop history feed.
+     Restore legacy shared home: CODEX_PLUGIN_USE_DEFAULT_HOME=1
+  Suppress this notice: CODEX_PLUGIN_SUPPRESS_V2_NOTICE=1
+[codex-plugin-cc] --prompt-file path "C:/Users/tgkim/AppData/Local/Temp/codex-albi-enum-prompt.txt" resolves outside cwd (C:\Users\tgkim\AppData\Local\Temp\codex-albi-enum-prompt.txt). Reading anyway — set CODEX_PLUGIN_PROMPT_FILE_STRICT=1 to refuse.
+[codex] Starting Codex task thread.
+[codex] Thread ready (019e637d-a3a3-75b0-9fa4-948aec84825c).
+[codex] Turn started (019e637d-ba9c-7670-a49e-4e0ff17d9810).
+[codex] Assistant message captured: I’ll inspect the view, viewmodel, and integration test files first, then map actual widgets a...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg --files lib/views lib/viewmodels in...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-ChildItem -Path lib\\views -Recurs...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-ChildItem -Path integration_test -...
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg --files lib/views lib/viewmodels in... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-ChildItem -Path integration_test -... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-ChildItem -Path lib\\views -Recurs... (exit 0)
+[codex] Assistant message captured: The file set is compact: 21 view files, 11 viewmodels, and 3 integration tests. I’m reading t...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$i=0; Get-Content lib'"\\views\\onboar...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$i=0; Get-Content lib'"\\views\\home\\...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$i=0; Get-Content lib'"\\views\\home\\...
+[codex] Command declined: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$i=0; Get-Content lib'"\\views\\onboar... (exit -1)
+[codex] Command declined: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$i=0; Get-Content lib'"\\views\\home\\... (exit -1)
+[codex] Command declined: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$i=0; Get-Content lib'"\\views\\home\\... (exit -1)
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$i=0; Get-Content lib'"\\views\\home\\...
+[codex] Command declined: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$i=0; Get-Content lib'"\\views\\home\\... (exit -1)
+[codex] Assistant message captured: The PowerShell line-number wrapper was blocked by the local policy, so I’m switching to `rg -...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\onboarding\\...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\home\\home_s...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\home\\widget...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\home\\widget...
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\home\\home_s... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\onboarding\\... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\home\\widget... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\home\\widget... (exit 0)
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\draft_review...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\draft_review...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\draft_review...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\draft_review...
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\draft_review... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\draft_review... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\draft_review... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\draft_review... (exit 0)
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\log_lis...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\log_det...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\widgets...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\widgets...
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\log_det... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\log_lis... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\widgets... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\widgets... (exit 0)
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\widgets...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\archive\\arc...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\archive\\arc...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\stats\\stats...
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\log\\widgets... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\stats\\stats... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\archive\\arc... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\archive\\arc... (exit 0)
+[codex] Assistant message captured: I’ve got the core screen code now. A few candidates are already visible: fixed-width rows in ...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\settings\\se...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\settings\\ai...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\settings\\mo...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\common\\dele...
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\settings\\se... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\settings\\mo... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\common\\dele... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\views\\settings\\ai... (exit 0)
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "BottomNavigationBar|NavigationB...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg -n \"class .*ViewModel|Provider|Sta...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" integration_test'"\\app_te...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" integration_test'"\\layout...
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg -n \"class .*ViewModel|Provider|Sta... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "BottomNavigationBar|NavigationB... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" integration_test'"\\layout... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" integration_test'"\\app_te... (exit 0)
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\app.dart"
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\app.dart" (exit 0)
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\viewmodels\\home_vi...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\viewmodels\\stats_v...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\viewmodels\\archive...
+[codex] Running command: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\viewmodels\\ai_sett...
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\viewmodels\\archive... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\viewmodels\\ai_sett... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\viewmodels\\home_vi... (exit 0)
+[codex] Command completed: "C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n "''^" lib'"\\viewmodels\\stats_v... (exit 0)
+[codex] Assistant message captured: Read-only inspection completed. I read all files under `lib/views/`, `lib/viewmodels/`, and `...
+[codex] Turn completion inferred after the main thread finished and subagent work drained.
+Read-only inspection completed. I read all files under `lib/views/`, `lib/viewmodels/`, and `integration_test/`; no files were written.
+
+**1. Full Scenario List**
+
+| ID | Screen | State/Situation | Interaction | Expected breakage? |
+|---|---|---|---|---|
+| app-entry-loading | AppEntry | onboarding preference loading | app launch | No |
+| app-db-loading | AppShell | DB initializing | app launch | No |
+| app-db-error | AppShell | DB init failed text | app launch | Unstyled error only |
+| nav-home-tab | AppShell | Home selected | BottomNavigationBar tap 홈 | No |
+| nav-log-tab | AppShell | Log selected | BottomNavigationBar tap 기록 | No |
+| nav-more-tab | AppShell | More selected | BottomNavigationBar tap 더보기 | No |
+| onboarding-page-1 | Onboarding | welcome page | swipe/next | Low risk |
+| onboarding-page-2 | Onboarding | parser page | swipe/next | Possible tight 2-card row |
+| onboarding-page-3 | Onboarding | benefits page | 시작하기 | Possible tight 3-tile row |
+| onboarding-skip | Onboarding | page 1/2 only | 건너뛰기 | Skip hidden on last page |
+| home-empty | Home | no recent logs, month count 0 | view | No |
+| home-recent-loading | Home | recentLogs loading | wait | No |
+| home-recent-error | Home | recentLogs error | 다시 시도 | No |
+| home-recent-horizontal | Home | recent logs present | horizontal scroll | Long place overflow risk |
+| home-recent-more | Home | recent logs present | → 더보기 | No |
+| home-input-focused | Home | TextField focused | tap input | Keyboard layout risk |
+| home-input-clear | Home | text entered | clear suffix icon | No |
+| home-ai-disabled | Home | no text/image | AI로 생성 disabled | No |
+| home-ai-generate | Home | text entered | AI로 생성 | No |
+| home-ai-loading | Home | parsing in progress | 취소 | No |
+| home-ai-error | Home | parse/image error text | retry by editing | No |
+| home-manual-input | Home | empty or text state | 직접 입력 | No |
+| home-pick-image | Home | no image | 사진 첨부 | Platform picker dependent |
+| home-image-chip | Home | image selected | delete image chip | Chip height risk |
+| home-recent-liquor-chips | Home | recent liquors present | horizontal scroll | 36px height clips 48dp Chip |
+| home-month-stat | Home | month count > 0 | view card | No |
+| draft-manual-empty | DraftReview | manual blank entry | save | SnackBar validation |
+| draft-ai-result | DraftReview | parsed result | review | No |
+| draft-ai-fail-banner | DraftReview | AI attempted + local fallback | close banner | Possible long title row |
+| draft-source-badge | DraftReview | source + confidence | view | Row overflow risk |
+| draft-image-preview | DraftReview | raw image exists | image load | No |
+| draft-image-error | DraftReview | image file missing | view fallback | No |
+| draft-warnings | DraftReview | parseWarnings present | view | No |
+| draft-date-picker | DraftReview | date row | tap date/change | No |
+| draft-time-picker | DraftReview | after date selected | choose time/cancel | No |
+| draft-place-focused | DraftReview | place field | tap/type | Keyboard layout risk |
+| draft-entry-name | DraftReview | name field | type liquor name | No |
+| draft-entry-master-match | DraftReview | master matched | view suffix/helper | Helper text height risk |
+| draft-entry-unmatched | DraftReview | raw name unmatched | view warning helper | Helper text height risk |
+| draft-entry-category-dropdown | DraftReview | category field | expand dropdown | No |
+| draft-entry-age | DraftReview | ageStatement field | type | Label wording bug |
+| draft-entry-quantity | DraftReview | quantity field | type invalid/valid | Silent fallback to 1.0 by design |
+| draft-entry-unit-dropdown | DraftReview | unit dropdown | expand/select | Cramped row risk |
+| draft-entry-abv | DraftReview | ABV field | type | Label truncation risk |
+| draft-entry-estimated | DraftReview | estimated quantity | view warning | No |
+| draft-entry-add | DraftReview | one entry | 항목 추가 | No |
+| draft-entry-delete | DraftReview | multiple entries | delete icon | No |
+| draft-food-empty | DraftReview | no foods | view input | No |
+| draft-food-add | DraftReview | food input | submit/add icon | No |
+| draft-food-remove | DraftReview | food chips present | chip delete | No |
+| draft-memo-focused | DraftReview | memo field | tap/type | Keyboard layout risk |
+| draft-back-cancel | DraftReview | unsaved | back, 계속 작성 | No |
+| draft-back-leave | DraftReview | unsaved | back, 나가기 | No |
+| draft-save-loading | DraftReview | saving | tap 저장 | No |
+| draft-save-error | DraftReview | repo save throws | SnackBar | No |
+| log-list-loading | LogList | provider loading | wait | No |
+| log-list-error | LogList | provider error | retry | No |
+| log-list-empty | LogList | no logs | 첫 기록 남기기 | No |
+| log-list-grouped | LogList | multiple months | scroll top/bottom | Long tile text overflow |
+| log-list-search-open | LogList | search inactive | search icon | No |
+| log-list-search-type | LogList | search active | type query | No |
+| log-list-search-close | LogList | search active | close icon | No |
+| log-list-refresh | LogList | data present | pull refresh | No |
+| log-list-tap-detail | LogList | data present | tap tile | No |
+| log-list-long-delete | LogList | data present | long press | Dialog opens |
+| log-list-icon-delete | LogList | data present | trash icon | Dialog opens |
+| delete-dialog-cancel | Common | delete dialog | 취소 | No |
+| delete-dialog-confirm | Common | delete dialog | 삭제 | No |
+| log-detail-loading | LogDetail | provider loading | wait | No |
+| log-detail-error | LogDetail | provider error | retry | No |
+| log-detail-missing | LogDetail | null log | view | No |
+| log-detail-basic | LogDetail | date/place/entries | scroll | Entry title overflow risk |
+| log-detail-image | LogDetail | raw image exists | view | No |
+| log-detail-image-error | LogDetail | missing image | view fallback | No |
+| log-detail-foods | LogDetail | foods present | view chips | shrinkWrap tap target risk |
+| log-detail-memo | LogDetail | memo present | view | No |
+| log-detail-raw-input | LogDetail | raw input present | expand tile | No |
+| log-detail-edit | LogDetail | data present | edit icon | No |
+| log-detail-delete | LogDetail | data present | delete icon | Dialog opens |
+| tasting-note-loading | TastingNote | note loading | wait | No |
+| tasting-note-empty | TastingNote | no note | 테이스팅 노트 작성 | No |
+| tasting-note-present | TastingNote | note exists | view rows/star | Edit tap target too small |
+| tasting-note-edit-open | TastingSheet | create/edit sheet | tap CTA/edit | Header row cramped risk |
+| tasting-note-rating | TastingSheet | rating row | half-star tap | 28px touch target small |
+| tasting-note-ai-enhance | TastingSheet | form open | AI 보완 | No cancel button while enhancing |
+| tasting-note-save | TastingSheet | form open | 저장 | No |
+| tasting-note-save-error | TastingSheet | save fails | SnackBar | No |
+| archive-loading | Archive | provider loading | wait | No |
+| archive-error | Archive | provider error | retry | No |
+| archive-empty-all | Archive | no archive | 첫 기록 남기기 | No |
+| archive-empty-filter | Archive | selected empty category | filter chip | No |
+| archive-filter-scroll | Archive | category chips | horizontal scroll/select | 40px chip height risk |
+| archive-list-many | Archive | many items | scroll top/bottom | Long title/subtitle overflow |
+| archive-favorite | Archive | master item | favorite icon | Tap target OK |
+| archive-raw-no-detail | Archive | no masterId | tap tile | SnackBar |
+| archive-open-detail | Archive | masterId item | tap tile | No |
+| archive-detail-loading | ArchiveDetail | provider loading | wait | No |
+| archive-detail-error | ArchiveDetail | provider error | retry | No |
+| archive-detail-header | ArchiveDetail | long canonical/name | view | Subtitle overflow risk |
+| archive-detail-metrics | ArchiveDetail | metrics row | view | 3-card row tight |
+| archive-detail-history-empty | ArchiveDetail | no history | view | No |
+| archive-detail-history-many | ArchiveDetail | history present | scroll | Place overflow risk |
+| archive-detail-rating | ArchiveDetail | rated history | view stars | No |
+| archive-detail-aliases | ArchiveDetail | aliases present | view chips | shrinkWrap tap target risk |
+| archive-detail-add-alias | ArchiveDetail | alias dialog | type/add/cancel | No |
+| archive-detail-duplicate-alias | ArchiveDetail | existing alias | add duplicate | SnackBar |
+| stats-loading | Stats | provider loading | wait | No |
+| stats-error | Stats | provider error | retry | No |
+| stats-empty | Stats | totalCount 0 | view | No |
+| stats-period-this-month | Stats | data present | select 이번 달 | No |
+| stats-period-3months | Stats | data present | select 3개월 | No |
+| stats-period-all | Stats | data present | select 전체 | No |
+| stats-metric-cards | Stats | data present | view 3 cards | Tight but likely OK |
+| stats-standard-drinks | Stats | std drinks > 0 | view card | No |
+| stats-achievements | Stats | achievements present | tooltip/chips | Chip wrap OK |
+| stats-pie-many-categories | Stats | many categories | view chart/legend | Overflow risk |
+| stats-top-liquors | Stats | top 5 present | view long names | Name overflow risk |
+| stats-monthly-trend | Stats | trend present | view chart | No |
+| more-main | More | menu list | view | No |
+| more-open-archive | More | menu list | 마셔본 술 | No |
+| more-open-stats | More | menu list | 통계 | No |
+| more-open-settings | More | menu list | 설정 | No |
+| settings-ai-loading | Settings | aiConfig loading | wait | No |
+| settings-ai-error | Settings | aiConfig error | view | No retry |
+| settings-ai-toggle | Settings | aiConfig data | switch AI 사용 | No |
+| settings-open-ai-detail | Settings | data | AI 설정 상세 | No |
+| settings-theme-dialog | Settings | general | 다크 모드 | No |
+| settings-theme-select | Settings | SimpleDialog | system/light/dark radio | No |
+| settings-unit-dialog | Settings | general | 기본 수량 단위 | No |
+| settings-cutoff-toggle | Settings | general | 6시 컷오프 switch | No |
+| settings-data-loading | Settings | data loading | wait | No |
+| settings-data-error | Settings | data error | view | No retry |
+| settings-reset-dialog | Settings | data section | 데이터 초기화 | Dialog opens |
+| settings-license | Settings | info | 오픈소스 라이선스 | No |
+| ai-settings-loading | AISettings | provider loading | wait | No |
+| ai-settings-error | AISettings | provider error | view | Raw error text |
+| ai-settings-no-key | AISettings | no user key | view guide | Long URL/text overflow risk |
+| ai-settings-key-focused | AISettings | key field | tap/type | Keyboard layout risk |
+| ai-settings-key-visible | AISettings | key field | visibility icon | No |
+| ai-settings-key-save-empty | AISettings | empty key | check icon | SnackBar |
+| ai-settings-key-save-invalid | AISettings | invalid key | check icon | SnackBar |
+| ai-settings-has-key | AISettings | key registered | delete key | No confirm |
+| ai-settings-model-lite | AISettings | model section | select Flash Lite | No |
+| ai-settings-model-flash | AISettings | model section | select Flash | No |
+| ai-settings-quota | AISettings | usage data | view | No |
+| ai-settings-last-error | AISettings | lastErrorMessage | view | Ellipsis OK |
+| ai-settings-jobs-loading | AISettings | parse jobs loading | wait | No |
+| ai-settings-jobs-empty | AISettings | no parse jobs | view | Low contrast risk |
+| ai-settings-jobs-many | AISettings | recent jobs | scroll/view | Mostly OK |
+
+**2. Integration Test Split**
+
+| filename | scenarios covered | estimated run time |
+|---|---|---|
+| `integration_test/_screenshot_helper.dart` | shared viewport, bounded settle, screenshot, prefs cleanup, finders | helper only |
+| `integration_test/onboarding_capture_test.dart` | onboarding pages 1-3, skip, start | 10-20s |
+| `integration_test/home_capture_test.dart` | home empty, input focus, image chip, loading/cancel, recent logs | 20-35s |
+| `integration_test/draft_review_capture_test.dart` | manual, AI parsed, multi-entry, dropdowns, food/memo/date, back dialog | 45-70s |
+| `integration_test/log_capture_test.dart` | list loading/empty/data/search/delete, detail, tasting note sheet | 45-75s |
+| `integration_test/archive_capture_test.dart` | filters, empty/data, favorite, raw no-detail, detail, alias dialog | 35-60s |
+| `integration_test/stats_capture_test.dart` | empty/data, period tabs, pie, top liquors, achievements | 25-45s |
+| `integration_test/settings_capture_test.dart` | settings states, theme/unit/reset dialogs, AI settings states/jobs | 45-70s |
+
+**3. Screenshot Helper Skeleton**
+
+```dart
+// integration_test/_screenshot_helper.dart
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+Future<void> resetPrefs() async {
+  SharedPreferences.setMockInitialValues(<String, Object>{});
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+}
+
+void setMobilePortrait(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1080, 2400);
+  tester.view.devicePixelRatio = 3.0;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+}
+
+Future<void> boundedSettle(
+  WidgetTester tester, {
+  Duration timeout = const Duration(seconds: 5),
+  Duration step = const Duration(milliseconds: 100),
+}) async {
+  final end = DateTime.now().add(timeout);
+  do {
+    await tester.pump(step);
+    if (!tester.binding.hasScheduledFrame) return;
+  } while (DateTime.now().isBefore(end));
+}
+
+Future<bool> waitFor(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 5),
+}) async {
+  final end = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(end)) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (finder.evaluate().isNotEmpty) return true;
+  }
+  return false;
+}
+
+Future<void> takeScreenshot(WidgetTester tester, String name) async {
+  await boundedSettle(tester);
+  if (Platform.isAndroid || Platform.isIOS) return;
+
+  final root = tester.binding.rootElement?.renderObject;
+  if (root == null) return;
+
+  final boundaries = <RenderRepaintBoundary>[];
+  void visit(RenderObject object) {
+    if (object is RenderRepaintBoundary) boundaries.add(object);
+    object.visitChildren(visit);
+  }
+
+  visit(root);
+
+  final viewLogical = tester.view.physicalSize / tester.view.devicePixelRatio;
+  final minW = viewLogical.width * 0.7;
+  final minH = viewLogical.height * 0.7;
+
+  RenderRepaintBoundary? boundary;
+  for (final candidate in boundaries.reversed) {
+    if (candidate.size.width >= minW && candidate.size.height >= minH) {
+      boundary = candidate;
+      break;
+    }
+  }
+  boundary ??= boundaries.isEmpty ? null : boundaries.first;
+  if (boundary == null) return;
+
+  final image = await boundary.toImage(pixelRatio: 1.0);
+  final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+  if (bytes == null) return;
+
+  final dir = Directory('test_screenshots');
+  if (!dir.existsSync()) dir.createSync(recursive: true);
+  File('test_screenshots/$name.png')
+      .writeAsBytesSync(bytes.buffer.asUint8List());
+}
+```
+
+**4. Detected Layout/Overflow Bugs**
+
+| Priority | Finding | Source |
+|---|---|---|
+| P0 | Log list tile can overflow horizontally: `summary`, food text, and place text have no `maxLines`/`overflow`, and food/place sit in a `Row` without `Expanded`. Long Korean place/food strings can throw overflow on 360px. | [log_list_screen.dart](D:/01.Work/08.rf/albi/lib/views/log/log_list_screen.dart:194), [log_list_screen.dart](D:/01.Work/08.rf/albi/lib/views/log/log_list_screen.dart:198) |
+| P0 | Stats pie legend is fixed height `220` and renders all categories in a non-scroll `Column`; legend label/count row has no `Expanded` or overflow. Many categories or long labels can overflow vertically/horizontally. | [stats_screen.dart](D:/01.Work/08.rf/albi/lib/views/stats/stats_screen.dart:226), [stats_screen.dart](D:/01.Work/08.rf/albi/lib/views/stats/stats_screen.dart:259) |
+| P1 | Draft entry numeric row is cramped on 360px: fixed `60` quantity + expanded unit + fixed `70` ABV. `도수%` label can truncate; dropdown can squeeze. | [entry_card_widget.dart](D:/01.Work/08.rf/albi/lib/views/draft_review/widgets/entry_card_widget.dart:158) |
+| P1 | Draft age label is `연산`, which is domain-confusing for general users. Rename to `숙성` or `연수` with helper text. | [entry_card_widget.dart](D:/01.Work/08.rf/albi/lib/views/draft_review/widgets/entry_card_widget.dart:150) |
+| P1 | Home recent liquor chips are inside `SizedBox(height: 36)` while comments claim default Chip 48dp tap target. This can visually clip or reduce accessible hit area. | [home_screen.dart](D:/01.Work/08.rf/albi/lib/views/home/home_screen.dart:115) |
+| P1 | Recent log card place text has no overflow handling inside a fixed `160x90` card. Long place names can overflow. | [recent_logs_widget.dart](D:/01.Work/08.rf/albi/lib/views/home/widgets/recent_logs_widget.dart:68), [recent_logs_widget.dart](D:/01.Work/08.rf/albi/lib/views/home/widgets/recent_logs_widget.dart:86) |
+| P1 | Archive list `ListTile` title/subtitle has no overflow caps; long display names, countries, or ABV/subcategory strings can overflow. Favorite `IconButton` itself keeps Material default tap target, so tap target is OK. | [archive_screen.dart](D:/01.Work/08.rf/albi/lib/views/archive/archive_screen.dart:159) |
+| P1 | Archive detail history row has place text inside a nested `Row` without overflow handling. Long place can overflow beside quantity. | [archive_detail_screen.dart](D:/01.Work/08.rf/albi/lib/views/archive/archive_detail_screen.dart:253) |
+| P2 | Tasting note edit icon uses `InkWell` with `Padding(4)` and `Icon(size:16)`, yielding a very small practical tap target. | [tasting_note_section.dart](D:/01.Work/08.rf/albi/lib/views/log/widgets/tasting_note_section.dart:71) |
+| P2 | Detail food chips use `MaterialTapTargetSize.shrinkWrap`, reducing touch target. | [log_detail_screen.dart](D:/01.Work/08.rf/albi/lib/views/log/log_detail_screen.dart:159) |
+| P2 | Archive detail alias chips also use `shrinkWrap`. | [archive_detail_screen.dart](D:/01.Work/08.rf/albi/lib/views/archive/archive_detail_screen.dart:111) |
+| P2 | Source badge uses hard-coded colors instead of `ColorScheme`; dark mode contrast should be visually verified. | [source_badge_widget.dart](D:/01.Work/08.rf/albi/lib/views/draft_review/widgets/source_badge_widget.dart:20) |
+| P2 | AI settings empty jobs text uses `Colors.grey`, which may be low contrast in dark mode. | [ai_settings_screen.dart](D:/01.Work/08.rf/albi/lib/views/settings/ai_settings_screen.dart:233) |
+| P2 | Bottom nav Korean labels are short (`홈`, `기록`, `더보기`), so no immediate overflow expected. Still include as regression baseline. | [app.dart](D:/01.Work/08.rf/albi/lib/app.dart:113) |
+
+**5. docs/plan-ui-issues.md Content**
+
+```markdown
+# UI Issues Plan
+
+| ID | Screen | Issue type | Priority | Fix direction | Regression test |
+|---|---|---|---|---|---|
+| UI-001 | DraftReview | Layout overflow | P1 | Replace quantity/unit/ABV row with responsive Wrap or two-row layout; give ABV field wider min width and full label visibility. | draft_review_capture_test: 360x800, `도수%` visible, no overflow. |
+| UI-002 | DraftReview | Wording | P1 | Rename `연산` to `숙성` or `연수`; consider helper text `예: 12년`. | parser_ui_test updated label finder. |
+| UI-003 | LogList | Text overflow | P0 | Add `maxLines`/`overflow` to summary, food, place; wrap metadata row with `Expanded/Flexible`. | log_capture_test with long liquor/food/place. |
+| UI-004 | Stats | Chart legend overflow | P0 | Cap pie legend rows, wrap in scroll/flexible list, add ellipsis to labels. | stats_capture_test with 8+ categories. |
+| UI-005 | Home | Chip tap target/clipping | P1 | Remove `SizedBox(height: 36)` or use 48dp min-height chip rail. | home_capture_test recent liquor chips. |
+| UI-006 | Home | Recent card text overflow | P1 | Add place `maxLines: 1`, `overflow: ellipsis`; verify fixed card height. | home_capture_test long place. |
+| UI-007 | Archive | Tile text overflow | P1 | Add `maxLines`/ellipsis to title and subtitle lines; keep favorite tap target. | archive_capture_test long names. |
+| UI-008 | ArchiveDetail | History row overflow | P1 | Make quantity/place row use `Expanded` and ellipsis for place. | archive_capture_test long history place. |
+| UI-009 | TastingNote | Small tap target | P2 | Replace edit `InkWell` with `IconButton` or 48dp constrained hit area. | log_capture_test note edit tap. |
+| UI-010 | LogDetail | Chip tap target | P2 | Remove `MaterialTapTargetSize.shrinkWrap` from food chips. | log_capture_test food chips. |
+| UI-011 | ArchiveDetail | Alias chip tap target | P2 | Remove `shrinkWrap` from alias chips or use accessible density. | archive_capture_test aliases. |
+| UI-012 | DraftReview | Dark mode contrast | P2 | Replace hard-coded source badge colors with ColorScheme-derived tokens. | settings_capture_test dark mode + draft source badge. |
+| UI-013 | AISettings | Dark mode contrast | P2 | Replace `Colors.grey` with `colorScheme.onSurfaceVariant`. | settings_capture_test AI empty jobs dark mode. |
+| UI-014 | BottomNav | Regression baseline | P2 | Keep labels short; capture selected/unselected tabs in light/dark mode. | home_capture_test tab switch screenshots. |
+```
+
+**6. Next Sprint Priorities**
+
+Phase 1: split integration tests and add `_screenshot_helper.dart`; enforce 360x800 viewport, SharedPreferences cleanup, and bounded settle only.
+
+Phase 2: capture Home + DraftReview first, because the known screenshot bug is in DraftReview and Home feeds that flow.
+
+Phase 3: visually verify generated PNGs, then update `docs/plan-ui-issues.md` with confirmed screenshots and exact reproduction inputs.
+
+Phase 4: fix loop in priority order: `UI-001`, `UI-002`, `UI-003`, `UI-004`, then rerun focused capture tests before broad regression.
